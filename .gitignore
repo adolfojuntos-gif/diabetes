@@ -1,0 +1,34 @@
+node_modules
+.next
+out
+*.tsbuildinfo
+next-env.d.ts
+
+# ---------------------------------------------------------------------------
+# NOTHING IN data/ EVER GOES IN GIT.
+#
+# This used to read `data/*.db*`, which matches a file directly inside data/ and
+# NOT one in a subdirectory. Since the move to one database per account the real
+# records live in data/accounts/, so every patient database was about to be
+# committed to a public repository. The whole directory is ignored now, because
+# an allowlist of patterns is the wrong shape for this: a new subdirectory should
+# be excluded by default, not included by default.
+# ---------------------------------------------------------------------------
+data/
+
+# Secrets. .env.example is the template and IS committed; it holds no values.
+.env
+.env.local
+.env*.local
+.env.production
+
+# Local tooling and editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Test and scratch output
+coverage/
+.fly/

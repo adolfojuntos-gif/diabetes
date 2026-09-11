@@ -1,0 +1,50 @@
+{
+  "name": "steady",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "db:push": "drizzle-kit push",
+    "seed": "tsx scripts/seed.ts",
+    "demo": "tsx scripts/demo.ts",
+    "demo:clear": "tsx scripts/demo.ts --clear",
+    "setup": "npm run db:push && npm run seed && npm run seed:foods",
+    "test": "tsx --test tests/*.test.ts",
+    "seed:foods": "tsx scripts/seedFoods.ts",
+    "schema:build": "drizzle-kit generate --name=account && node scripts/buildAccountSchema.mjs",
+    "migrate:accounts": "tsx scripts/migrateToAccounts.ts",
+    "migrate:all": "tsx scripts/migrateAllAccounts.ts",
+    "check:share": "tsx scripts/checkShareScoping.ts",
+    "sweep:orphans": "tsx scripts/sweepOrphanAccounts.ts",
+    "check:coach": "tsx scripts/checkCoachTokens.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.123.0",
+    "@libsql/client": "^0.18.0",
+    "drizzle-orm": "^0.45.2",
+    "next": "16.3.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
+    "stripe": "^22.6.2",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.4",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.13",
+    "typescript": "^5"
+  }
+}

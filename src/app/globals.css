@@ -1,0 +1,514 @@
+@import "tailwindcss";
+
+/*
+  STEADY — the design system.
+
+  A diabetes app is opened eight times a day, sometimes at 3am with shaking hands. So: a cool
+  off-white ground under an open sky, one serif for the words that matter, one sans for everything
+  you tap, and tabular numerals so a column of readings lines up. The ground is off-white rather
+  than pure white on purpose: clinical white is the look this app is trying not to have.
+
+  Glucose has exactly five colours and they mean the same thing on every screen:
+    coral   — low (< 70)          rust   — very low (< 54) is coral, heavier
+    juniper — in range            amber  — high (> 180)
+    ember   — very high (> 250)
+  Nothing else in the app may use coral or amber, so a red thing is always a low and a gold thing
+  is always a high. The Copilot's own colour is slate, so its voice is visibly distinct from the
+  numbers.
+*/
+
+:root {
+  color-scheme: light dark;
+
+  /*
+    Surfaces carry the brightness, so the accents never have to. The old ground and card differed
+    by about 3% lightness, which is why nothing lifted and the whole app read dusty. Card is now
+    true white against a warm, cleaner ground: the lift is structural, not coloured.
+  */
+  --paper: #f7f9fc;
+  --paper-raised: #ffffff;
+  --paper-sunk: #edf1f7;
+  --line: #e2e8f0;
+  --line-strong: #b6c2d0;
+
+  /*
+    BLOOM — the one decorative hue, and the only colour in the app allowed to be cheerful.
+    Glucose already owns green, red-orange, gold and deep-orange; the Copilot owns blue. Violet is
+    the furthest free hue from all five, so it can be vivid without ever being mistaken for a
+    reading. Everything decorative that wants colour uses this and nothing else.
+  */
+  --bloom: #7551d8;
+  --bloom-soft: #7551d81a;
+  --bloom-tint: #f3efff;
+  /*
+    SKY — the ambient wash only. Never a surface, never a meaning, never on a chip or a chart.
+    These are deliberately brighter and far more saturated than the Copilot's slate (#3f5f8a), which
+    is a muted navy. A big blurred sky at the edge of the screen cannot be mistaken for slate on a
+    chip, and nothing here is within reach of coral, amber, ember or juniper.
+  */
+  --sky: #5cb0ef;
+  --azure: #2f7fd4;
+  --horizon: #86cdf2;
+
+  --ink: #1c1f1d;
+  --ink-soft: #565c58;
+  --ink-faint: #858b86;
+
+  --juniper: #2e6b4f;
+  --juniper-soft: #2e6b4f1f;
+  --coral: #cf4f39;
+  --coral-soft: #cf4f3922;
+  --amber: #c4861d;
+  --amber-soft: #c4861d24;
+  --ember: #9a3f1a;
+  --ember-soft: #9a3f1a24;
+  --slate: #3f5f8a;
+  --slate-soft: #3f5f8a1f;
+
+  --danger: var(--coral);
+
+  --shadow-card: 0 1px 2px rgb(28 31 29 / 0.04), 0 8px 24px -12px rgb(28 31 29 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(28 31 29 / 0.05), 0 18px 40px -20px rgb(28 31 29 / 0.22);
+
+  --measure: 36rem;
+  --radius: 20px;
+  --radius-sm: 12px;
+
+  /*
+    Motion is where "alive" actually comes from, and it costs no colour budget at all. One set of
+    tokens so everything in the app shares a rhythm. Exit is ~65% of enter, which is what makes an
+    interface feel responsive rather than slow.
+  */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-micro: 140ms;
+  --dur-enter: 240ms;
+  --dur-exit: 160ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151614;
+    --paper-raised: #212320;
+    --paper-sunk: #0e0f0d;
+    --line: #32352f;
+    --line-strong: #4a4d45;
+
+    /* Lifted and desaturated for dark, per the rule that dark mode is a tonal variant, not an invert. */
+    --bloom: #b5a0f0;
+    --bloom-soft: #b5a0f026;
+    --bloom-tint: #201d2e;
+    --sky: #6fbcf5;
+    --azure: #4a92dd;
+    --horizon: #8ed2f6;
+
+    --ink: #ebe8e0;
+    --ink-soft: #a7aca6;
+    --ink-faint: #767b75;
+
+    --juniper: #7dbb9a;
+    --juniper-soft: #7dbb9a29;
+    --coral: #f08a72;
+    --coral-soft: #f08a7229;
+    --amber: #e3b25c;
+    --amber-soft: #e3b25c29;
+    --ember: #e08a5a;
+    --ember-soft: #e08a5a29;
+    --slate: #93acd3;
+    --slate-soft: #93acd329;
+
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -20px rgb(0 0 0 / 0.65);
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-raised: var(--paper-raised);
+  --color-sunk: var(--paper-sunk);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-soft: var(--ink-soft);
+  --color-faint: var(--ink-faint);
+  --color-juniper: var(--juniper);
+  --color-coral: var(--coral);
+  --color-amber: var(--amber);
+  --color-ember: var(--ember);
+  --color-slate: var(--slate);
+  --color-bloom: var(--bloom);
+  --color-bloom-tint: var(--bloom-tint);
+  --color-danger: var(--danger);
+  --font-display: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --radius-card: var(--radius);
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-instrument-serif), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  h1 { font-size: clamp(2rem, 5vw, 2.8rem); }
+  h2 { font-size: clamp(1.4rem, 3.2vw, 1.8rem); }
+  h3 { font-size: 1.15rem; }
+
+  a { color: inherit; }
+
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection { background: var(--amber-soft); }
+
+  input, textarea, select, button { font: inherit; color: inherit; }
+  textarea { resize: vertical; }
+}
+
+@layer components {
+  /* ---------- surfaces ---------- */
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+  }
+  .card-quiet {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .card-sunk {
+    background: var(--paper-sunk);
+    border-radius: var(--radius);
+  }
+
+  /* ---------- alive ----------
+     Three utilities, and between them they do all the work. None of them touches a glucose
+     colour, so none of them can weaken what coral or amber mean.
+  */
+
+  /*
+    Press response. A 0.97 squeeze with a spring return is the single cheapest thing that makes an
+    interface feel physical rather than printed. Bounded so it never shifts surrounding layout.
+  */
+  .press {
+    transition:
+      transform var(--dur-micro) var(--ease-spring),
+      box-shadow var(--dur-micro) var(--ease-out),
+      background-color var(--dur-micro) var(--ease-out);
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .press { transition: none; }
+    .press:active { transform: none; }
+  }
+
+  /* Entrance staggering already exists further down as `.rise` + `.rise-1..6`. Use that. */
+
+  /* ---------- type ---------- */
+  .eyebrow {
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 600;
+  }
+  .lede { font-size: 1.0625rem; line-height: 1.6; color: var(--ink-soft); }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+  .big-num {
+    font-family: var(--font-instrument-serif), Georgia, serif;
+    font-size: clamp(2.6rem, 8vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .muted { color: var(--ink-soft); }
+  .faint { color: var(--ink-faint); }
+
+  /* ---------- glucose bands (the only place these colours are allowed) ---------- */
+  .band-very_low { color: var(--coral); }
+  .band-low { color: var(--coral); }
+  .band-in_range { color: var(--juniper); }
+  .band-high { color: var(--amber); }
+  .band-very_high { color: var(--ember); }
+  .bg-band-very_low { background: var(--coral); }
+  .bg-band-low { background: var(--coral); opacity: 0.7; }
+  .bg-band-in_range { background: var(--juniper); }
+  .bg-band-high { background: var(--amber); }
+  .bg-band-very_high { background: var(--ember); }
+  .chip-very_low, .chip-low { background: var(--coral-soft); color: var(--coral); }
+  .chip-in_range { background: var(--juniper-soft); color: var(--juniper); }
+  .chip-high { background: var(--amber-soft); color: var(--amber); }
+  .chip-very_high { background: var(--ember-soft); color: var(--ember); }
+
+  /* ---------- severity ---------- */
+  .sev-attention { border-left: 3px solid var(--coral); }
+  .sev-watch { border-left: 3px solid var(--amber); }
+  .sev-info { border-left: 3px solid var(--line-strong); }
+  .sev-win { border-left: 3px solid var(--juniper); }
+
+  /* ---------- triage banners: fixed text, fixed colour, above everything ---------- */
+  .triage { border-radius: var(--radius); padding: 1rem 1.125rem; border: 1px solid; }
+  .triage-emergency { background: var(--coral); color: #fff; border-color: var(--coral); }
+  .triage-urgent { background: var(--coral-soft); color: var(--ink); border-color: var(--coral); }
+  .triage-clinic { background: var(--amber-soft); color: var(--ink); border-color: var(--amber); }
+  .triage-general { background: var(--juniper-soft); color: var(--ink); border-color: var(--juniper); }
+
+  /* ---------- controls ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.7rem 1.1rem; border-radius: 999px; font-weight: 600; font-size: 0.95rem;
+    border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
+    cursor: pointer; min-height: 44px;
+    transition:
+      transform var(--dur-micro) var(--ease-spring),
+      box-shadow var(--dur-micro) var(--ease-out),
+      opacity var(--dur-micro) var(--ease-out);
+  }
+  /* A squeeze and a spring back, not a nudge downward. This is most of what "alive" means on a phone. */
+  .btn:hover { opacity: 0.92; }
+  .btn:active { transform: scale(0.97); }
+  @media (prefers-reduced-motion: reduce) {
+    .btn { transition: opacity var(--dur-micro) linear; }
+    .btn:active { transform: none; }
+  }
+  .btn-bloom { background: var(--bloom); border-color: var(--bloom); color: #fff; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+  .btn-ghost { background: transparent; color: var(--ink-soft); border-color: transparent; }
+  .btn-juniper { background: var(--juniper); border-color: var(--juniper); color: #fff; }
+  .btn-slate { background: var(--slate); border-color: var(--slate); color: #fff; }
+  .btn-danger { background: transparent; color: var(--coral); border-color: var(--coral); }
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; min-height: 36px; }
+  .btn-lg { padding: 0.9rem 1.4rem; font-size: 1.05rem; min-height: 52px; }
+
+  .field { display: flex; flex-direction: column; gap: 0.35rem; }
+  .label { font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
+  .input, .select, .textarea {
+    width: 100%; padding: 0.7rem 0.9rem; border-radius: var(--radius-sm);
+    border: 1px solid var(--line-strong); background: var(--paper-raised); color: var(--ink);
+    min-height: 44px;
+  }
+  .input:focus, .select:focus, .textarea:focus { outline: 2px solid var(--ink); outline-offset: 1px; border-color: transparent; }
+  .input-big { font-size: 2rem; font-family: var(--font-instrument-serif), Georgia, serif; min-height: 64px; text-align: center; }
+  .hint { font-size: 0.8rem; color: var(--ink-faint); }
+  .error { font-size: 0.85rem; color: var(--coral); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.7rem;
+    border-radius: 999px; font-size: 0.8rem; font-weight: 600; background: var(--paper-sunk); color: var(--ink-soft);
+  }
+  .pill-juniper { background: var(--juniper-soft); color: var(--juniper); }
+  .pill-slate { background: var(--slate-soft); color: var(--slate); }
+  .pill-amber { background: var(--amber-soft); color: var(--amber); }
+  .pill-coral { background: var(--coral-soft); color: var(--coral); }
+  .pill-bloom { background: var(--bloom-soft); color: var(--bloom); }
+
+  /* Tappable surfaces rise toward the finger. Shadow and transform only, so nothing reflows. */
+  .lift { transition: transform var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out); }
+  .lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+  .lift:active { transform: translateY(0) scale(0.995); }
+  @media (prefers-reduced-motion: reduce) {
+    .lift, .lift:hover, .lift:active { transition: none; transform: none; }
+  }
+
+  .seg { display: inline-flex; background: var(--paper-sunk); border-radius: 999px; padding: 3px; gap: 2px; }
+  .seg > * { padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); cursor: pointer; border: 0; background: transparent; }
+  .seg > .on, .seg > [aria-current="true"] { background: var(--paper-raised); color: var(--ink); box-shadow: var(--shadow-card); }
+
+  /* ---------- layout ---------- */
+  .page { max-width: 64rem; margin: 0 auto; padding: 1.25rem 1rem 6rem; }
+  @media (min-width: 900px) { .page { padding: 2rem 2rem 4rem; } }
+  .prose-measure { max-width: var(--measure); }
+
+  .nav-link {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.9rem; border-radius: 12px;
+    color: var(--ink-soft); font-weight: 500; font-size: 0.95rem;
+  }
+  .nav-link[aria-current="page"] { background: var(--paper-raised); color: var(--ink); box-shadow: var(--shadow-card); }
+  .nav-link:hover { color: var(--ink); }
+
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    background: color-mix(in srgb, var(--paper-raised) 92%, transparent);
+    backdrop-filter: blur(14px); border-top: 1px solid var(--line);
+    padding: 0.4rem 0.4rem calc(0.4rem + env(safe-area-inset-bottom));
+  }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+    font-size: 0.68rem; font-weight: 600; color: var(--ink-faint); padding: 0.35rem 0; border-radius: 10px;
+  }
+  .tab[aria-current="page"] { color: var(--ink); }
+  .tab svg { width: 22px; height: 22px; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  .divider { border-top: 1px solid var(--line); }
+  .tir-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--paper-sunk); }
+
+  @media print {
+    .tabbar, nav, .no-print { display: none !important; }
+    .page { padding: 0; max-width: none; }
+    .card { box-shadow: none; }
+  }
+}
+
+/* ============================================================================
+   ALIVE
+   The app is opened eight times a day. It should feel like a room with light
+   moving through it, not a form. Three devices, in order of how much they do:
+
+   1. THE AMBIENT WASH. Three big, slow, blurred lights drifting behind every
+      screen. They are a light source, never a surface: always behind content,
+      never under a card, and low enough in opacity that type contrast never
+      depends on where they happen to be. The greens and golds are chosen to sit
+      away from the glucose band colours, so a warm glow is never mistaken for a
+      high reading.
+   2. ENTRANCE. Cards rise and settle once on arrival. Staggered, brief, and
+      never repeated on re-render.
+   3. THE BREATHING NUMBER. The latest reading carries a slow pulse in its own
+      band colour, so the one number that matters is the one thing moving.
+
+   Every one of these is switched off entirely under prefers-reduced-motion.
+   ============================================================================ */
+
+@layer components {
+  .ambient {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    /*
+      The drifting lights alone cannot read as sky, because the middle of every screen is covered by
+      cards. This fixed band is what actually makes it one: colour at the top of the viewport,
+      falling away to the paper ground before it reaches anything you have to read.
+    */
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sky) 22%, transparent) 0%,
+      color-mix(in srgb, var(--horizon) 10%, transparent) 30%,
+      transparent 58%
+    );
+  }
+  .ambient span {
+    position: absolute;
+    display: block;
+    border-radius: 50%;
+    filter: blur(90px);
+    will-change: transform;
+  }
+  /*
+    The wash used to be pigmented amber, juniper and slate, which are three of the five colours the
+    app reserves for meaning. Amber over juniper over cream is what made every screen read dusty,
+    and it quietly broke the rule at the top of this file: a warm glow really could be mistaken for
+    a high reading.
+
+    It is now a sky: bright blue at the top, a deeper azure low and to the right, and a pale band of
+    horizon light drifting through the middle. Blue was the one thing the old wash got right, and it
+    is the one colour a person of any age or taste opens without flinching. Nothing here comes near
+    coral, amber, ember or juniper, and all three are far brighter than the Copilot's muted slate.
+  */
+  .ambient span:nth-child(1) {
+    width: 52vmax; height: 52vmax; top: -20vmax; left: -12vmax;
+    background: radial-gradient(circle, color-mix(in srgb, var(--sky) 56%, transparent), transparent 70%);
+    animation: drift-a 34s ease-in-out infinite alternate;
+  }
+  .ambient span:nth-child(2) {
+    width: 44vmax; height: 44vmax; bottom: -18vmax; right: -10vmax;
+    background: radial-gradient(circle, color-mix(in srgb, var(--azure) 40%, transparent), transparent 70%);
+    animation: drift-b 44s ease-in-out infinite alternate;
+  }
+  .ambient span:nth-child(3) {
+    width: 48vmax; height: 48vmax; top: 18%; left: 34%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--horizon) 46%, transparent), transparent 70%);
+    animation: drift-c 56s ease-in-out infinite alternate;
+  }
+
+  /* The cards have to sit on something solid, or the wash muddies the type. */
+  .card, .card-sunk, .triage, .tabbar {
+    backdrop-filter: blur(6px);
+  }
+
+  .rise { animation: rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .rise-1 { animation-delay: 40ms; }
+  .rise-2 { animation-delay: 90ms; }
+  .rise-3 { animation-delay: 140ms; }
+  .rise-4 { animation-delay: 190ms; }
+  .rise-5 { animation-delay: 240ms; }
+  .rise-6 { animation-delay: 290ms; }
+
+  /* The one number that matters is the one thing breathing. */
+  .breathing { position: relative; }
+  .breathing::before {
+    content: "";
+    position: absolute;
+    inset: -14% -10%;
+    border-radius: 50%;
+    background: radial-gradient(circle, currentColor, transparent 68%);
+    opacity: 0.1;
+    animation: breathe 4.5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Hero type sits over footage, so it gets its own weight and a soft lift. */
+  .on-film {
+    text-shadow: 0 1px 24px color-mix(in srgb, var(--paper) 70%, transparent);
+  }
+}
+
+@keyframes drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(14vmax, 8vmax, 0) scale(1.18); }
+}
+@keyframes drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.1); }
+  to   { transform: translate3d(-12vmax, -10vmax, 0) scale(1); }
+}
+@keyframes drift-c {
+  from { transform: translate3d(0, 0, 0) scale(0.9); }
+  to   { transform: translate3d(-16vmax, 12vmax, 0) scale(1.2); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.07; transform: scale(0.96); }
+  50%      { opacity: 0.18; transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient span { animation: none !important; }
+  .rise { animation: none !important; }
+  .breathing::before { animation: none !important; opacity: 0.08; }
+}

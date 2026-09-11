@@ -1,0 +1,381 @@
+<meta charset="utf-8" />
+<title>Steady — listing graphic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f7f9fc;
+    --raised: #ffffff;
+    --sunk: #edf1f7;
+    --line: #e2e8f0;
+    --ink: #1c1f1d;
+    --ink-soft: #565c58;
+    --ink-faint: #858b86;
+    --bloom: #7551d8;
+    --bloom-deep: #4e33a0;
+    --bloom-soft: #7551d81a;
+    --deep: #121c2e;
+    --sky: #5cb0ef;
+    --azure: #2f7fd4;
+    --horizon: #86cdf2;
+    --juniper: #2e6b4f;
+    --coral: #cf4f39;
+    --amber: #c4861d;
+    --slate: #3f5f8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1600px; height: 1200px;
+    font-family: Nunito, system-ui, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    overflow: hidden;
+    position: relative;
+  }
+  /* the ambient wash, same three lights the app itself uses */
+  .wash { position: absolute; inset: 0; overflow: hidden; z-index: 0;
+    background: linear-gradient(180deg, #5cb0ef3d 0%, #86cdf21f 30%, transparent 58%); }
+  .wash i { position: absolute; display: block; border-radius: 50%; filter: blur(110px); }
+  .w1 { width: 860px; height: 860px; top: -320px; left: -200px; background: radial-gradient(circle, #5cb0ef70, transparent 70%); }
+  .w2 { width: 720px; height: 720px; bottom: -280px; right: -140px; background: radial-gradient(circle, #2f7fd455, transparent 70%); }
+  .w3 { width: 760px; height: 760px; top: 240px; left: 520px; background: radial-gradient(circle, #86cdf25e, transparent 70%); }
+
+  .sheet { position: relative; z-index: 1; width: 1600px; height: 1200px; padding: 40px 44px 0; display: flex; flex-direction: column; }
+
+  /* ---------------- header ---------------- */
+  header { display: grid; grid-template-columns: 118px 1fr auto; gap: 26px; align-items: center; }
+  .wordmark { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; letter-spacing: -0.02em; line-height: 0.86; }
+  .wordmark .l1 { font-size: 128px; display: block; }
+  .rule { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+  .rule span { height: 2px; background: var(--bloom); flex: 0 0 54px; border-radius: 2px; }
+  .tagline { font-size: 21px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); }
+
+  .stamp { width: 290px; border: 2px solid var(--bloom); border-radius: 20px; padding: 18px 20px; display: flex; gap: 14px; align-items: center; background: #ffffffb8; }
+  .stamp h4 { font-size: 13px; letter-spacing: 0.16em; color: var(--bloom); font-weight: 800; }
+  .stamp p { font-size: 17px; font-weight: 800; line-height: 1.2; margin-top: 3px; }
+  .stamp small { display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft); margin-top: 4px; line-height: 1.3; }
+
+  /* ---------------- body grid ---------------- */
+  .grid { flex: 1; display: grid; grid-template-columns: 300px 1fr 236px; gap: 30px; margin-top: 22px; align-items: stretch; }
+  .rail { display: flex; flex-direction: column; justify-content: space-between; }
+
+  .feat { display: flex; gap: 15px; padding: 13px 0; align-items: flex-start; border-bottom: 1px solid var(--line); }
+  .feat:last-child { border-bottom: 0; }
+  .ic { flex: 0 0 50px; height: 50px; border-radius: 15px; background: var(--bloom); display: grid; place-items: center; }
+  .ic svg { width: 25px; height: 25px; stroke: #fff; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .feat h3 { font-size: 16px; font-weight: 800; letter-spacing: 0.055em; text-transform: uppercase; }
+  .feat p { font-size: 14.5px; color: var(--ink-soft); line-height: 1.36; margin-top: 3px; font-weight: 600; }
+
+  /* ---------------- laptop ---------------- */
+  .stage { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .lid { width: 100%; background: #d2dae4; border-radius: 22px 22px 8px 8px; padding: 13px 13px 16px; box-shadow: 0 40px 80px -40px #12203a5c, 0 2px 0 #fff inset; }
+  .cam { width: 7px; height: 7px; border-radius: 50%; background: #a9b5c4; margin: 0 auto 10px; }
+  .screen { background: var(--paper); border-radius: 10px; overflow: hidden; display: flex; height: 676px; }
+  .screen::before { content: none; }
+  .base { width: 103%; height: 15px; background: linear-gradient(#c8d1dc, #aeb9c7); border-radius: 0 0 16px 16px; }
+  .notch { width: 116px; height: 6px; background: #9aa6b6; border-radius: 0 0 8px 8px; margin: 0 auto; }
+
+  /* app sidebar */
+  .side { width: 176px; padding: 16px 12px; color: var(--ink); flex: 0 0 176px;
+    background: linear-gradient(180deg, #5cb0ef2e 0%, #86cdf214 46%, transparent 78%);
+    border-right: 1px solid var(--line); }
+  .side .brand { font-family: "Instrument Serif", Georgia, serif; font-size: 25px; line-height: 1; }
+  .side .sub { font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; font-weight: 600; }
+  .nav { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; }
+  .nav a { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 9px; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+  .nav a.on { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px #12203a14, 0 6px 16px -10px #12203a3d; }
+  .nav svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* app main */
+  .main { flex: 1; padding: 15px 16px; overflow: hidden; }
+  .mhead { display: flex; justify-content: space-between; align-items: flex-start; }
+  .eyebrow { font-size: 9.5px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-faint); font-weight: 800; }
+  .h1 { font-family: "Instrument Serif", Georgia, serif; font-size: 30px; line-height: 1.05; margin-top: 2px; }
+  .chip-date { font-size: 11px; font-weight: 700; border: 1px solid var(--line); background: var(--raised); border-radius: 999px; padding: 6px 12px; color: var(--ink-soft); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-top: 13px; }
+  .stat { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 10px 11px; }
+  .stat .k { font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-faint); font-weight: 800; line-height: 1.25; }
+  .stat .v { font-family: "Instrument Serif", Georgia, serif; font-size: 30px; line-height: 1; margin-top: 6px; }
+  .stat .v i { font-family: Nunito; font-size: 12px; font-style: normal; font-weight: 700; color: var(--ink-soft); margin-left: 2px; }
+  .stat .d { font-size: 10px; font-weight: 700; color: var(--ink-soft); margin-top: 5px; }
+
+  .cols { display: grid; grid-template-columns: 1.42fr 1fr; gap: 9px; margin-top: 9px; }
+  .card { background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; }
+  .card h4 { font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-faint); font-weight: 800; }
+
+  .tir { height: 9px; border-radius: 999px; overflow: hidden; display: flex; margin-top: 9px; }
+  .tir b { display: block; height: 100%; }
+  .legend { display: flex; gap: 13px; margin-top: 9px; }
+  .legend div { font-size: 10px; font-weight: 700; color: var(--ink-soft); }
+  .legend b { display: block; font-family: "Instrument Serif", Georgia, serif; font-size: 21px; font-weight: 400; color: var(--ink); line-height: 1; margin-bottom: 2px; }
+
+  .latest { display: flex; align-items: baseline; gap: 8px; margin-top: 7px; }
+  .latest .big { font-family: "Instrument Serif", Georgia, serif; font-size: 45px; line-height: 1; }
+  .pill { font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: #2e6b4f1f; color: var(--juniper); }
+  .rows { margin-top: 9px; display: flex; flex-direction: column; gap: 6px; }
+  .row { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+  .row b { color: var(--ink); font-weight: 800; }
+
+  .copilot { background: #3f5f8a12; border: 1px solid #3f5f8a2e; border-radius: 14px; padding: 11px 12px; margin-top: 9px; }
+  .copilot .who { font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--slate); font-weight: 800; }
+
+  .attn { margin-top: 10px; }
+  .pat { display: flex; gap: 10px; background: var(--raised); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; margin-bottom: 7px; }
+  .sev { flex: 0 0 4px; border-radius: 999px; background: var(--amber); }
+  .sev.win { background: var(--juniper); }
+  .pat b { font-size: 11.5px; font-weight: 800; display: block; }
+  .pat p { font-size: 10.5px; color: var(--ink-soft); line-height: 1.4; margin-top: 3px; font-weight: 600; }
+  .copilot p { font-size: 11.5px; line-height: 1.42; margin-top: 5px; font-weight: 600; color: #2c3c55; }
+
+  /* ---------------- trust rail ---------------- */
+  .trust { background: var(--deep); border-radius: 24px; padding: 30px 20px; color: #fff; display: flex; flex-direction: column; gap: 22px; justify-content: center; height: 100%; }
+  .trust .t { text-align: center; }
+  .trust .ring { width: 54px; height: 54px; border-radius: 50%; border: 2px solid #ffffff40; display: grid; place-items: center; margin: 0 auto 10px; }
+  .trust svg { width: 25px; height: 25px; stroke: #fff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .trust h4 { font-size: 14px; font-weight: 800; letter-spacing: 0.05em; line-height: 1.25; }
+  .trust p { font-size: 12.5px; color: #b9b2d4; margin-top: 5px; line-height: 1.35; font-weight: 600; }
+  .sep { height: 1px; background: #ffffff1f; }
+
+  /* ---------------- footer ---------------- */
+  footer { margin: 22px -44px 0; background: var(--deep); padding: 20px 44px; display: grid; grid-template-columns: repeat(4, 1fr) 300px; gap: 22px; align-items: center; color: #fff; height: 132px; }
+  .fitem { display: flex; gap: 12px; align-items: center; }
+  .fitem svg { width: 27px; height: 27px; stroke: #b9a3f5; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 27px; }
+  .fitem h5 { font-size: 13.5px; font-weight: 800; letter-spacing: 0.055em; text-transform: uppercase; }
+  .fitem p { font-size: 12px; color: #b0a9c9; margin-top: 2px; line-height: 1.3; font-weight: 600; }
+  .cta { background: #fff; border-radius: 16px; padding: 14px 18px; text-align: center; }
+  .cta b { display: block; font-size: 17px; font-weight: 800; color: var(--bloom-deep); letter-spacing: 0.03em; line-height: 1.2; }
+  .cta small { font-size: 11.5px; color: var(--ink-soft); font-weight: 700; }
+
+  .disclaimer { position: absolute; left: 44px; bottom: 8px; font-size: 10.5px; color: #8e88a8; font-weight: 600; z-index: 3; }
+</style>
+
+<div class="wash"><i class="w1"></i><i class="w2"></i><i class="w3"></i></div>
+
+<div class="sheet">
+
+  <header>
+    <!-- mark: an erratic trace settling into a steady line, inside a drop -->
+    <svg viewBox="0 0 100 100" width="118" height="118" aria-label="Steady mark">
+      <path d="M50 7 C50 7 84 42 84 64 A34 34 0 0 1 16 64 C16 42 50 7 50 7 Z"
+            fill="none" stroke="#7551d8" stroke-width="5.5" stroke-linejoin="round"/>
+      <path d="M27 70 L36 52 L44 76 L53 44 L61 62 L73 62"
+            fill="none" stroke="#4e33a0" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
+    <div>
+      <span class="wordmark"><span class="l1">STEADY</span></span>
+      <div class="rule"><span></span><div class="tagline">Your diabetes, one day at a time</div></div>
+    </div>
+
+    <div class="stamp">
+      <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="#7551d8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2.6 4.6 5.8v5.4c0 4.6 3.1 8.9 7.4 10.2 4.3-1.3 7.4-5.6 7.4-10.2V5.8Z"/>
+        <path d="m8.6 11.8 2.4 2.4 4.4-4.6"/>
+      </svg>
+      <div>
+        <h4>ALL IN ONE</h4>
+        <p>Diabetes self-management</p>
+        <small>with a clinical copilot that reads your own numbers</small>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ============ features ============ -->
+    <div class="rail">
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2.7s6.6 6.9 6.6 11a6.6 6.6 0 0 1-13.2 0c0-4.1 6.6-11 6.6-11Z"/></svg></div>
+        <div><h3>Glucose &amp; CGM</h3><p>Log by hand, or import Dexcom Clarity and LibreView CSV</p></div>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M6 3v8a2.4 2.4 0 0 0 4.8 0V3M8.4 11v10M17 3c-1.6 0-2.6 2-2.6 5s1 4 2.6 4v9"/></svg></div>
+        <div><h3>Meals &amp; carbs</h3><p>Type a meal, or estimate it from a photo. Estimates stay estimates</p></div>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 17.5 9 11l4 4 8-8.5"/><path d="M16 6.5h5v5"/></svg></div>
+        <div><h3>Trends</h3><p>Time in range, GMI, variability, and the patterns your data supports</p></div>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 1 1-3.6-6.9"/><path d="M3.5 20.5 5 16.4"/><path d="M9 12h6M12 9v6"/></svg></div>
+        <div><h3>Clinical copilot</h3><p>Ask about your own data. Every number comes from the engine, never the model</p></div>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-3.4L6 21Z"/><path d="M9.2 8.4h5.6M9.2 12h5.6"/></svg></div>
+        <div><h3>Weekly review</h3><p>This week against last, with wins and what to raise. Printable for the room</p></div>
+      </div>
+      <div class="feat">
+        <div class="ic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8.2" r="3.3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16.5 6.4a3.3 3.3 0 0 1 0 6.5M18.6 20a6 6 0 0 0-2.4-4.8"/></svg></div>
+        <div><h3>Caregiver sharing</h3><p>A private link that shows only the sections you chose. Revoke any time</p></div>
+      </div>
+    </div>
+
+    <!-- ============ the laptop ============ -->
+    <div class="stage">
+      <div class="lid">
+        <div class="cam"></div>
+        <div class="screen">
+
+          <aside class="side">
+            <div class="brand">Steady</div>
+            <div class="sub">for Maria</div>
+            <nav class="nav">
+              <a class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.6M12 19.4V22M22 12h-2.6M4.6 12H2M19 5l-1.8 1.8M6.8 17.2 5 19M19 19l-1.8-1.8M6.8 6.8 5 5"/></svg>Today</a>
+              <a><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Log</a>
+              <a><svg viewBox="0 0 24 24"><path d="M3 17.5 9 11l4 4 8-8.5"/><path d="M16 6.5h5v5"/></svg>Trends</a>
+              <a><svg viewBox="0 0 24 24"><path d="M20.5 11.5a8 8 0 1 1-3.4-6.6"/><path d="M4 20l1.4-3.9"/></svg>Copilot</a>
+              <a><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Plan</a>
+              <a><svg viewBox="0 0 24 24"><circle cx="13" cy="4.6" r="1.9"/><path d="m7 21 3-6 3.4-2.3 1.4 3.6L18 19"/><path d="m8.6 10.4 4-2.4 3 2.6 3 .8"/></svg>Move</a>
+              <a><svg viewBox="0 0 24 24"><rect x="3" y="7.4" width="18" height="12.6" rx="2.2"/><path d="M9 7.4V5.6A1.6 1.6 0 0 1 10.6 4h2.8A1.6 1.6 0 0 1 15 5.6v1.8"/></svg>Toolkit</a>
+              <a><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.3 14.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-2.87 1.2V21a2 2 0 0 1-4 0v-.1A1.7 1.7 0 0 0 6.9 19.2l-.06.06A2 2 0 1 1 4 16.43l.06-.06A1.7 1.7 0 0 0 2.9 13.5H3a2 2 0 0 1 0-4h.1A1.7 1.7 0 0 0 4.8 6.9l-.06-.06A2 2 0 1 1 7.57 4l.06.06a1.7 1.7 0 0 0 1.87.34H9.6a1.7 1.7 0 0 0 1-1.56V2a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 2.87 1.2l.06-.06A2 2 0 1 1 20.36 6l-.06.06a1.7 1.7 0 0 0-.34 1.87v.07a1.7 1.7 0 0 0 1.56 1H22a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.56 1Z"/></svg>Settings</a>
+            </nav>
+          </aside>
+
+          <main class="main">
+            <div class="mhead">
+              <div>
+                <div class="eyebrow">Friday, September 11</div>
+                <div class="h1">Good morning, Maria</div>
+              </div>
+              <div class="chip-date">Last 7 days</div>
+            </div>
+
+            <div class="stats">
+              <div class="stat"><div class="k">Time in range</div><div class="v">84<i>%</i></div><div class="d">+6 on last week</div></div>
+              <div class="stat"><div class="k">Average</div><div class="v">128<i>mg/dL</i></div><div class="d">over 31 readings</div></div>
+              <div class="stat"><div class="k">Carbs today</div><div class="v">165<i>g</i></div><div class="d">3 of 3 meals logged</div></div>
+              <div class="stat"><div class="k">Sleep</div><div class="v">7.6<i>h</i></div><div class="d">quality 4 of 5</div></div>
+            </div>
+
+            <div class="cols">
+              <div>
+                <div class="card">
+                  <h4>Last 7 days</h4>
+                  <div class="tir">
+                    <b style="width:3%;background:#cf4f39;opacity:.75"></b>
+                    <b style="width:84%;background:#2e6b4f"></b>
+                    <b style="width:13%;background:#c4861d"></b>
+                  </div>
+                  <div class="legend">
+                    <div><b>84%</b>in range</div>
+                    <div><b>128</b>average mg/dL</div>
+                    <div><b>1</b>low reading</div>
+                    <div><b>31%</b>variability</div>
+                  </div>
+                  <svg viewBox="0 0 420 72" style="width:100%;height:72px;margin-top:9px" role="img" aria-label="Seven days of glucose, all between 96 and 168 mg/dL">
+                    <rect x="0" y="18" width="420" height="40" fill="#2e6b4f14"/>
+                    <line x1="0" y1="18" x2="420" y2="18" stroke="#e9e3d7"/>
+                    <line x1="0" y1="58" x2="420" y2="58" stroke="#e9e3d7"/>
+                    <polyline points="14,44 82,28 150,50 218,22 286,54 354,33 412,40"
+                              fill="none" stroke="#7551d8" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    <g fill="#7551d8">
+                      <circle cx="14" cy="44" r="3.4"/><circle cx="82" cy="28" r="3.4"/><circle cx="150" cy="50" r="3.4"/>
+                      <circle cx="218" cy="22" r="3.4"/><circle cx="286" cy="54" r="3.4"/><circle cx="354" cy="33" r="3.4"/>
+                      <circle cx="412" cy="40" r="3.4"/>
+                    </g>
+                  </svg>
+                </div>
+
+                <div class="copilot">
+                  <div class="who">Copilot</div>
+                  <p>Your mornings after short sleep ran higher on 4 of 6 nights under 6 hours. That is worth raising at your appointment on the 29th. I have added it to your questions.</p>
+                </div>
+              </div>
+
+              <div>
+                <div class="card">
+                  <h4>Latest reading</h4>
+                  <div class="latest"><span class="big">118</span><span class="pill">In range</span></div>
+                  <div class="rows" style="margin-top:7px">
+                    <div class="row"><span>Taken</span><b>7:42 AM</b></div>
+                    <div class="row"><span>Before breakfast</span><b>fasting</b></div>
+                  </div>
+                </div>
+                <div class="card" style="margin-top:9px">
+                  <h4>Today so far</h4>
+                  <div class="rows">
+                    <div class="row"><span>Glucose readings</span><b>4</b></div>
+                    <div class="row"><span>Meals logged</span><b>3 of 3</b></div>
+                    <div class="row"><span>Insulin recorded</span><b>24 u</b></div>
+                    <div class="row"><span>Movement</span><b>35 min</b></div>
+                    <div class="row"><span>Water</span><b>6 of 8 cups</b></div>
+                  </div>
+                </div>
+                <div class="card" style="margin-top:9px">
+                  <h4>This week's review</h4>
+                  <div class="rows">
+                    <div class="row"><span>Checked in</span><b>6 days</b></div>
+                    <div class="row"><span>To discuss</span><b>2 items</b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+              <div class="attn">
+                <h4 style="margin-bottom:8px">Needs your attention</h4>
+                <div class="pat">
+                  <div class="sev"></div>
+                  <div>
+                    <b>Lows between midnight and 6am</b>
+                    <p>2 separate low episodes in the last 14 days, lowest 53 mg/dL. Worth a bedtime reading for the next week so you and your care team can see the number before sleep.</p>
+                  </div>
+                </div>
+              </div>
+          </main>
+
+        </div>
+      </div>
+      <div class="base"></div>
+      <div class="notch"></div>
+    </div>
+
+    <!-- ============ trust ============ -->
+    <div class="trust">
+      <div class="t">
+        <div class="ring"><svg viewBox="0 0 24 24"><rect x="4.4" y="10.4" width="15.2" height="10.2" rx="2.2"/><path d="M8.2 10.4V7.6a3.8 3.8 0 0 1 7.6 0v2.8"/></svg></div>
+        <h4>PRIVATE BY DESIGN</h4>
+        <p>One file on your device. No accounts, no server, nothing sent anywhere</p>
+      </div>
+      <div class="sep"></div>
+      <div class="t">
+        <div class="ring"><svg viewBox="0 0 24 24"><path d="M2.6 9.2a13 13 0 0 1 18.8 0"/><path d="M6 12.6a8.4 8.4 0 0 1 12 0"/><path d="M9.4 16a3.7 3.7 0 0 1 5.2 0"/><circle cx="12" cy="19.4" r=".9" fill="#fff"/><path d="M4 20 20 4" stroke-width="1.6"/></svg></div>
+        <h4>WORKS OFFLINE</h4>
+        <p>Every screen runs with no API key. Nothing is faked when it cannot reach the model</p>
+      </div>
+      <div class="sep"></div>
+      <div class="t">
+        <div class="ring"><svg viewBox="0 0 24 24"><path d="M12 3.4 4.8 6.2v5.2c0 4.4 3 8.5 7.2 9.8 4.2-1.3 7.2-5.4 7.2-9.8V6.2Z"/><path d="M9.2 12.4h5.6"/></svg></div>
+        <h4>RECORDS, NEVER PRESCRIBES</h4>
+        <p>Insulin and medication are logged, never recommended. Enforced in code</p>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <div class="fitem">
+      <svg viewBox="0 0 24 24"><path d="M12 3.4 4.8 6.2v5.2c0 4.4 3 8.5 7.2 9.8 4.2-1.3 7.2-5.4 7.2-9.8V6.2Z"/><path d="M12 8.4v4.2M12 16.1h.01"/></svg>
+      <div><h5>Safety triage</h5><p>Deterministic, separate from the model, and it wins</p></div>
+    </div>
+    <div class="fitem">
+      <svg viewBox="0 0 24 24"><path d="M12 3.6v11.2"/><path d="m7.8 10.6 4.2 4.2 4.2-4.2"/><path d="M4.4 19.4h15.2"/></svg>
+      <div><h5>Export everything</h5><p>Every table, one JSON file, yours to keep</p></div>
+    </div>
+    <div class="fitem">
+      <svg viewBox="0 0 24 24"><path d="M7 8.4V3.6h10v4.8"/><rect x="4" y="8.4" width="16" height="7.2" rx="1.8"/><path d="M7 15.6h10v4.8H7Z"/></svg>
+      <div><h5>Print ready</h5><p>Weekly review and appointment brief, built for the room</p></div>
+    </div>
+    <div class="fitem">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.2v4.8l3.2 1.9"/></svg>
+      <div><h5>No subscription</h5><p>Runs on your machine. No monthly fee</p></div>
+    </div>
+    <div class="cta">
+      <b>ONE DAY AT A TIME</b>
+      <small>Start with a single reading</small>
+    </div>
+  </footer>
+
+</div>
+
+<div class="disclaimer">Not a medical device. Not a dosing calculator. Steady records what you enter and never suggests a medication or insulin dose.</div>

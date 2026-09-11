@@ -1,0 +1,29 @@
+# Steady. One machine, one SQLite file on a volume. No database service to run.
+app = "steady-diabetes"
+primary_region = "dfw"
+
+[build]
+
+[env]
+  PORT = "8080"
+  DATABASE_URL = "file:/data/steady.db"
+  NEXT_PUBLIC_APP_NAME = "Steady"
+  NEXT_PUBLIC_APP_TAGLINE = "Your diabetes, one day at a time."
+  # Fictional demo data on first boot, so a prospect sees a working app rather than empty states.
+  SEED_DEMO = "1"
+
+[[mounts]]
+  source = "steady_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  # One machine only. Two machines would mean two SQLite files disagreeing with each other.
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

@@ -1,0 +1,90 @@
+/**
+ * GENERATED FILE. Run `npm run schema:build` to regenerate; do not edit by hand.
+ *
+ * The account schema as executable statements, so a new account's database can be created inside a
+ * request. Generated from `src/lib/db/schema.ts` via `drizzle-kit generate`.
+ *
+ * 36 tables, 33 indexes. Every statement is create-if-not-exists, so applying this to
+ * an existing database is a no-op and the same list doubles as the migration path.
+ */
+
+export const ACCOUNT_SCHEMA_SQL: string[] = [
+  "CREATE TABLE IF NOT EXISTS `ai_audit` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`conversation_id` text,\n\t`message_id` text,\n\t`mode` text NOT NULL,\n\t`user_question` text NOT NULL,\n\t`data_accessed` text NOT NULL,\n\t`knowledge_used` text NOT NULL,\n\t`safety_rules` text NOT NULL,\n\t`triage_level` text NOT NULL,\n\t`feature` text DEFAULT 'copilot' NOT NULL,\n\t`responder` text NOT NULL,\n\t`model` text,\n\t`filtered` integer DEFAULT false NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `audit_at_idx` ON `ai_audit` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `app_secrets` (\n\t`name` text PRIMARY KEY NOT NULL,\n\t`value` text NOT NULL,\n\t`updated_at` integer NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS `appointments` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`with_whom` text DEFAULT '' NOT NULL,\n\t`kind` text DEFAULT '' NOT NULL,\n\t`location` text DEFAULT '' NOT NULL,\n\t`brief` text,\n\t`note` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `appt_at_idx` ON `appointments` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `blood_pressure_logs` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`systolic` integer NOT NULL,\n\t`diastolic` integer NOT NULL,\n\t`pulse` integer,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `bp_at_idx` ON `blood_pressure_logs` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `caregiver_comments` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`caregiver_id` text NOT NULL,\n\t`at` integer NOT NULL,\n\t`body` text NOT NULL,\n\t`about_date` text,\n\t`read_at` integer\n)",
+  "CREATE INDEX IF NOT EXISTS `cg_comment_at_idx` ON `caregiver_comments` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `caregivers` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`relationship` text DEFAULT '' NOT NULL,\n\t`token` text NOT NULL,\n\t`can_view` text DEFAULT '' NOT NULL,\n\t`can_comment` integer DEFAULT false NOT NULL,\n\t`alert_kinds` text DEFAULT '' NOT NULL,\n\t`status` text DEFAULT 'active' NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`last_seen_at` integer\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `caregiver_token_uq` ON `caregivers` (`token`)",
+  "CREATE TABLE IF NOT EXISTS `coach_events` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`route` text NOT NULL,\n\t`outcome` text NOT NULL,\n\t`detail` text,\n\t`ip` text\n)",
+  "CREATE INDEX IF NOT EXISTS `coach_event_at_idx` ON `coach_events` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `coach_messages` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`kind` text NOT NULL,\n\t`date` text NOT NULL,\n\t`body` text NOT NULL,\n\t`facts` text NOT NULL,\n\t`triage_level` text NOT NULL,\n\t`responder` text NOT NULL,\n\t`model` text,\n\t`filtered` integer DEFAULT false NOT NULL,\n\t`conversation_id` text,\n\t`created_at` integer NOT NULL,\n\t`delivered_at` integer,\n\t`channel` text,\n\t`read_at` integer\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `coach_kind_date_uq` ON `coach_messages` (`kind`,`date`)",
+  "CREATE INDEX IF NOT EXISTS `coach_created_idx` ON `coach_messages` (`created_at`)",
+  "CREATE TABLE IF NOT EXISTS `conversations` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`mode` text DEFAULT 'talk' NOT NULL,\n\t`title` text DEFAULT '' NOT NULL,\n\t`state` text,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `conv_updated_idx` ON `conversations` (`updated_at`)",
+  "CREATE TABLE IF NOT EXISTS `doctor_questions` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`text` text NOT NULL,\n\t`evidence` text,\n\t`source` text DEFAULT 'manual' NOT NULL,\n\t`pattern_key` text,\n\t`asked` integer DEFAULT false NOT NULL,\n\t`answer` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `doctor_q_pattern_uq` ON `doctor_questions` (`pattern_key`)",
+  "CREATE TABLE IF NOT EXISTS `exercise_ideas` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`title` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`minutes` integer NOT NULL,\n\t`intensity` text NOT NULL,\n\t`tags` text DEFAULT '' NOT NULL,\n\t`body` text NOT NULL,\n\t`glucose_note` text NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS `exercise_sessions` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`kind` text NOT NULL,\n\t`minutes` integer NOT NULL,\n\t`intensity` text DEFAULT 'moderate' NOT NULL,\n\t`idea_id` text,\n\t`note` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `exercise_at_idx` ON `exercise_sessions` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `food_portions` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`food_id` text NOT NULL,\n\t`label` text NOT NULL,\n\t`grams` real NOT NULL,\n\t`sort` integer DEFAULT 0 NOT NULL,\n\t`custom` integer DEFAULT false NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `food_portions_food_idx` ON `food_portions` (`food_id`)",
+  "CREATE TABLE IF NOT EXISTS `foods` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`brand` text,\n\t`category` text DEFAULT 'other' NOT NULL,\n\t`carbs_g` real NOT NULL,\n\t`protein_g` real DEFAULT 0 NOT NULL,\n\t`fat_g` real DEFAULT 0 NOT NULL,\n\t`fiber_g` real DEFAULT 0 NOT NULL,\n\t`calories_kcal` real DEFAULT 0 NOT NULL,\n\t`aliases` text DEFAULT '' NOT NULL,\n\t`source` text NOT NULL,\n\t`aisle` text DEFAULT 'other' NOT NULL,\n\t`note` text DEFAULT '' NOT NULL,\n\t`custom` integer DEFAULT false NOT NULL,\n\t`times_used` integer DEFAULT 0 NOT NULL,\n\t`last_used_at` integer,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `foods_name_idx` ON `foods` (`name`)",
+  "CREATE INDEX IF NOT EXISTS `foods_used_idx` ON `foods` (`times_used`)",
+  "CREATE TABLE IF NOT EXISTS `glucose_readings` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`value_mgdl` integer NOT NULL,\n\t`source` text DEFAULT 'manual' NOT NULL,\n\t`context` text,\n\t`note` text,\n\t`import_batch` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `glucose_at_idx` ON `glucose_readings` (`at`)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `glucose_at_source_uq` ON `glucose_readings` (`at`,`source`)",
+  "CREATE TABLE IF NOT EXISTS `grocery_items` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`week_of` text NOT NULL,\n\t`name` text NOT NULL,\n\t`qty` text DEFAULT '' NOT NULL,\n\t`aisle` text DEFAULT 'other' NOT NULL,\n\t`from_recipe_id` text,\n\t`checked` integer DEFAULT false NOT NULL,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `grocery_week_idx` ON `grocery_items` (`week_of`)",
+  "CREATE TABLE IF NOT EXISTS `hydration_logs` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`ml` integer NOT NULL,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `hydration_at_idx` ON `hydration_logs` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `insulin_doses` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`kind` text NOT NULL,\n\t`insulin_name` text DEFAULT '' NOT NULL,\n\t`units` real NOT NULL,\n\t`meal_id` text,\n\t`note` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `insulin_at_idx` ON `insulin_doses` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `journal_entries` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`body` text NOT NULL,\n\t`mood` integer,\n\t`patterns_snapshot` text,\n\t`reflection` text,\n\t`reflection_source` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `journal_at_idx` ON `journal_entries` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `lab_results` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`test_key` text,\n\t`name` text NOT NULL,\n\t`value` real NOT NULL,\n\t`unit` text DEFAULT '' NOT NULL,\n\t`ref_low` real,\n\t`ref_high` real,\n\t`lab_flag` text,\n\t`verified` integer DEFAULT false NOT NULL,\n\t`note` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `lab_at_idx` ON `lab_results` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `meal_items` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`meal_id` text NOT NULL,\n\t`food_id` text,\n\t`name` text NOT NULL,\n\t`portion_label` text DEFAULT '' NOT NULL,\n\t`grams` real NOT NULL,\n\t`carbs_g` real NOT NULL,\n\t`protein_g` real DEFAULT 0 NOT NULL,\n\t`fat_g` real DEFAULT 0 NOT NULL,\n\t`fiber_g` real DEFAULT 0 NOT NULL,\n\t`calories_kcal` real DEFAULT 0 NOT NULL,\n\t`basis` text DEFAULT 'reference' NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `meal_items_meal_idx` ON `meal_items` (`meal_id`)",
+  "CREATE INDEX IF NOT EXISTS `meal_items_food_idx` ON `meal_items` (`food_id`)",
+  "CREATE TABLE IF NOT EXISTS `meal_plan` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`week_of` text NOT NULL,\n\t`day` integer NOT NULL,\n\t`slot` text NOT NULL,\n\t`recipe_id` text NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `meal_plan_cell_uq` ON `meal_plan` (`week_of`,`day`,`slot`)",
+  "CREATE TABLE IF NOT EXISTS `meals` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`slot` text DEFAULT 'snack' NOT NULL,\n\t`name` text NOT NULL,\n\t`carbs_g` real DEFAULT 0 NOT NULL,\n\t`protein_g` real,\n\t`fat_g` real,\n\t`fiber_g` real,\n\t`tags` text DEFAULT '' NOT NULL,\n\t`recipe_id` text,\n\t`calories_kcal` real,\n\t`estimate_source` text DEFAULT 'manual' NOT NULL,\n\t`items` text,\n\t`note` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `meals_at_idx` ON `meals` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `medication_taken` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`medication_id` text NOT NULL,\n\t`at` integer NOT NULL,\n\t`note` text\n)",
+  "CREATE INDEX IF NOT EXISTS `med_taken_at_idx` ON `medication_taken` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `medications` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`dose_text` text DEFAULT '' NOT NULL,\n\t`knowledge_id` text,\n\t`started_on` text,\n\t`active` integer DEFAULT true NOT NULL,\n\t`note` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS `memory_facts` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`kind` text NOT NULL,\n\t`key` text NOT NULL,\n\t`text` text NOT NULL,\n\t`evidence` text,\n\t`source` text NOT NULL,\n\t`confirmed` integer DEFAULT false NOT NULL,\n\t`first_seen` integer NOT NULL,\n\t`last_seen` integer NOT NULL,\n\t`times_seen` integer DEFAULT 1 NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `memory_kind_key_uq` ON `memory_facts` (`kind`,`key`)",
+  "CREATE TABLE IF NOT EXISTS `messages` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`conversation_id` text NOT NULL,\n\t`role` text NOT NULL,\n\t`body` text NOT NULL,\n\t`triage_level` text,\n\t`meta` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `msg_conv_idx` ON `messages` (`conversation_id`,`created_at`)",
+  "CREATE TABLE IF NOT EXISTS `nudges` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`dedupe_key` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`title` text NOT NULL,\n\t`body` text NOT NULL,\n\t`href` text,\n\t`created_at` integer NOT NULL,\n\t`read_at` integer,\n\t`dismissed_at` integer\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `nudges_dedupe_uq` ON `nudges` (`dedupe_key`)",
+  "CREATE TABLE IF NOT EXISTS `packing_items` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`category` text NOT NULL,\n\t`label` text NOT NULL,\n\t`per_day` real,\n\t`unit` text,\n\t`tip` text,\n\t`only_if` text,\n\t`custom` integer DEFAULT false NOT NULL,\n\t`checked` integer DEFAULT false NOT NULL,\n\t`sort` integer DEFAULT 0 NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS `profile` (\n\t`id` integer PRIMARY KEY NOT NULL,\n\t`name` text DEFAULT '' NOT NULL,\n\t`diabetes_type` text DEFAULT 'type2' NOT NULL,\n\t`units` text DEFAULT 'mgdl' NOT NULL,\n\t`target_low_mgdl` integer DEFAULT 70 NOT NULL,\n\t`target_high_mgdl` integer DEFAULT 180 NOT NULL,\n\t`insulin_regimen` text DEFAULT 'none' NOT NULL,\n\t`uses_cgm` integer DEFAULT false NOT NULL,\n\t`hydration_goal_ml` integer DEFAULT 2000 NOT NULL,\n\t`sleep_goal_minutes` integer DEFAULT 450 NOT NULL,\n\t`daily_carb_target_g` integer,\n\t`reminder_times` text DEFAULT '' NOT NULL,\n\t`quiet_start` text DEFAULT '22:00' NOT NULL,\n\t`quiet_end` text DEFAULT '07:00' NOT NULL,\n\t`copilot_style` text DEFAULT 'standard' NOT NULL,\n\t`goals` text DEFAULT '' NOT NULL,\n\t`pregnant` integer DEFAULT false NOT NULL,\n\t`birth_year` integer,\n\t`onboarded` integer DEFAULT false NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS `recipes` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`name` text NOT NULL,\n\t`slot` text NOT NULL,\n\t`carbs_g` real NOT NULL,\n\t`protein_g` real NOT NULL,\n\t`fiber_g` real NOT NULL,\n\t`minutes` integer NOT NULL,\n\t`tags` text DEFAULT '' NOT NULL,\n\t`ingredients` text NOT NULL,\n\t`steps` text NOT NULL,\n\t`why_it_works` text NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS `sleep_logs` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`wake_date` text NOT NULL,\n\t`bed_at` integer NOT NULL,\n\t`wake_at` integer NOT NULL,\n\t`minutes` integer NOT NULL,\n\t`quality` integer DEFAULT 3 NOT NULL,\n\t`note` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `sleep_wake_date_uq` ON `sleep_logs` (`wake_date`)",
+  "CREATE TABLE IF NOT EXISTS `symptom_logs` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`symptoms` text NOT NULL,\n\t`severity` integer DEFAULT 2 NOT NULL,\n\t`note` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `symptom_at_idx` ON `symptom_logs` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `trips` (\n\t`id` integer PRIMARY KEY NOT NULL,\n\t`name` text DEFAULT '' NOT NULL,\n\t`days` integer DEFAULT 7 NOT NULL,\n\t`spare_fraction` real DEFAULT 0.5 NOT NULL,\n\t`updated_at` integer NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS `weight_logs` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`kg` real NOT NULL,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `weight_at_idx` ON `weight_logs` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `wellbeing_checkins` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`date` text NOT NULL,\n\t`feeling` integer NOT NULL,\n\t`energy` integer,\n\t`stress` integer,\n\t`unusual` text,\n\t`want_to_discuss` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `checkin_date_uq` ON `wellbeing_checkins` (`date`)",
+];
+
+/**
+ * Statements the generator cannot produce, added by hand. A column added to a table that already
+ * exists needs an ALTER, and SQLite has no `add column if not exists`, so each one is written to
+ * be safe when it has already been applied.
+ */
+export const ACCOUNT_SCHEMA_EXTRA: string[] = [];
+
+export const ACCOUNT_SCHEMA_TABLES = 36;
