@@ -294,6 +294,81 @@ export const QUEST_TEMPLATES: QuestTemplate[] = [
     weight: (d) => 4 - Math.min(4, daysWith(d, (x) => x.sleepLogged)),
   },
   {
+    code: "quest_reach",
+    title: "The message you keep not sending",
+    ask: "Send it. The one you have been meaning to send for a while, to the person you have been meaning to send it to.",
+    why: "Isolation does more quiet damage to a long condition than almost anything else, and it is the one thing an app cannot do for you.",
+    xp: 30,
+    kind: "manual",
+    dimension: "wellness",
+  },
+  {
+    code: "quest_route",
+    title: "The other way round",
+    ask: "Go somewhere you normally go, by a route you do not normally take.",
+    why: "Same effort, different day. Novelty is most of what makes a walk something you do again.",
+    xp: 35,
+    kind: "manual",
+    dimension: "explorer",
+  },
+  {
+    code: "quest_nothing",
+    title: "Do nothing useful",
+    ask: "Five minutes of something with no purpose at all. Not resting in order to be productive later. Just five minutes.",
+    why: "This one is a real quest and not a joke. Doing nothing on purpose is a skill, and it is the first one this condition takes away.",
+    xp: 20,
+    kind: "manual",
+    dimension: "wellness",
+  },
+  {
+    code: "quest_blue",
+    title: "Find something blue",
+    ask: "One blue thing you would not otherwise have looked at. That is the whole quest.",
+    why: "It is a trick for making you look up, and it works.",
+    xp: 20,
+    kind: "manual",
+    dimension: "discovery",
+  },
+  {
+    code: "quest_journal",
+    title: "Two lines, two days",
+    ask: "Write something down on two days this week. One line each is plenty.",
+    why: "The notes are what turn a number into a reason, months later when you are trying to remember.",
+    xp: 40,
+    kind: "auto",
+    dimension: "wellness",
+    done: (d) => daysWith(d, (x) => x.journal) >= 2,
+    weight: (d) => 2 - Math.min(2, daysWith(d, (x) => x.journal)),
+  },
+  {
+    code: "quest_whole",
+    title: "Two complete days",
+    ask: "Two days this week with readings, food, and one more thing you chose.",
+    why: "A complete day is the only kind the pattern engine can really read.",
+    xp: 70,
+    kind: "auto",
+    dimension: "builder",
+    done: (d) =>
+      daysWith(d, (x) => x.readings > 0 && x.meals > 0 && (x.moveMinutes >= 15 || x.sleepLogged || x.waterGoalMet || x.checkin)) >= 2,
+    weight: (d) =>
+      2 -
+      Math.min(
+        2,
+        daysWith(d, (x) => x.readings > 0 && x.meals > 0 && (x.moveMinutes >= 15 || x.sleepLogged || x.waterGoalMet || x.checkin)),
+      ),
+  },
+  {
+    code: "quest_pair",
+    title: "A plate and a number",
+    ask: "Three days this week where you log both a meal and a reading.",
+    why: "Food and glucose only mean something together. Either one alone is half a sentence.",
+    xp: 50,
+    kind: "auto",
+    dimension: "builder",
+    done: (d) => daysWith(d, (x) => x.readings > 0 && x.meals > 0) >= 3,
+    weight: (d) => 3 - Math.min(3, daysWith(d, (x) => x.readings > 0 && x.meals > 0)),
+  },
+  {
     code: "quest_water",
     title: "The dull one that works",
     ask: "Hit your water goal on three days this week.",
@@ -347,24 +422,68 @@ function hash(s: string): number {
   return h >>> 0;
 }
 
+/** How many weeks back a quest is remembered before it may be offered again. */
+export const NOVELTY_WEEKS = 2;
+
 /**
- * This week's adventure: three quests, weighted toward whatever the person has actually been
- * skipping, with one manual quest always present so the week is not purely bookkeeping.
+ * This week's adventure: three quests, biased toward what the person has actually been skipping,
+ * with one manual quest always present so the week is not purely bookkeeping.
  *
  * Seeded by the week, never by the clock, so opening the app twice on Tuesday shows the same
  * adventure and there is no reroll to hunt for.
+ *
+ * `recent` is the codes offered in the last `NOVELTY_WEEKS` adventures, and it exists because a
+ * year of simulated weeks proved it had to. Gap weighting alone put the same two quests in all
+ * fifty-three weeks: somebody who never logs sleep has a permanently high sleep weight, so the
+ * sleep quest won every single time, and a tiebreaker of zero to three could not overcome a weight
+ * scaled by ten. Responsiveness had quietly become repetition, which is the one thing a quest
+ * cannot be.
+ *
+ * So recent codes are excluded outright, and the weight now only orders what is left. If that
+ * leaves too few to fill a week the exclusion is relaxed rather than the week being short, because
+ * a thin pool is a content problem and must not become a broken screen.
  */
-export function weeklyAdventure(now: Date, weekDays: DayRoll[]): Adventure {
+export function weeklyAdventure(now: Date, weekDays: DayRoll[], recent: string[] = []): Adventure {
   const wk = weekKey(now);
   const seed = hash(wk);
   const a = ADVENTURES[seed % ADVENTURES.length];
 
-  const autos = QUEST_TEMPLATES.filter((t) => t.kind === "auto")
-    .map((t, i) => ({ t, w: (t.weight?.(weekDays) ?? 0) * 10 + ((seed >> i) & 3) }))
-    .sort((x, y) => y.w - x.w)
-    .map((x) => x.t);
-  const manuals = QUEST_TEMPLATES.filter((t) => t.kind === "manual");
-  const manual = manuals[seed % manuals.length];
+  const rank = (pool: QuestTemplate[]) =>
+    pool
+      .map((t, i) => ({ t, w: (t.weight?.(weekDays) ?? 0) * 3 + ((hash(`${wk}:${t.code}`) >> i) & 7) }))
+      .sort((x, y) => y.w - x.w)
+      .map((x) => x.t);
+
+  const allAutos = QUEST_TEMPLATES.filter((t) => t.kind === "auto");
+  const allManuals = QUEST_TEMPLATES.filter((t) => t.kind === "manual");
+
+  /*
+   * POOL-AWARE EXCLUSION, and the simulation is why this is not a fixed window.
+   *
+   * Blocking two whole weeks sounds right and is not: there are five automatic templates and a
+   * week takes two, so two weeks of exclusion leaves one candidate, the fallback fires, and the
+   * ranking runs over the unfiltered pool again. The measured result was one quest appearing in
+   * twenty-seven weeks of fifty-three, which is worse than it looks: it is every other week,
+   * forever.
+   *
+   * So the window shrinks to whatever the pool can actually afford. Recent codes are dropped one
+   * week at a time until enough candidates remain, which means a bigger pool automatically buys a
+   * longer memory and nobody has to remember to retune a constant after adding a template.
+   */
+  const afford = (pool: QuestTemplate[], need: number, recentCodes: string[]) => {
+    for (let keep = recentCodes.length; keep >= 0; keep -= 1) {
+      const drop = new Set(recentCodes.slice(0, keep));
+      const left = pool.filter((t) => !drop.has(t.code));
+      if (left.length >= need + 1 || keep === 0) return left.length >= need ? left : pool;
+    }
+    return pool;
+  };
+
+  // Newest first, so the most recent week is the last thing forgiven.
+  const newestFirst = [...recent].reverse();
+  const autos = rank(afford(allAutos, 2, newestFirst.filter((c) => allAutos.some((t) => t.code === c))));
+  const manualPool = afford(allManuals, 1, newestFirst.filter((c) => allManuals.some((t) => t.code === c)));
+  const manual = manualPool[hash(`m:${wk}`) % manualPool.length];
 
   const chosen = [autos[0], autos[1], manual].filter(Boolean);
   return {

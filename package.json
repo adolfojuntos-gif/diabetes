@@ -25,7 +25,8 @@
     "foods:starter": "tsx scripts/starterFoods.ts",
     "check:limit": "tsx scripts/checkSpendLimit.ts",
     "check:import": "tsx scripts/importcheck.ts",
-    "foods:restaurant": "tsx scripts/importRestaurant.ts"
+    "foods:restaurant": "tsx scripts/importRestaurant.ts",
+    "simulate": "tsx scripts/simulate.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

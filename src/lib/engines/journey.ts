@@ -126,15 +126,28 @@ export const REGIONS: { level: number; name: string; blurb: string }[] = [
 ];
 
 /**
- * Cumulative XP needed to reach a level: 150·(L−1)² + 250·(L−1).
+ * Cumulative XP needed to reach a level: 40·(L−1)³ + 200·(L−1).
  *
- * A day of full logging is about 170 XP, so level 2 lands on day three and the summit is around
- * three months of consistent use. Quadratic rather than exponential because an exponential curve
- * makes the later levels unreachable, and a wall is the moment people stop.
+ * CUBIC, AND A YEAR OF SIMULATION IS WHY. The curve here was quadratic, 150n² + 250n, and it was
+ * wrong at both ends. A steady logger earning about 260 XP a day reached the last of the twelve
+ * regions on day eighty and then had nothing left to open for the remaining ten months, which is
+ * the exact failure the world was rebuilt to avoid. Meanwhile somebody logging one day in five
+ * was still on level one after a month, and that is the person who most needed to see something
+ * move.
+ *
+ * A cube is gentle early and steep late, which is the shape this actually needs: level 2 arrives
+ * in the first week even for a sparse logger, and level 12 is most of a year for a consistent
+ * one. Exponential was the other candidate and is worse, because it turns the late game into a
+ * wall, and a wall is where people stop.
+ *
+ * Changing this does not take anything from anybody: XP is stored, levels are derived, and every
+ * existing award keeps the value it had. Somebody mid-journey moves DOWN the region list, which
+ * is the one visible cost, and it is paid once against a map that otherwise ran out in twelve
+ * weeks. See `scripts/simulate.ts`.
  */
 export function xpForLevel(level: number): number {
   const n = Math.max(0, level - 1);
-  return 150 * n * n + 250 * n;
+  return 40 * n * n * n + 200 * n;
 }
 
 export function levelForXp(xp: number): number {

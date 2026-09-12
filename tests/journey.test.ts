@@ -155,15 +155,21 @@ test("a broken streak can be earned again", () => {
 
 /* ================================== levels ================================= */
 
-test("the level curve is 150n squared plus 250n and never goes backwards", () => {
+/**
+ * The curve is cubic: 40·(L−1)³ + 200·(L−1). It was quadratic until a year of simulation showed a
+ * steady logger opening the whole twelve region map on day eighty, and a sparse one stuck on
+ * level one for two months. A cube is cheap early and expensive late, which is the shape needed.
+ */
+test("the level curve is cubic and never goes backwards", () => {
   assert.equal(xpForLevel(1), 0);
-  assert.equal(xpForLevel(2), 400);
-  assert.equal(xpForLevel(3), 1100);
+  assert.equal(xpForLevel(2), 240);
+  assert.equal(xpForLevel(3), 720);
+  assert.equal(xpForLevel(12), 55_440);
   assert.equal(levelForXp(0), 1);
-  assert.equal(levelForXp(399), 1);
-  assert.equal(levelForXp(400), 2);
-  assert.equal(levelForXp(1099), 2);
-  assert.equal(levelForXp(1100), 3);
+  assert.equal(levelForXp(239), 1);
+  assert.equal(levelForXp(240), 2);
+  assert.equal(levelForXp(719), 2);
+  assert.equal(levelForXp(720), 3);
   let last = 0;
   for (let xp = 0; xp < 40000; xp += 137) {
     const l = levelForXp(xp);
@@ -173,13 +179,13 @@ test("the level curve is 150n squared plus 250n and never goes backwards", () =>
 });
 
 test("level state reports progress inside the level, not overall", () => {
-  const s = levelState(750); // level 2, base 400, next 1100, span 700
-  assert.equal(s.level, 2);
-  assert.equal(s.intoLevel, 350);
-  assert.equal(s.levelSpan, 700);
+  const s = levelState(1200); // level 3, base 720, next 1680, span 960
+  assert.equal(s.level, 3);
+  assert.equal(s.intoLevel, 480);
+  assert.equal(s.levelSpan, 960);
   assert.equal(s.progress, 0.5);
-  assert.equal(s.toNext, 350);
-  assert.equal(s.region.name, "First Path");
+  assert.equal(s.toNext, 480);
+  assert.equal(s.region.name, "The Grove");
 });
 
 test("the world only ever grows with the level", () => {

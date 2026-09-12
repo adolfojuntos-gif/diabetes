@@ -79,10 +79,13 @@ test("the morning greeting is acknowledged by every way out of it", () => {
 /* --------------------------- what a ceremony marks ------------------------- */
 
 test("a backfilled history owes one ceremony, not one per level passed", () => {
-  // Somebody whose three months land in a single write goes from 0 to level 7. The data layer
-  // compares against the CURRENT level only, so exactly one region is owed.
+  // Somebody whose three months land in a single write arrives at whatever level that XP buys, in
+  // one write. The data layer compares against the CURRENT level only, so exactly one region is
+  // owed however many were passed on the way. The level itself is incidental and is read from the
+  // curve rather than hard-coded, so retuning the curve cannot make this test lie.
   const level = levelForXp(7170);
-  assert.equal(level, 7);
+  assert.ok(level > 1, `a backfilled 7,170 XP should clear level 1, got ${level}`);
+  assert.ok(xpForLevel(level) <= 7170, "the level claimed costs more XP than was earned");
   const owed = level > 0 ? 1 : 0;
   assert.equal(owed, 1);
 

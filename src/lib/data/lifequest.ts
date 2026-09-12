@@ -31,6 +31,7 @@ import { worldState } from "../engines/journey";
 import type { WorldEvent } from "../db";
 import {
   weeklyAdventure,
+  NOVELTY_WEEKS,
   autoQuestDone,
   todaysQuest,
   thisWeek,
@@ -142,8 +143,21 @@ function prov(sampleSize: number, at: Date) {
  */
 export async function syncQuests(rolls: DayRoll[], now = new Date()): Promise<{ adventure: Adventure; rows: JourneyQuest[] }> {
   const week = thisWeek(rolls, now);
-  const adventure = weeklyAdventure(now, week);
   const wk = weekKey(now);
+  /*
+   * What was offered recently, so the picker can avoid repeating it. Read from the quest rows
+   * themselves rather than kept as a separate list: the rows ARE the history, and a second copy
+   * of the same fact is a second thing that can be wrong.
+   */
+  const recentRows = await db
+    .select({ code: journeyQuests.code, weekKey: journeyQuests.weekKey })
+    .from(journeyQuests)
+    .orderBy(desc(journeyQuests.weekKey))
+    .limit(NOVELTY_WEEKS * 4);
+  const recentWeeks = [...new Set(recentRows.map((r) => r.weekKey))].filter((w) => w !== wk).slice(0, NOVELTY_WEEKS);
+  const recent = recentRows.filter((r) => recentWeeks.includes(r.weekKey)).map((r) => r.code);
+
+  const adventure = weeklyAdventure(now, week, recent);
 
   for (const q of adventure.quests) {
     await db
