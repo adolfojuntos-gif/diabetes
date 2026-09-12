@@ -370,6 +370,10 @@ export default async function QuestPage() {
             <h3>Guess the Carbs</h3>
             <p className="hint mt-1">Build a feel for a portion. No score, and nothing to get wrong.</p>
           </Link>
+          <Link href="/quest/tree" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
+            <h3>The Knowledge Tree</h3>
+            <p className="hint mt-1">Where the figures come from, and what they are not telling you.</p>
+          </Link>
           <Link href="/quest/forest" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
             <h3>The Food Forest</h3>
             <p className="hint mt-1">Everything you have eaten, grown into a place.</p>

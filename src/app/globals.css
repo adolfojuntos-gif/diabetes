@@ -1071,4 +1071,84 @@
   .forge-share-carbohydrate { background: rgba(166, 139, 255, 0.28); }
   .forge-share-protein { background: rgba(111, 210, 240, 0.24); }
   .forge-share-fat { background: rgba(255, 255, 255, 0.1); }
+
+  /* ============================ THE KNOWLEDGE TREE =========================
+     A tier that has not opened yet is DIMMED, never locked. No padlock, no
+     crossed-out anything, no red. It is reading somebody has not got to, and
+     the visual language for that is quiet, not forbidden.
+  */
+  .tree-tier {
+    border-radius: 18px;
+    padding: 1.1rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018));
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(10px);
+  }
+  .tree-tier-shut {
+    background: rgba(255, 255, 255, 0.014);
+    box-shadow: none;
+  }
+  .tree-tier-shut h2,
+  .tree-tier-shut .hint { opacity: 0.62; }
+
+  .tree-standing-glyph {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .tree-lesson {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.65rem 0.8rem;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: left;
+    transition: border-color 120ms ease, background 120ms ease;
+  }
+  a.tree-lesson:hover {
+    border-color: var(--line-strong);
+    background: rgba(0, 0, 0, 0.42);
+  }
+  /*
+     A lesson already read keeps its full contrast. Fading it would say "done
+     with you", and these are meant to be re-readable: the whole point of the
+     tree is that somebody can come back for the one about portions at the
+     moment it finally matters to them.
+  */
+  .tree-lesson-read .tree-lesson-mark { color: var(--juniper); }
+  .tree-lesson-shut { background: transparent; border-color: transparent; }
+
+  .tree-lesson-mark {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    width: 1rem;
+    flex-shrink: 0;
+    color: var(--ink-faint);
+  }
+
+  /*
+     Every option is styled identically, and that is load-bearing rather than
+     lazy. A check with one option that looks like the answer is a test, and a
+     test is a thing a person can fail at understanding their own food.
+  */
+  .tree-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 0.98rem;
+    transition: border-color 120ms ease, background 120ms ease;
+  }
+  .tree-option:hover {
+    border-color: var(--line-strong);
+    background: rgba(0, 0, 0, 0.45);
+  }
 }

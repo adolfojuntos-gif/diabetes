@@ -4,7 +4,7 @@
  * The account schema as executable statements, so a new account's database can be created inside a
  * request. Generated from `src/lib/db/schema.ts` via `drizzle-kit generate`.
  *
- * 42 tables, 44 indexes. Every statement is create-if-not-exists, so applying this to
+ * 43 tables, 46 indexes. Every statement is create-if-not-exists, so applying this to
  * an existing database is a no-op and the same list doubles as the migration path.
  */
 
@@ -95,6 +95,9 @@ export const ACCOUNT_SCHEMA_SQL: string[] = [
   "CREATE TABLE IF NOT EXISTS `carb_guesses` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`round_key` text NOT NULL,\n\t`food_id` text,\n\t`food_name` text NOT NULL,\n\t`portion_label` text NOT NULL,\n\t`grams` real NOT NULL,\n\t`reference_carbs_g` real NOT NULL,\n\t`guess_g` real NOT NULL,\n\t`source` text DEFAULT '' NOT NULL,\n\t`engine_version` text DEFAULT '0' NOT NULL\n)",
   "CREATE UNIQUE INDEX IF NOT EXISTS `carb_guess_round_uq` ON `carb_guesses` (`round_key`)",
   "CREATE INDEX IF NOT EXISTS `carb_guess_at_idx` ON `carb_guesses` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `knowledge_progress` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`lesson_key` text NOT NULL,\n\t`learned_at` integer NOT NULL,\n\t`chose` integer DEFAULT 0 NOT NULL,\n\t`engine_version` text DEFAULT '0' NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `knowledge_lesson_uq` ON `knowledge_progress` (`lesson_key`)",
+  "CREATE INDEX IF NOT EXISTS `knowledge_learned_idx` ON `knowledge_progress` (`learned_at`)",
 ];
 
 /**
@@ -104,4 +107,4 @@ export const ACCOUNT_SCHEMA_SQL: string[] = [
  */
 export const ACCOUNT_SCHEMA_EXTRA: string[] = [];
 
-export const ACCOUNT_SCHEMA_TABLES = 42;
+export const ACCOUNT_SCHEMA_TABLES = 43;

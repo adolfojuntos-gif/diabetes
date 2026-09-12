@@ -1116,6 +1116,30 @@ export const carbGuesses = sqliteTable(
 
 export type CarbGuess = typeof carbGuesses.$inferSelect;
 
+/**
+ * Lessons read in the Nutrition Knowledge Tree.
+ *
+ * A row means read, and that is all it means. `chose` records which option was picked purely so the
+ * screen can show the same answer back on a return visit; NOTHING anywhere scores it, because the
+ * check is not a test and a lesson counts as learned whichever option was chosen. There is
+ * deliberately no correct-answer column to tempt a future version into keeping score.
+ */
+export const knowledgeProgress = sqliteTable(
+  "knowledge_progress",
+  {
+    id: text("id").primaryKey(),
+    /** The lesson's key in `engines/knowledge.ts`. Unique, so reading twice is not two rows. */
+    lessonKey: text("lesson_key").notNull(),
+    learnedAt: ts("learned_at").notNull(),
+    /** Which option was picked, by index. Kept to show the answer again, never to grade it. */
+    chose: integer("chose").notNull().default(0),
+    engineVersion: text("engine_version").notNull().default("0"),
+  },
+  (t) => [uniqueIndex("knowledge_lesson_uq").on(t.lessonKey), index("knowledge_learned_idx").on(t.learnedAt)],
+);
+
+export type KnowledgeProgress = typeof knowledgeProgress.$inferSelect;
+
 export type JourneyQuest = typeof journeyQuests.$inferSelect;
 export type Discovery = typeof discoveries.$inferSelect;
 export type PlayerState = typeof playerState.$inferSelect;
