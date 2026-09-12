@@ -70,6 +70,12 @@ export const PLAN_LIMITS: Record<Plan, Record<AiFeature, Window[]>> = {
      * to rely on it, and then lose it.
      */
     coach: [{ label: "month", ms: MONTH, max: 0 }],
+    /**
+     * The Game Master is off on free for the same reason as the coach, and it costs a person
+     * nothing to lose: the engine writes the celebration itself, with the real figures in it, and
+     * that path is free, unlimited and complete. The model only ever makes the sentence warmer.
+     */
+    gamemaster: [{ label: "month", ms: MONTH, max: 0 }],
   },
   plus: {
     photo: [
@@ -86,6 +92,17 @@ export const PLAN_LIMITS: Record<Plan, Record<AiFeature, Window[]>> = {
       // Two are legitimate per day, morning and weekly. The rest of the allowance is retries.
       { label: "day", ms: DAY, max: 3 },
       { label: "month", ms: MONTH, max: 30 },
+    ],
+    /**
+     * Tight on purpose. A celebration is only written when something was newly earned and the
+     * person has not yet acknowledged it, so a real day produces one or two. The hourly cap is
+     * what stops a page somebody leaves open on a loop from spending their month in an afternoon,
+     * and hitting it costs nothing visible: they get the engine's sentence instead.
+     */
+    gamemaster: [
+      { label: "hour", ms: HOUR, max: 4 },
+      { label: "day", ms: DAY, max: 10 },
+      { label: "month", ms: MONTH, max: 60 },
     ],
   },
 };
@@ -114,7 +131,8 @@ export function longestWindowMs(plan: Plan, feature: AiFeature): number {
 }
 
 /** Per-call cost estimates, so a refusal can say what was being spent. Opus 5 rates. */
-export const ROUGH_COST_USD: Record<AiFeature, number> = { photo: 0.03, copilot: 0.06, coach: 0.04 };
+// The Game Master writes under sixty words from a tiny prompt, so it is the cheapest call here.
+export const ROUGH_COST_USD: Record<AiFeature, number> = { photo: 0.03, copilot: 0.06, coach: 0.04, gamemaster: 0.01 };
 
 export type LimitVerdict = {
   allowed: boolean;
@@ -198,6 +216,7 @@ const FEATURE_NOUN: Record<AiFeature, string> = {
   photo: "photo estimate",
   copilot: "Copilot reply",
   coach: "written check-in",
+  gamemaster: "guardian celebration",
 };
 
 /** What the paid plan allows in the same named window, or 0 when it has no such window. */
@@ -213,6 +232,8 @@ const FREE_PATH: Record<AiFeature, string> = {
   copilot:
     "The Copilot will keep answering from this app's own engine over your real data, which costs nothing and is clearly labelled as coming from the engine.",
   coach: "The engine writes your check-in instead, from the same numbers, and that never runs out.",
+  gamemaster:
+    "The engine writes the celebration instead, with exactly the same figures in it, and that never runs out. Nothing you earned is affected either way.",
 };
 
 function notOnYourPlan(feature: AiFeature, plan: Plan): string {

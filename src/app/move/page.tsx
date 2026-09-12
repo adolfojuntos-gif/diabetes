@@ -57,9 +57,9 @@ export default async function MovePage({ searchParams }: { searchParams: Search 
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Move"
-        title="Something to do today"
-        lede="Short, specific things, sorted by what you have room for right now. Pick one, or log whatever you already did."
+        eyebrow="Movement"
+        title="Explore"
+        lede="Short, specific things, sorted by what you have room for right now. Pick one, or log whatever you already did. Every day with fifteen minutes in it is ground covered."
       />
 
       <div className="mb-5">

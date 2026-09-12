@@ -45,8 +45,8 @@ export default async function CopilotHome({ searchParams }: { searchParams: Prom
     <div className="page">
       <PageHeader
         eyebrow="Clinical Copilot"
-        title="Tell me what's going on."
-        lede="Speak plainly. I will ask what I need to know, look at what you have logged, explain what I can and cannot tell from it, and help you decide whether this needs a professional."
+        title="Ask a Guardian"
+        lede="The guardians carry your question in. The answer comes back from Steady's clinical Copilot, in its own plain words, with the safety check above it. Speak plainly: it will ask what it needs to know, look at what you have logged, and say what it can and cannot tell from it."
       />
 
       {sp.error ? <p className="error mb-4">{sp.error}</p> : null}
@@ -56,6 +56,8 @@ export default async function CopilotHome({ searchParams }: { searchParams: Prom
       </Card>
 
       <Notice>
+        <strong>No guardian answers this.</strong> The game carries the question; the reply below is the
+        Copilot&apos;s, not a character&apos;s, and it is never written in a game voice.{" "}
         <strong>What I am and am not.</strong> I am a diabetes health assistant and a care-preparation assistant. I am not a doctor or a nurse, no clinician has reviewed anything here, and I never suggest or change a medication or insulin dose. A deterministic safety check runs on every message before I answer, and its verdict sits above whatever I write.
         {!aiAvailable() ? (
           <>

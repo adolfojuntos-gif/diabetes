@@ -52,6 +52,12 @@ export type CoachDayInput = {
   patterns: Pattern[];
   goals: string;
   nextAppointment: { at: Date; withWhom: string } | null;
+  /**
+   * The game's half of the morning, or null when Life Quest has nothing to say. Deliberately
+   * thin: a region name, a level, and one thing to do. No XP totals and no milestones, because a
+   * morning message is for starting a day and not for reviewing a ledger.
+   */
+  quest: { region: string; level: number; guardian: string; title: string; ask: string } | null;
 };
 
 export type CoachFocus = {
@@ -98,6 +104,7 @@ export type CoachDayFacts = {
   focus: CoachFocus;
   goals: string;
   appointment: string | null;
+  quest: { region: string; level: number; guardian: string; title: string; ask: string } | null;
   /** Set when the sample is too small to say anything about a trend. */
   sampleNote: string | null;
 };
@@ -233,6 +240,7 @@ export function coachDayFacts(i: CoachDayInput): CoachDayFacts {
     appointment: i.nextAppointment
       ? `${fmtDayLong(i.nextAppointment.at)} with ${i.nextAppointment.withWhom || "your care team"}`
       : null,
+    quest: i.quest,
     sampleNote:
       i.readings.length > 0 && i.readings.length < 3
         ? "Yesterday has too few readings to describe as a day, so treat anything about it as one moment rather than a pattern."
@@ -272,6 +280,14 @@ export function engineMorning(f: CoachDayFacts): string {
   if (f.noted) p.push(`You wrote down that you noticed: "${f.noted}". It is still on the record.`);
 
   p.push(`Today's focus: ${f.focus.line}`);
+  /*
+   * The game's line goes AFTER the focus and never instead of it. A quest is an invitation; the
+   * focus is the thing the engine actually thinks matters this morning, and a cheerful adventure
+   * hook must not displace it.
+   */
+  if (f.quest) {
+    p.push(`In your world you are standing in ${f.quest.region}, and ${f.quest.guardian} has one thing for you: ${f.quest.title}. ${f.quest.ask}`);
+  }
   p.push("Progress does not require perfection.");
   p.push(
     "This one was written by Steady's own engine from your logged rows, because no API key is set. Every number in it is yours and nothing is guessed.",

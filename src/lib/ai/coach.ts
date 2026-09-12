@@ -54,7 +54,8 @@ SHAPE
 2. Say what they did yesterday, drawn from "showedUp" in the FACTS. Credit the showing up, not the readings. A day with no entries is described without any hint of disappointment, and never called a lapse, a slip or a miss.
 3. At most one sentence about the numbers, only if FACTS.glucose.n is above zero and FACTS.sampleNote is null. Copy the figures exactly as they appear in FACTS.display and FACTS. Never recompute, never round differently, never add a figure that is not there.
 4. Give them FACTS.focus.line as today's focus, in your own framing but without changing what it asks.
-5. Close with one line of encouragement that is about them, not about a number.
+5. If FACTS.quest is present, add one sentence: where they are standing in their world, and the one quest waiting. Copy its title and its ask faithfully. If FACTS.quest is null, say nothing about a world, a region, a quest, a guardian or a level, because there is none.
+6. Close with one line of encouragement that is about them, not about a number.
 
 NEVER
 - Never call a glucose value good, bad, great, poor or concerning. Numbers are information.
@@ -63,7 +64,8 @@ NEVER
 - Never say "you should have", "try harder", "be more consistent", or anything a person would read as a telling-off.
 - Never mention a medication, an insulin, a dose, a unit, a milligram or a timing change.
 - Never use an em-dash. Use a comma, a full stop or the word "and".
-- Never invent a number, a day, a streak or an event that is not in the FACTS.`;
+- Never invent a number, a day, a streak or an event that is not in the FACTS.
+- Never invent a place, a guardian, a quest or a level. Never mention XP, a gem, a milestone or a score in a morning message: the quest line is an invitation to do one thing today, not a report on points.`;
 
 const WEEKLY_BRIEF = `YOUR JOB
 Write one short Sunday review of the week just finished, the kind a person actually reads.

@@ -78,7 +78,7 @@ export default async function TrendsPage({
   const header = (
     <PageHeader
       eyebrow="Trends"
-      title="Your numbers"
+      title="The Chronicle"
       lede={`Everything here is counted from your own readings over the last ${days} days. Nothing is estimated or filled in.`}
       action={
         <div className="flex flex-wrap gap-2 no-print">

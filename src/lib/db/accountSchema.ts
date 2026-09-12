@@ -4,7 +4,7 @@
  * The account schema as executable statements, so a new account's database can be created inside a
  * request. Generated from `src/lib/db/schema.ts` via `drizzle-kit generate`.
  *
- * 36 tables, 34 indexes. Every statement is create-if-not-exists, so applying this to
+ * 40 tables, 39 indexes. Every statement is create-if-not-exists, so applying this to
  * an existing database is a no-op and the same list doubles as the migration path.
  */
 
@@ -79,6 +79,15 @@ export const ACCOUNT_SCHEMA_SQL: string[] = [
   "CREATE TABLE IF NOT EXISTS `wellbeing_checkins` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`date` text NOT NULL,\n\t`feeling` integer NOT NULL,\n\t`energy` integer,\n\t`stress` integer,\n\t`unusual` text,\n\t`want_to_discuss` text,\n\t`created_at` integer NOT NULL\n)",
   "CREATE UNIQUE INDEX IF NOT EXISTS `checkin_date_uq` ON `wellbeing_checkins` (`date`)",
   "ALTER TABLE `foods` ADD `source_date` text",
+  "CREATE TABLE IF NOT EXISTS `discoveries` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`at` integer NOT NULL,\n\t`name` text NOT NULL,\n\t`note` text DEFAULT '' NOT NULL,\n\t`place` text DEFAULT '' NOT NULL,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE INDEX IF NOT EXISTS `discovery_at_idx` ON `discoveries` (`at`)",
+  "CREATE TABLE IF NOT EXISTS `journey_awards` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`key` text NOT NULL,\n\t`code` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`title` text NOT NULL,\n\t`body` text NOT NULL,\n\t`evidence` text NOT NULL,\n\t`xp` integer DEFAULT 0 NOT NULL,\n\t`gems` integer DEFAULT 0 NOT NULL,\n\t`earned_at` integer NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`seen_at` integer,\n\t`engine_version` text DEFAULT '0' NOT NULL,\n\t`rule_version` text DEFAULT '0' NOT NULL,\n\t`metric_version` text DEFAULT '0' NOT NULL,\n\t`sample_size` integer DEFAULT 0 NOT NULL,\n\t`window_from` integer,\n\t`window_to` integer,\n\t`compare_from` integer,\n\t`compare_to` integer,\n\t`data_quality` text DEFAULT 'high' NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `journey_award_key_uq` ON `journey_awards` (`key`)",
+  "CREATE INDEX IF NOT EXISTS `journey_award_earned_idx` ON `journey_awards` (`earned_at`)",
+  "CREATE TABLE IF NOT EXISTS `journey_quests` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`key` text NOT NULL,\n\t`week_key` text NOT NULL,\n\t`code` text NOT NULL,\n\t`slot` integer DEFAULT 0 NOT NULL,\n\t`adventure` text NOT NULL,\n\t`title` text NOT NULL,\n\t`ask` text NOT NULL,\n\t`why` text NOT NULL,\n\t`xp` integer DEFAULT 0 NOT NULL,\n\t`kind` text NOT NULL,\n\t`dimension` text NOT NULL,\n\t`completed_at` integer,\n\t`verified_by` text,\n\t`created_at` integer NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `journey_quest_key_uq` ON `journey_quests` (`key`)",
+  "CREATE INDEX IF NOT EXISTS `journey_quest_week_idx` ON `journey_quests` (`week_key`)",
+  "CREATE TABLE IF NOT EXISTS `player_state` (\n\t`id` integer PRIMARY KEY NOT NULL,\n\t`world_theme` text DEFAULT 'forest' NOT NULL,\n\t`region_seen_level` integer DEFAULT 0 NOT NULL,\n\t`morning_seen_date` text DEFAULT '' NOT NULL,\n\t`rest_until` integer,\n\t`last_visit_at` integer,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL\n)",
 ];
 
 /**
@@ -88,4 +97,4 @@ export const ACCOUNT_SCHEMA_SQL: string[] = [
  */
 export const ACCOUNT_SCHEMA_EXTRA: string[] = [];
 
-export const ACCOUNT_SCHEMA_TABLES = 36;
+export const ACCOUNT_SCHEMA_TABLES = 40;

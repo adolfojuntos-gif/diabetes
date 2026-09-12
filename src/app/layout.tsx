@@ -5,6 +5,7 @@ import { Frame } from "@/components/Frame";
 import { optionalAccount, asAccount } from "@/lib/auth/session";
 import { getProfile } from "@/lib/data/snapshot";
 import { unreadCount } from "@/lib/data/nudges";
+import { pendingCount } from "@/lib/data/lifequest";
 import "./globals.css";
 
 const serif = Instrument_Serif({ variable: "--font-instrument-serif", subsets: ["latin"], weight: "400", display: "swap" });
@@ -22,10 +23,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f1ea" },
-    { media: "(prefers-color-scheme: dark)", color: "#141513" },
-  ],
+  // One world, one colour. The browser chrome matches the night ground so the app does not end
+  // at a seam on a phone.
+  themeColor: "#080b14",
 };
 
 export const dynamic = "force-dynamic";
@@ -44,12 +44,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const account = await optionalAccount();
   let onboarded = false;
   let unread = 0;
+  let quests = 0;
   let name = "";
   if (account) {
     try {
-      const [profile, count] = await asAccount(account, () => Promise.all([getProfile(), unreadCount()]));
+      const [profile, count, waiting] = await asAccount(account, () => Promise.all([getProfile(), unreadCount(), pendingCount()]));
       onboarded = profile.onboarded;
       unread = count;
+      quests = waiting;
       name = profile.name;
     } catch {
       // Most likely an account caught mid-provision. Draw the bare frame rather than failing the
@@ -70,7 +72,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:card focus:px-4 focus:py-2">
           Skip to content
         </a>
-        <Frame onboarded={Boolean(account) && onboarded} unread={unread} name={name}>
+        <Frame onboarded={Boolean(account) && onboarded} unread={unread} quests={quests} name={name}>
           {children}
         </Frame>
       </body>

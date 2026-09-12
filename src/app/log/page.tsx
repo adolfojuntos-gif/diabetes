@@ -20,6 +20,7 @@ import { getProfile, usesInsulin } from "@/lib/data/snapshot";
 import { unitLabel } from "@/lib/units";
 import { dateKey, endOfDay, fmtTime, parseDateKey, startOfDay } from "@/lib/time";
 import { PageHeader, GlucoseChip, EmptyState } from "@/components/ui";
+import { XP } from "@/lib/game/naming";
 import { DeleteButton } from "./ActionForm";
 import {
   deleteGlucose,
@@ -69,18 +70,23 @@ export default async function LogHubPage() {
 
   const medName = new Map(meds.map((m) => [m.id, m.name]));
 
-  const targets: { href: string; label: string; hint: string }[] = [
-    { href: "/log/glucose", label: "Glucose", hint: `A reading in ${unitLabel(u)}` },
-    { href: "/log/food", label: "Look up a food", hint: "Search a plate, see the carbs" },
-    { href: "/log/meal", label: "Meal", hint: "Carbs, or a photo estimate" },
-    ...(usesInsulin(profile) ? [{ href: "/log/insulin", label: "Insulin", hint: "What you took, and when" }] : []),
-    { href: "/move", label: "Movement", hint: "Minutes and how hard" },
-    { href: "/log/sleep", label: "Sleep", hint: "Last night, in one go" },
-    { href: "/log/water", label: "Water", hint: "One tap a glass" },
-    { href: "/log/more#symptoms", label: "Symptoms", hint: "How you are feeling" },
-    { href: "/log/more#weight", label: "Weight", hint: "Kilograms or pounds" },
-    { href: "/log/more#blood-pressure", label: "Blood pressure", hint: "Top and bottom number" },
-    { href: "/log/more#medications", label: "Medication taken", hint: "Tick it off your list" },
+  /*
+   * The XP on each tile is read from the approved rule configuration, never typed in here, so a
+   * screen cannot promise an amount the engine will not pay. A tile worth nothing on its own says
+   * nothing rather than inventing a figure.
+   */
+  const targets: { href: string; label: string; hint: string; xp: number }[] = [
+    { href: "/log/glucose", label: "Glucose", hint: `A reading in ${unitLabel(u)}`, xp: XP.log },
+    { href: "/log/food", label: "Look up a food", hint: "Search a plate, see the carbs", xp: 0 },
+    { href: "/log/meal", label: "Meal", hint: "Carbs, or a photo estimate", xp: XP.meal },
+    ...(usesInsulin(profile) ? [{ href: "/log/insulin", label: "Insulin", hint: "What you took, and when", xp: 0 }] : []),
+    { href: "/move", label: "Movement", hint: "Minutes and how hard", xp: XP.move },
+    { href: "/log/sleep", label: "Sleep", hint: "Last night, in one go", xp: XP.sleep },
+    { href: "/log/water", label: "Water", hint: "One tap a glass", xp: XP.water },
+    { href: "/log/more#symptoms", label: "Symptoms", hint: "How you are feeling", xp: 0 },
+    { href: "/log/more#weight", label: "Weight", hint: "Kilograms or pounds", xp: 0 },
+    { href: "/log/more#blood-pressure", label: "Blood pressure", hint: "Top and bottom number", xp: 0 },
+    { href: "/log/more#medications", label: "Medication taken", hint: "Tick it off your list", xp: 0 },
   ];
 
   const rows: Row[] = [];
@@ -254,12 +260,23 @@ export default async function LogHubPage() {
 
   return (
     <div className="page">
-      <PageHeader eyebrow="Log" title="What would you like to write down?" lede="Everything here takes a few seconds. Nothing here judges you for it." />
+      <PageHeader
+        eyebrow="Log"
+        title="Gather"
+        lede="Everything you write down here is what your world is built from. It takes a few seconds and none of it judges you."
+      />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {targets.map((t) => (
           <Link key={t.href} href={t.href} className="card flex min-h-[96px] flex-col justify-between p-4 hover:shadow-lift">
-            <span className="font-display text-xl">{t.label}</span>
+            <span className="flex items-start justify-between gap-2">
+              <span className="font-display text-xl">{t.label}</span>
+              {t.xp > 0 ? (
+                <span className="pill num shrink-0" style={{ background: "var(--bloom-soft)", color: "var(--bloom)" }}>
+                  +{t.xp}
+                </span>
+              ) : null}
+            </span>
             <span className="hint">{t.hint}</span>
           </Link>
         ))}

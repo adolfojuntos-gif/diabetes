@@ -1,335 +1,357 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { and, desc, eq, gte, lt } from "drizzle-orm";
-import {
-  db,
-  glucoseReadings,
-  meals,
-  insulinDoses,
-  exerciseSessions,
-  hydrationLogs,
-  sleepLogs,
-  wellbeingCheckins,
-  appointments,
-} from "@/lib/db";
-import { HeroVideo } from "@/components/HeroVideo";
-import { Card, Stat, GlucoseChip, TirBar, Notice, EmptyState, PatternCard, TriageBanner } from "@/components/ui";
 import { requireAccount } from "@/lib/auth/session";
-import { getProfile, usesInsulin, loadSnapshot } from "@/lib/data/snapshot";
-import { refreshDerived, inbox } from "@/lib/data/nudges";
-import { glucoseStats, between } from "@/lib/engines/stats";
-import { formatGlucose, unitLabel, bandOf, BAND_LABEL } from "@/lib/units";
-import { startOfDay, endOfDay, addDays, dateKey, fmtTime, fmtDayLong, relative } from "@/lib/time";
+import { Card, Notice, TriageBanner } from "@/components/ui";
+import { World } from "@/components/World";
+import { loadLifeQuest } from "@/lib/data/lifequest";
+import { getProfile } from "@/lib/data/snapshot";
 import { runTriage } from "./copilot/actions";
+import { markQuestDone, enterRest, leaveRest, acknowledge, dismissMorning } from "./quest/actions";
+import { SubmitButton } from "@/components/Form";
+import { dateKey } from "@/lib/time";
+import { fmtDayLong } from "@/lib/time";
+import { TREND_REVIEW_NOTE } from "@/lib/engines/rules";
 
 export const dynamic = "force-dynamic";
 
-function greeting(now: Date, name: string): string {
-  const h = now.getHours();
-  const part = h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-  return name ? `${part}, ${name}` : part;
-}
-
-export default async function Today() {
+/**
+ * LIFE QUEST.
+ *
+ * The order of this page is the safety architecture made visible. Triage is loaded and drawn
+ * FIRST, above the world, above the level, above anything celebratory, because a person whose
+ * readings say they need help must not be handed confetti instead. Everything below the banner is
+ * a game; the banner is not, and it never moves.
+ */
+export default async function QuestPage() {
   return requireAccount(async () => {
-  const profile = await getProfile();
-  if (!profile.onboarded) redirect("/welcome");
+    const profile = await getProfile();
+    if (!profile.onboarded) redirect("/welcome");
 
-  const now = new Date();
-  const today = startOfDay(now);
-  const tomorrow = endOfDay(now);
+    const [triage, q] = await Promise.all([runTriage({}), loadLifeQuest()]);
 
-  // Engines first: this refreshes nudges, doctor questions and memory. Idempotent.
-  const report = await refreshDerived(now);
+    /*
+     * THE ONE INTERRUPT IN THE PRODUCT, AND WHAT OUTRANKS IT.
+     *
+     * A new region takes over the whole screen, because a moment that appears as a card between
+     * two other cards is not a moment. It does NOT take over when triage has something to say,
+     * when the person is resting, or when they are away and being welcomed back: in all three the
+     * screen already has a more important job, and the ceremony simply waits. Nothing expires while
+     * it waits, because the region was unlocked the instant it was earned.
+     */
+    if (q.unlocked && triage.level === "general" && !q.resting && !q.standing.returning) redirect("/quest/unlocked");
+    const { state, guardian, standing, dimensions, todayQuest, adventure, quests, fresh, resting, restUntil } = q;
+    const level = state.level;
 
-  const [readingsToday, mealsToday, insulinToday, exToday, waterToday, lastNight, checkin, nextAppt, nudgeList, snap14, triageNow] = await Promise.all([
-    db.select().from(glucoseReadings).where(and(gte(glucoseReadings.at, today), lt(glucoseReadings.at, tomorrow))).orderBy(desc(glucoseReadings.at)),
-    db.select().from(meals).where(and(gte(meals.at, today), lt(meals.at, tomorrow))).orderBy(desc(meals.at)),
-    db.select().from(insulinDoses).where(and(gte(insulinDoses.at, today), lt(insulinDoses.at, tomorrow))).orderBy(desc(insulinDoses.at)),
-    db.select().from(exerciseSessions).where(and(gte(exerciseSessions.at, today), lt(exerciseSessions.at, tomorrow))),
-    db.select().from(hydrationLogs).where(and(gte(hydrationLogs.at, today), lt(hydrationLogs.at, tomorrow))),
-    db.select().from(sleepLogs).where(eq(sleepLogs.wakeDate, dateKey(now))).limit(1),
-    db.select().from(wellbeingCheckins).where(eq(wellbeingCheckins.date, dateKey(now))).limit(1),
-    db.select().from(appointments).where(gte(appointments.at, today)).orderBy(appointments.at).limit(1),
-    inbox(6),
-    loadSnapshot(14, now, profile),
-    runTriage({}),
-  ]);
+    const questsDone = quests.filter((x) => x.completedAt).length;
 
-  const latest = readingsToday[0] ?? null;
-  const todayStats = glucoseStats(readingsToday, profile.targetLowMgdl, profile.targetHighMgdl);
-  const stats7 = glucoseStats(between(snap14.readings, addDays(today, -6), tomorrow), profile.targetLowMgdl, profile.targetHighMgdl);
-  const water = waterToday.reduce((a, h) => a + h.ml, 0);
-  const carbs = Math.round(mealsToday.reduce((a, m) => a + m.carbsG, 0));
-  const units = insulinToday.reduce((a, d) => a + d.units, 0);
-  const exMinutes = exToday.reduce((a, e) => a + e.minutes, 0);
-  const u = profile.units;
-  const hasAnyData = snap14.readings.length > 0 || snap14.meals.length > 0;
+    return (
+      <div className="page">
+        {/* SAFETY FIRST, ALWAYS. Nothing on this page may be drawn above this. */}
+        {triage.level !== "general" ? (
+          <div className="mb-5">
+            <TriageBanner t={triage} />
+          </div>
+        ) : null}
 
-  const safety = nudgeList.filter((n) => n.kind === "safety");
-  const gaps = nudgeList.filter((n) => n.kind === "gap" || n.kind === "reminder");
-  const wins = nudgeList.filter((n) => n.kind === "win");
+        {/* ------------------------------- morning ------------------------------- */}
+        {q.morning && !q.resting ? (
+          <section className="morning rise" aria-label="This morning">
+            <div className="eyebrow">{fmtDayLong(new Date())}</div>
+            <h2 className="morning-title mt-0.5">
+              {profile.name ? `Good morning, ${profile.name}` : "Good morning"}
+            </h2>
+            <p className="mt-2 prose-measure">
+              {q.standing.returning
+                ? "Your world has been waiting for you, exactly as you left it."
+                : todayQuest.xp > 0
+                  ? `${guardian.name} has one thing for you today.`
+                  : "Everything you set out to do today is already logged."}
+            </p>
+            {todayQuest.xp > 0 ? (
+              <div className="card-sunk p-3 mt-3">
+                <div className="eyebrow">Today&apos;s quest</div>
+                <div className="font-display text-xl mt-0.5">{todayQuest.title}</div>
+                <p className="text-sm mt-1 prose-measure">{todayQuest.ask}</p>
+              </div>
+            ) : null}
+            <div className="flex flex-wrap gap-2 mt-4">
+              {/*
+                Both buttons acknowledge the greeting, so it is shown once a day and never becomes a
+                thing to dismiss. Taking the action and skipping it both count as having read it.
+              */}
+              {todayQuest.xp > 0 ? (
+                <form action={dismissMorning}>
+                  <input type="hidden" name="date" value={dateKey(new Date())} />
+                  <input type="hidden" name="to" value={todayQuest.href} />
+                  <SubmitButton className="btn" pendingText="Going…">
+                    {`Start it · +${todayQuest.xp} XP`}
+                  </SubmitButton>
+                </form>
+              ) : null}
+              <form action={dismissMorning}>
+                <input type="hidden" name="date" value={dateKey(new Date())} />
+                <SubmitButton className="btn btn-ghost" pendingText="…">
+                  Just show me my world
+                </SubmitButton>
+              </form>
+            </div>
+          </section>
+        ) : null}
 
-  return (
-    <div className="page">
-      <div className="-mx-4 -mt-5 mb-6 md:-mx-8 md:-mt-8">
-        {/*
-          The morning plate is cut from longer footage that opens on three seconds of near-black and
-          carries a title card burnt into the middle of the frame. Neither is re-encoded: the window
-          skips the dark head, the zoom crops below the title and the face, and the slow rate turns
-          a 1.7 second window into a loop that reads as drift.
+        {/* --------------------------------- the HUD -------------------------------
+          A game tells you where you stand without being asked. The ring is the level, the track is
+          the way into the next region, and both are read from the ledger. It is sticky, so wherever
+          you scroll to on the front door you can still see what you are building toward.
         */}
-        <HeroVideo
-          name="morning"
-          height="h-[34vh] min-h-[13rem] max-h-[20rem]"
-          start={3.3}
-          end={4.98}
-          rate={0.55}
-          zoom={2.05}
-        >
-          <div className="eyebrow on-film">{fmtDayLong(now)}</div>
-          <h1 className="on-film mt-1">{greeting(now, profile.name)}</h1>
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Link href="/log/glucose" className="btn">
-              Log a reading
-            </Link>
-            <Link href="/copilot" className="btn btn-slate">
-              Talk to the Copilot
-            </Link>
+        <div className="hud rise" data-world={state.theme.key}>
+          <div className="hud-ring num" style={{ "--p": level.progress } as React.CSSProperties} aria-hidden>
+            <span>{level.level}</span>
           </div>
-        </HeroVideo>
-      </div>
-
-      {triageNow.level !== "general" ? (
-        <div className="mb-5">
-          <TriageBanner t={triageNow} />
+          <div className="hud-main">
+            <div className="eyebrow">
+              {level.nextRegion ? `Next: ${level.nextRegion.name}` : "The map is fully open"}
+            </div>
+            <div className="hud-region">{level.region.name}</div>
+            <div className="hud-track">
+              <span style={{ width: `${Math.round(level.progress * 100)}%` }} />
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="num font-display text-lg" style={{ color: "var(--gold)" }}>
+              {level.xp.toLocaleString()}
+            </div>
+            <div className="eyebrow">XP</div>
+          </div>
+          {state.gems > 0 ? <span className="gem-pill num shrink-0">◆ {state.gems}</span> : null}
         </div>
-      ) : null}
 
-      {/* ---------------- the number, big ---------------- */}
-      <div className="grid gap-4 md:grid-cols-[1fr_1.4fr]">
-        <Card className="rise rise-1">
-          <div className="eyebrow">Latest reading</div>
-          {latest ? (
-            <>
-              <div className={`big-num breathing inline-block mt-1 band-${bandOf(latest.valueMgdl, profile.targetLowMgdl, profile.targetHighMgdl)}`}>
-                {formatGlucose(latest.valueMgdl, u)}
-                <span className="text-base font-body muted ml-2">{unitLabel(u)}</span>
+        {/* ------------------------------ the world ------------------------------
+          Full bleed and vignetted, so it is the ground the page stands on rather than an
+          illustration inside a card.
+        */}
+        <section className="bleed rise rise-1" data-world={state.theme.key}>
+          <div className="world-stage relative">
+            <World w={state.world} theme={state.theme.key} rest={resting} />
+            {/*
+              Top left, not bottom left. Every theme puts the home, the path and the figure along the
+              lower band, which is the point of the drawing, and a title laid over that is two things
+              fighting for the same pixels. The sky is the one region of the frame the scene keeps
+              deliberately empty, so that is where the words go.
+            */}
+            <div className="absolute inset-x-0 top-0 p-5 md:p-7">
+              <div className="eyebrow on-film" style={{ color: "var(--gold)" }}>
+                Life Quest
               </div>
-              <div className="mt-1">
-                <span className={`pill chip-${bandOf(latest.valueMgdl, profile.targetLowMgdl, profile.targetHighMgdl)}`}>
-                  {BAND_LABEL[bandOf(latest.valueMgdl, profile.targetLowMgdl, profile.targetHighMgdl)]}
-                </span>
-                <span className="hint ml-2">
-                  {fmtTime(latest.at)}, {relative(latest.at, now)}
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="big-num mt-1 faint">—</div>
-              <p className="muted text-sm mt-1">
-                Nothing logged yet today.{" "}
-                <Link href="/log/glucose" className="underline">
-                  Add one
-                </Link>
-                .
+              <h1 className="on-film mt-0.5">{level.region.name}</h1>
+              <p className="on-film text-sm mt-1 prose-measure" style={{ color: "var(--ink-soft)" }}>
+                {level.region.blurb}
               </p>
-            </>
-          )}
-          <div className="divider my-4" />
-          <div className="eyebrow mb-2">Today, {todayStats.n} reading{todayStats.n === 1 ? "" : "s"}</div>
-          {todayStats.n > 0 ? (
-            <>
-              <TirBar pct={todayStats.pct} />
-              <div className="hint mt-2">
-                {todayStats.timeInRange?.toFixed(0)}% in your range of {formatGlucose(profile.targetLowMgdl, u)} to {formatGlucose(profile.targetHighMgdl, u)} {unitLabel(u)}
-                {todayStats.mean !== null ? ` · average ${formatGlucose(todayStats.mean, u)}` : ""}
-              </div>
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {readingsToday.slice(0, 12).map((r) => (
-                  <span key={r.id} className="flex items-center gap-1 text-xs">
-                    <GlucoseChip mgdl={r.valueMgdl} units={u} low={profile.targetLowMgdl} high={profile.targetHighMgdl} showUnit={false} />
-                    <span className="faint">{fmtTime(r.at)}</span>
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="hint">Your day fills in here as you log.</p>
-          )}
-        </Card>
-
-        <div className="grid gap-4 rise rise-2">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Stat label="Carbs today" value={carbs} unit="g" sub={mealsToday.length ? `${mealsToday.length} meal${mealsToday.length === 1 ? "" : "s"}` : "nothing logged"} />
-            {usesInsulin(profile) ? (
-              <Stat label="Insulin today" value={Math.round(units * 10) / 10} unit="u" sub={insulinToday.length ? `${insulinToday.length} entr${insulinToday.length === 1 ? "y" : "ies"}` : "nothing logged"} />
-            ) : (
-              <Stat label="Movement" value={exMinutes} unit="min" sub={exToday.length ? `${exToday.length} session${exToday.length === 1 ? "" : "s"}` : "nothing logged"} />
-            )}
-            <Stat label="Water" value={water} unit="ml" sub={`of ${profile.hydrationGoalMl} goal`} />
-            <Stat label="Sleep" value={lastNight[0] ? (lastNight[0].minutes / 60).toFixed(1) : "—"} unit={lastNight[0] ? "h" : undefined} sub={lastNight[0] ? `quality ${lastNight[0].quality} of 5` : "not logged"} />
+            </div>
           </div>
+        </section>
 
-          <Card>
-            <div className="eyebrow mb-2">Last 7 days</div>
-            {stats7.n >= 10 ? (
-              <>
-                <TirBar pct={stats7.pct} />
-                <div className="grid grid-cols-3 gap-3 mt-3">
-                  <div>
-                    <div className="num text-xl font-display">{stats7.timeInRange?.toFixed(0)}%</div>
-                    <div className="hint">in range</div>
-                  </div>
-                  <div>
-                    <div className="num text-xl font-display">{formatGlucose(stats7.mean!, u)}</div>
-                    <div className="hint">average {unitLabel(u)}</div>
-                  </div>
-                  <div>
-                    <div className={`num text-xl font-display ${stats7.lowsCount > 0 ? "band-low" : ""}`}>{stats7.lowsCount}</div>
-                    <div className="hint">low readings</div>
-                  </div>
-                </div>
-                <Link href="/trends" className="btn btn-secondary btn-sm mt-4">
-                  See the trends
-                </Link>
-              </>
-            ) : (
-              <p className="muted text-sm">
-                {stats7.n === 0 ? "No readings in the last week yet." : `Only ${stats7.n} readings this week, which is not enough to compare anything honestly.`} Keep logging and this fills in.
-              </p>
-            )}
+        <p className="hint mt-3">
+          XP comes from things you decided to do. It is never earned or lost because of a reading, and nothing here
+          ever goes down.
+        </p>
+
+        {/* --------------------------- coming back ---------------------------- */}
+        {standing.returning ? (
+          <Card className="mt-4 rise rise-3" as="section">
+            <div className="eyebrow">{guardian.glyph} {guardian.name}, {guardian.animal}</div>
+            <h2 className="mt-1">{standing.headline}</h2>
+            <p className="mt-1 prose-measure">{standing.body}</p>
+            <p className="mt-2 text-sm muted prose-measure">&ldquo;{guardian.onReturn}&rdquo;</p>
           </Card>
+        ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {!checkin[0] ? (
-              <Link href="/copilot/checkin" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
-                <h3>Daily check-in</h3>
-                <p className="hint mt-1">Three questions about how today felt.</p>
-              </Link>
-            ) : (
-              <Card>
-                <div className="eyebrow">Check-in done</div>
-                <p className="text-sm mt-1">Feeling {checkin[0].feeling} of 5{checkin[0].unusual ? `. You noted: "${checkin[0].unusual}"` : "."}</p>
+        {/* --------------------------- what just landed ------------------------ */}
+        {fresh.length ? (
+          <section className="mt-6">
+            <div className="flex items-end justify-between gap-3 mb-3">
+              <h2>What you earned</h2>
+              <form action={acknowledge}>
+                <button className="btn btn-ghost btn-sm" type="submit">
+                  Got it
+                </button>
+              </form>
+            </div>
+            {/*
+              The guardian speaks ABOUT what the engine granted, never instead of it. The award cards
+              below carry the real figures, so a narration that went missing costs nothing.
+            */}
+            {q.celebration ? (
+              <Card className="mb-3">
+                <div className="eyebrow">{guardian.glyph} {guardian.name}, {guardian.animal}</div>
+                <p className="mt-2 prose-measure font-display text-lg">{q.celebration.text}</p>
               </Card>
-            )}
-            <Link href="/review" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
-              <h3>This week&apos;s review</h3>
-              <p className="hint mt-1">Your numbers and your food, side by side with last week.</p>
-            </Link>
-          </div>
-        </div>
-      </div>
+            ) : null}
+            <div className="grid gap-3 md:grid-cols-2">
+              {fresh.map((a, i) => (
+                <article key={i} className="card p-4 award-pop" style={{ animationDelay: `${i * 60}ms` }}>
+                  {a.achievement ? <div className="eyebrow">🏆 {a.achievement.title}</div> : null}
+                  <h3 className="mt-0.5">{a.title}</h3>
+                  <p className="text-sm mt-1">{a.body}</p>
+                  <p className="hint mt-2">{a.evidence}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {a.xp > 0 ? <span className="pill num" style={{ background: "var(--bloom-soft)", color: "var(--bloom)" }}>+{a.xp} XP</span> : null}
+                    {a.gems > 0 ? <span className="gem-pill num">◆ +{a.gems}</span> : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-      {/* ---------------- notifications ---------------- */}
-      {safety.length ? (
-        <>
-          <h2 className="mt-8 mb-3">Needs your attention</h2>
-          <div className="grid gap-3">
-            {safety.map((n) => (
-              <Card key={n.id} className="sev-attention">
-                <h3>{n.title}</h3>
-                <p className="text-sm mt-1">{n.body}</p>
-                {n.href ? (
-                  <Link href={n.href} className="btn btn-secondary btn-sm mt-3">
-                    Look at this
+        {/* ------------------------------ rest mode ---------------------------- */}
+        {resting ? (
+          <Card className="mt-6" as="section">
+            <div className="eyebrow">Rest mode</div>
+            <h2 className="mt-1">The world is quiet</h2>
+            <p className="mt-1 prose-measure">
+              No quests, nothing counting down, nothing expiring. Everything you have built is exactly where you left
+              it and it stays there.
+            </p>
+            <p className="mt-2 text-sm muted prose-measure">
+              {guardian.glyph} &ldquo;{guardian.onRest}&rdquo; {guardian.name}, {guardian.animal}
+            </p>
+            {restUntil ? <p className="hint mt-2">Quiet until {fmtDayLong(restUntil)}, unless you end it sooner.</p> : null}
+            <form action={leaveRest} className="mt-3">
+              <button className="btn btn-secondary btn-sm" type="submit">
+                I am ready to carry on
+              </button>
+            </form>
+          </Card>
+        ) : (
+          <>
+            {/* ---------------------------- today ---------------------------- */}
+            <section className="mt-6 grid gap-4 md:grid-cols-[1.1fr_1fr]">
+              <Card>
+                <div className="eyebrow">
+                  {guardian.glyph} {guardian.name}, {guardian.animal}
+                </div>
+                <p className="mt-2 prose-measure font-display text-xl">&ldquo;{q.guardianLine}&rdquo;</p>
+                <div className="divider my-4" />
+                <div className="eyebrow">Today</div>
+                <h3 className="mt-1">{todayQuest.title}</h3>
+                <p className="text-sm mt-1 prose-measure">{todayQuest.ask}</p>
+                {todayQuest.xp > 0 ? (
+                  <Link href={todayQuest.href} className="btn btn-sm mt-3">
+                    Do it now · +{todayQuest.xp} XP
                   </Link>
                 ) : null}
               </Card>
-            ))}
-          </div>
-        </>
-      ) : null}
 
-      {/* ---------------- patterns ---------------- */}
-      <div className="flex items-end justify-between gap-3 mt-8 mb-3">
-        <h2>What your data is showing</h2>
-        <Link href="/toolkit/inbox" className="btn btn-ghost btn-sm">
-          All notifications
-        </Link>
-      </div>
-      {!hasAnyData ? (
-        <EmptyState
-          title="Nothing to show yet, and that is fine"
-          body="Steady only ever tells you things it can prove from your own logs. Log a reading and a meal, and the first patterns appear within a few days."
-          cta="Log your first reading"
-          href="/log/glucose"
-        />
-      ) : report.patterns.length === 0 ? (
-        <Card>
-          <p className="muted">
-            {report.sampleNote ?? "No patterns stand out in the last 14 days. That is a real answer, not an empty one."}
-          </p>
-        </Card>
-      ) : (
-        <>
-          {report.sampleNote ? (
-            <div className="mb-3">
-              <Notice tone="amber">{report.sampleNote}</Notice>
+              <Card>
+                <div className="eyebrow">This week</div>
+                <h3 className="mt-1">{adventure.name}</h3>
+                <p className="text-sm mt-1 prose-measure muted">{adventure.opening}</p>
+                <p className="hint mt-2">
+                  Finish all three and {adventure.reward} opens. {questsDone} of {quests.length} done.
+                </p>
+                <div className="grid gap-2 mt-3">
+                  {quests.map((x) => (
+                    <div key={x.id} className={`card-sunk p-3 ${x.completedAt ? "quest-done" : ""}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="quest-title font-display">{x.title}</div>
+                          <p className="text-sm mt-0.5">{x.ask}</p>
+                          <p className="hint mt-1">{x.why}</p>
+                        </div>
+                        <span className="pill num shrink-0" style={{ background: "var(--bloom-soft)", color: "var(--bloom)" }}>
+                          +{x.xp}
+                        </span>
+                      </div>
+                      <div className="mt-2">
+                        {x.completedAt ? (
+                          <span className="hint">
+                            Done · {x.verifiedBy === "engine" ? "confirmed from your logs" : "marked by you"}
+                          </span>
+                        ) : x.kind === "manual" ? (
+                          <form action={markQuestDone}>
+                            <input type="hidden" name="key" value={x.key} />
+                            <button className="btn btn-secondary btn-sm" type="submit">
+                              I did this
+                            </button>
+                          </form>
+                        ) : (
+                          <span className="hint">This one ticks itself off from what you log.</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </section>
+          </>
+        )}
+
+        {/* ---------------------------- who you are ---------------------------- */}
+        <section className="mt-8">
+          <div className="flex items-end justify-between gap-3 mb-3">
+            <div>
+              <h2>Who you are becoming</h2>
+              <p className="hint mt-1 prose-measure">
+                Seven of these, and not one is a score. There is no overall number here and there never will be.
+              </p>
             </div>
-          ) : null}
-          <div className="grid gap-3 md:grid-cols-2">
-            {report.patterns.slice(0, 6).map((p) => (
-              <PatternCard key={p.key} p={p} units={u} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {dimensions.map((d) => (
+              <div key={d.key} className="card p-4">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h3>{d.name}</h3>
+                  <span className="hint">{d.rankName}</span>
+                </div>
+                <div className="xp-bar mt-2">
+                  <span style={{ width: `${Math.round(d.progress * 100)}%` }} />
+                </div>
+                <p className="hint mt-2">{d.blurb}</p>
+              </div>
             ))}
           </div>
-        </>
-      )}
+        </section>
 
-      {/* ---------------- small things ---------------- */}
-      {(gaps.length || wins.length) ? (
-        <div className="grid gap-3 md:grid-cols-2 mt-6">
-          {wins.length ? (
+        {/* ------------------------------ the rest ----------------------------- */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mt-6">
+          <Link href="/quest/recap" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
+            <h3>Your world, 90 days</h3>
+            <p className="hint mt-1">The whole stretch, played back one beat at a time.</p>
+          </Link>
+          <Link href="/quest/journey" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
+            <h3>Your journey</h3>
+            <p className="hint mt-1">The whole story, month by month, in your own numbers.</p>
+          </Link>
+          <Link href="/quest/world" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
+            <h3>Change your world</h3>
+            <p className="hint mt-1">Forest, coast or city. Nothing is lost by moving.</p>
+          </Link>
+          <Link href="/quest/journal" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
+            <h3>Explorer Journal</h3>
+            <p className="hint mt-1">{q.discoveries} thing{q.discoveries === 1 ? "" : "s"} you noticed and kept.</p>
+          </Link>
+          {!resting ? (
             <Card>
-              <div className="eyebrow mb-2">Worth noticing</div>
-              <ul className="grid gap-2">
-                {wins.map((n) => (
-                  <li key={n.id} className="text-sm">
-                    <strong>{n.title}.</strong> {n.body}
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
-          {gaps.length ? (
-            <Card>
-              <div className="eyebrow mb-2">Small gaps</div>
-              <ul className="grid gap-2">
-                {gaps.map((n) => (
-                  <li key={n.id} className="text-sm">
-                    {n.href ? (
-                      <Link href={n.href} className="underline">
-                        {n.title}
-                      </Link>
-                    ) : (
-                      <strong>{n.title}</strong>
-                    )}
-                    . {n.body}
-                  </li>
-                ))}
-              </ul>
+              <h3>Need a quiet week?</h3>
+              <p className="hint mt-1">Rest mode stops every ask. Nothing is lost and nothing expires.</p>
+              <form action={enterRest} className="mt-3 flex items-center gap-2">
+                <input type="hidden" name="days" value="7" />
+                <button className="btn btn-ghost btn-sm" type="submit">
+                  Rest for a week
+                </button>
+              </form>
             </Card>
           ) : null}
         </div>
-      ) : null}
 
-      {nextAppt[0] ? (
         <div className="mt-6">
-          <Notice tone="juniper">
-            {fmtDayLong(nextAppt[0].at)} with {nextAppt[0].withWhom || "your care team"}.{" "}
-            <Link href="/toolkit/appointments" className="underline">
-              Build your brief
-            </Link>{" "}
-            so nothing gets forgotten in the room.
+          <Notice>
+            Life Quest never scores your glucose. XP comes from what you chose to do; progress gems come only from a
+            sustained change in your own trend across a fortnight, measured by the same engine that draws your charts.
+            Nothing here is medical advice, and nothing here ever goes down. {TREND_REVIEW_NOTE}
           </Notice>
         </div>
-      ) : null}
-
-      <p className="hint mt-8 prose-measure">
-        Steady is not a medical device and does not diagnose. It never suggests or changes a medication or insulin dose. Everything above is computed from what you logged.
-      </p>
-    </div>
-  );
+      </div>
+    );
   });
 }

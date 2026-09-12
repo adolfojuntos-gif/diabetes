@@ -40,7 +40,7 @@ export default async function ToolkitPage() {
     <div className="page">
       <PageHeader
         eyebrow="Toolkit"
-        title="Your toolkit"
+        title="The Satchel"
         lede="The practical things: what to ask, what to pack, what to bring to an appointment, and everything Steady has written down about you."
       />
 

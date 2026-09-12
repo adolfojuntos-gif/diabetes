@@ -57,6 +57,10 @@ export type ExerciseIntensity = (typeof EXERCISE_INTENSITIES)[number];
 export const NUDGE_KINDS = ["pattern", "gap", "win", "safety", "reminder"] as const;
 export type NudgeKind = (typeof NUDGE_KINDS)[number];
 
+/** `habit` is something the person did. `milestone` is a sustained change in their own trend. */
+export const AWARD_KINDS = ["habit", "milestone"] as const;
+export type AwardKind = (typeof AWARD_KINDS)[number];
+
 export const QUESTION_SOURCES = ["pattern", "manual"] as const;
 export type QuestionSource = (typeof QUESTION_SOURCES)[number];
 
@@ -386,7 +390,7 @@ export type CopilotMode = (typeof COPILOT_MODES)[number];
  * The three places this app spends money on a model. Every one of them is metered, because on a
  * hosted deployment an unmetered paid endpoint is somebody else's budget.
  */
-export const AI_FEATURES = ["copilot", "coach", "photo"] as const;
+export const AI_FEATURES = ["copilot", "coach", "photo", "gamemaster"] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 
 /** Output of the deterministic safety engine. Ordered most to least severe. */
@@ -894,6 +898,150 @@ export const mealItems = sqliteTable(
 export type Food = typeof foods.$inferSelect;
 export type FoodPortion = typeof foodPortions.$inferSelect;
 export type MealItem = typeof mealItems.$inferSelect;
+
+/* ============================ THE JOURNEY ============================
+ *
+ * The progress ledger. One row per thing earned, and nothing else: there is no stored XP total, no
+ * level column, no balance. Totals are summed from this table every time they are shown.
+ *
+ * That is deliberate and it is what makes the whole feature safe. A stored total is a number that
+ * can drift, be double-counted by a retry, or be silently decremented by a future bug; a ledger can
+ * only be wrong in a way you can read line by line and explain to the person. `key` is unique, so
+ * running the engine twice over the same fortnight cannot award the same thing twice however many
+ * times the page is opened.
+ *
+ * Nothing in this table is ever deleted and no row ever holds a negative. Progress in Steady does
+ * not go backwards, because a difficult week is not a failure and glucose is not a score.
+ */
+export const journeyAwards = sqliteTable(
+  "journey_awards",
+  {
+    id: text("id").primaryKey(),
+    /** Unique, and the whole idempotency mechanism. E.g. "log:2026-09-12", "trend_tir:2026-09-07". */
+    key: text("key").notNull(),
+    /** The engine rule that produced it, for grouping on screen. */
+    code: text("code").notNull(),
+    kind: text("kind", { enum: AWARD_KINDS }).notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    /** The engine's own numbers at the moment of awarding. The model may never rewrite this. */
+    evidence: text("evidence").notNull(),
+    xp: integer("xp").notNull().default(0),
+    gems: integer("gems").notNull().default(0),
+    /** The moment the award belongs to, which is usually earlier than when it was written. */
+    earnedAt: ts("earned_at").notNull(),
+    createdAt: ts("created_at").notNull(),
+    /** Null until it has been celebrated on screen once. */
+    seenAt: ts("seen_at"),
+
+    /*
+     * PROVENANCE. Without these columns a reward is a number somebody has to take on trust.
+     *
+     * With them, any row in this table answers: which version of the arithmetic produced it, which
+     * version of the thresholds approved it, over which window, against which comparison window,
+     * from how many records, and how good that data was. A threshold changed next year does not
+     * rewrite what happened this year, because what happened this year is stamped with the rules
+     * that were in force when it happened.
+     */
+    engineVersion: text("engine_version").notNull().default("0"),
+    ruleVersion: text("rule_version").notNull().default("0"),
+    metricVersion: text("metric_version").notNull().default("0"),
+    /** Records the calculation actually consumed. */
+    sampleSize: integer("sample_size").notNull().default(0),
+    windowFrom: ts("window_from"),
+    windowTo: ts("window_to"),
+    /** The earlier window a trend was measured against. Null for a habit award, which has none. */
+    compareFrom: ts("compare_from"),
+    compareTo: ts("compare_to"),
+    dataQuality: text("data_quality", { enum: ["high", "moderate", "low", "insufficient"] }).notNull().default("high"),
+  },
+  (t) => [uniqueIndex("journey_award_key_uq").on(t.key), index("journey_award_earned_idx").on(t.earnedAt)],
+);
+
+export type JourneyAward = typeof journeyAwards.$inferSelect;
+
+/**
+ * This week's quests. Written once per ISO week from the engine's templates and then only ever
+ * marked complete, so the wording a person was shown on Monday is the wording they still see on
+ * Sunday even if the templates change under them in a deploy.
+ *
+ * `verifiedBy` is the honest part: `engine` means the logs prove it, `person` means they tapped to
+ * say so. Five quiet minutes cannot be verified by a database and pretending otherwise would mean
+ * only offering quests a database can see, which is the wrong set of quests.
+ */
+export const journeyQuests = sqliteTable(
+  "journey_quests",
+  {
+    id: text("id").primaryKey(),
+    /** "<code>:<weekKey>". */
+    key: text("key").notNull(),
+    weekKey: text("week_key").notNull(),
+    code: text("code").notNull(),
+    slot: integer("slot").notNull().default(0),
+    adventure: text("adventure").notNull(),
+    title: text("title").notNull(),
+    ask: text("ask").notNull(),
+    why: text("why").notNull(),
+    xp: integer("xp").notNull().default(0),
+    kind: text("kind", { enum: ["auto", "manual"] }).notNull(),
+    dimension: text("dimension").notNull(),
+    completedAt: ts("completed_at"),
+    verifiedBy: text("verified_by", { enum: ["engine", "person"] }),
+    createdAt: ts("created_at").notNull(),
+  },
+  (t) => [uniqueIndex("journey_quest_key_uq").on(t.key), index("journey_quest_week_idx").on(t.weekKey)],
+);
+
+/** The Explorer Journal: things the person saw out in the world and wanted to keep. */
+export const discoveries = sqliteTable(
+  "discoveries",
+  {
+    id: text("id").primaryKey(),
+    at: ts("at").notNull(),
+    name: text("name").notNull(),
+    note: text("note").notNull().default(""),
+    place: text("place").notNull().default(""),
+    createdAt: ts("created_at").notNull(),
+  },
+  (t) => [index("discovery_at_idx").on(t.at)],
+);
+
+/**
+ * The player's own state, as distinct from their health record. One row, id = 1.
+ *
+ * Kept in its own table rather than on `profile` on purpose: the game must be removable. Everything
+ * the game knows lives in these three tables, so turning Life Quest off is dropping them, and not a
+ * migration that touches a single column of clinical data.
+ */
+export const playerState = sqliteTable("player_state", {
+  id: integer("id").primaryKey(), // always 1
+  /**
+   * Which world they are building. It changes the palette, the terrain and what the regions are
+   * called, and it changes nothing about what anything is worth: the rules are identical in every
+   * theme, so this can be switched at any time without gaining or losing a single point.
+   */
+  worldTheme: text("world_theme", { enum: ["forest", "coast", "city"] }).notNull().default("forest"),
+  /**
+   * The highest region level whose unlock ceremony has been shown. Stored rather than derived,
+   * because a ceremony is a one-time moment and deriving it from the level would replay it on
+   * every page load forever. Zero means nothing has been shown, which is correct for a new
+   * player and for somebody whose whole history was backfilled: they get the ceremony for the
+   * region they are actually standing in, once, and not one for every level they passed through.
+   */
+  regionSeenLevel: integer("region_seen_level").notNull().default(0),
+  /** The last morning the greeting was shown, "YYYY-MM-DD". One a day, never twice. */
+  morningSeenDate: text("morning_seen_date").notNull().default(""),
+  /** While set and in the future, the world is in Rest Mode: quiet, no asks, nothing expiring. */
+  restUntil: ts("rest_until"),
+  /** The last time they opened the game, used only to greet somebody returning after a while. */
+  lastVisitAt: ts("last_visit_at"),
+  createdAt: ts("created_at").notNull(),
+  updatedAt: ts("updated_at").notNull(),
+});
+
+export type JourneyQuest = typeof journeyQuests.$inferSelect;
+export type Discovery = typeof discoveries.$inferSelect;
+export type PlayerState = typeof playerState.$inferSelect;
 
 /* ============================ SECRETS ============================
  *

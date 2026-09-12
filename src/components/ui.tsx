@@ -84,7 +84,16 @@ export function TriageBanner({ t, compact = false }: { t: TriageResult; compact?
       {t.actions.length ? (
         <div className="mt-3 grid gap-2">
           {t.actions.map((a) => (
-            <div key={a} className="rounded-lg px-3 py-2 text-sm" style={{ background: "rgb(255 255 255 / 0.25)" }}>
+            <div
+              key={a}
+              className="rounded-lg px-3 py-2 text-sm"
+              /*
+               * A quarter-white wash was tuned for a solid coral banner on a white page. On the darker
+               * urgent and clinic banners it lifts the box almost to the banner's own text colour, so
+               * it is lighter here and paired with a hairline that does the separating instead.
+               */
+              style={{ background: "rgb(255 255 255 / 0.12)", boxShadow: "inset 0 0 0 1px rgb(255 255 255 / 0.16)" }}
+            >
               {ACTION_TEXT[a]}
             </div>
           ))}

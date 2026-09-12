@@ -55,8 +55,8 @@ export default async function PlanPage({ searchParams }: { searchParams: Search 
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Plan"
-        title="Your week"
+        eyebrow="Meal planning"
+        title="Provisions"
         lede="Four slots a day, filled with recipes built around fiber and protein. Nothing here is a rule. Move anything, skip anything."
         action={
           <div className="flex gap-2">
