@@ -57,6 +57,10 @@ export type ExerciseIntensity = (typeof EXERCISE_INTENSITIES)[number];
 export const NUDGE_KINDS = ["pattern", "gap", "win", "safety", "reminder"] as const;
 export type NudgeKind = (typeof NUDGE_KINDS)[number];
 
+/** What the living world can produce. Mirrored in `engines/world.ts`, which owns the rules. */
+export const WORLD_EVENT_KINDS = ["growth", "arrival", "sighting", "landmark", "season"] as const;
+export type WorldEventKind = (typeof WORLD_EVENT_KINDS)[number];
+
 /** `habit` is something the person did. `milestone` is a sustained change in their own trend. */
 export const AWARD_KINDS = ["habit", "milestone"] as const;
 export type AwardKind = (typeof AWARD_KINDS)[number];
@@ -1038,6 +1042,38 @@ export const playerState = sqliteTable("player_state", {
   createdAt: ts("created_at").notNull(),
   updatedAt: ts("updated_at").notNull(),
 });
+
+/**
+ * THE WORLD'S MEMORY.
+ *
+ * Append-only and never rewritten: what happened in somebody's world is history, and history is
+ * not a mutable field. `key` is date-anchored and unique, so the same day cannot produce the same
+ * event twice however many times the page is opened, and a retry is free.
+ *
+ * What the drawing shows is derived from these rows rather than stored beside them, for the same
+ * reason the XP total is derived from the award ledger: a stored count can drift out of step with
+ * the thing it counts, and then the picture is telling a different story from the record.
+ */
+export const worldEvents = sqliteTable(
+  "world_events",
+  {
+    id: text("id").primaryKey(),
+    /** Date or week anchored, e.g. "sighting:2026-09-12". Unique, and the idempotency mechanism. */
+    key: text("key").notNull(),
+    kind: text("kind", { enum: WORLD_EVENT_KINDS }).notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    /** The moment it belongs to. */
+    at: ts("at").notNull(),
+    createdAt: ts("created_at").notNull(),
+    /** Null until it has appeared in What's New once. */
+    seenAt: ts("seen_at"),
+    engineVersion: text("engine_version").notNull().default("0"),
+  },
+  (t) => [uniqueIndex("world_event_key_uq").on(t.key), index("world_event_at_idx").on(t.at)],
+);
+
+export type WorldEvent = typeof worldEvents.$inferSelect;
 
 export type JourneyQuest = typeof journeyQuests.$inferSelect;
 export type Discovery = typeof discoveries.$inferSelect;

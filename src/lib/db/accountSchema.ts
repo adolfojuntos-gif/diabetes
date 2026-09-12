@@ -4,7 +4,7 @@
  * The account schema as executable statements, so a new account's database can be created inside a
  * request. Generated from `src/lib/db/schema.ts` via `drizzle-kit generate`.
  *
- * 40 tables, 39 indexes. Every statement is create-if-not-exists, so applying this to
+ * 41 tables, 41 indexes. Every statement is create-if-not-exists, so applying this to
  * an existing database is a no-op and the same list doubles as the migration path.
  */
 
@@ -88,6 +88,9 @@ export const ACCOUNT_SCHEMA_SQL: string[] = [
   "CREATE UNIQUE INDEX IF NOT EXISTS `journey_quest_key_uq` ON `journey_quests` (`key`)",
   "CREATE INDEX IF NOT EXISTS `journey_quest_week_idx` ON `journey_quests` (`week_key`)",
   "CREATE TABLE IF NOT EXISTS `player_state` (\n\t`id` integer PRIMARY KEY NOT NULL,\n\t`world_theme` text DEFAULT 'forest' NOT NULL,\n\t`region_seen_level` integer DEFAULT 0 NOT NULL,\n\t`morning_seen_date` text DEFAULT '' NOT NULL,\n\t`rest_until` integer,\n\t`last_visit_at` integer,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL\n)",
+  "CREATE TABLE IF NOT EXISTS `world_events` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`key` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`title` text NOT NULL,\n\t`body` text NOT NULL,\n\t`at` integer NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`seen_at` integer,\n\t`engine_version` text DEFAULT '0' NOT NULL\n)",
+  "CREATE UNIQUE INDEX IF NOT EXISTS `world_event_key_uq` ON `world_events` (`key`)",
+  "CREATE INDEX IF NOT EXISTS `world_event_at_idx` ON `world_events` (`at`)",
 ];
 
 /**
@@ -97,4 +100,4 @@ export const ACCOUNT_SCHEMA_SQL: string[] = [
  */
 export const ACCOUNT_SCHEMA_EXTRA: string[] = [];
 
-export const ACCOUNT_SCHEMA_TABLES = 40;
+export const ACCOUNT_SCHEMA_TABLES = 41;

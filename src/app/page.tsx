@@ -6,7 +6,7 @@ import { World } from "@/components/World";
 import { loadLifeQuest } from "@/lib/data/lifequest";
 import { getProfile } from "@/lib/data/snapshot";
 import { runTriage } from "./copilot/actions";
-import { markQuestDone, enterRest, leaveRest, acknowledge, dismissMorning } from "./quest/actions";
+import { markQuestDone, enterRest, leaveRest, acknowledge, dismissMorning, seenTheWorld } from "./quest/actions";
 import { SubmitButton } from "@/components/Form";
 import { dateKey } from "@/lib/time";
 import { fmtDayLong } from "@/lib/time";
@@ -149,6 +149,43 @@ export default async function QuestPage() {
             </div>
           </div>
         </section>
+
+        {/* ------------------------------ what's new ------------------------------
+          The first thing read after the world itself, and the reason to open the app at all. It
+          is silent when nothing has happened: inventing news is how a discovery feed becomes
+          something people learn to skip.
+        */}
+        {q.news.length ? (
+          <section className="mt-4 rise rise-2">
+            <div className="flex items-end justify-between gap-3 mb-2">
+              <h2>What&apos;s new</h2>
+              <form action={seenTheWorld}>
+                <button className="btn btn-ghost btn-sm" type="submit">
+                  Seen it
+                </button>
+              </form>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {q.news.map((n, i) => (
+                <article key={n.id} className="card p-4 award-pop" style={{ animationDelay: `${i * 60}ms` }}>
+                  <div className="eyebrow" style={{ color: "var(--bloom)" }}>
+                    {n.kind === "arrival"
+                      ? "Someone arrived"
+                      : n.kind === "sighting"
+                        ? "You noticed something"
+                        : n.kind === "growth"
+                          ? "While you were away"
+                          : n.kind === "landmark"
+                            ? "Visible from here"
+                            : "The season turned"}
+                  </div>
+                  <h3 className="mt-0.5">{n.title}</h3>
+                  <p className="text-sm mt-1 prose-measure">{n.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <p className="hint mt-3">
           XP comes from things you decided to do. It is never earned or lost because of a reading, and nothing here

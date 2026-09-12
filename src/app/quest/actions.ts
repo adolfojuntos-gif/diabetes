@@ -14,6 +14,7 @@ import { parseForm, zStr } from "@/lib/actions";
 import { completeQuest, addDiscovery, startRest, endRest, setWorldTheme, markRegionSeen, markMorningSeen } from "@/lib/data/lifequest";
 import { THEME_KEYS } from "@/lib/game/themes";
 import { markSeen } from "@/lib/data/journey";
+import { markWorldSeen } from "@/lib/data/world";
 
 function refresh() {
   for (const p of ["/", "/quest/journey", "/quest/journal", "/quest/world", "/quest/unlocked", "/quest/recap", "/today"]) revalidatePath(p);
@@ -106,6 +107,18 @@ export async function enterRest(fd: FormData): Promise<void> {
 export async function leaveRest(): Promise<void> {
   return requireAccount(async () => {
     await endRest();
+    refresh();
+    redirect("/");
+  });
+}
+
+/**
+ * Mark What's New as read. The events stay in the world's history forever; only their newness is
+ * spent, which is why this sets a timestamp rather than deleting anything.
+ */
+export async function seenTheWorld(): Promise<void> {
+  return requireAccount(async () => {
+    await markWorldSeen();
     refresh();
     redirect("/");
   });

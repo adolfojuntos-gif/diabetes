@@ -195,9 +195,20 @@ export type WorldState = {
   stars: number;
   /** Gems spent on nothing; they are the count of trend milestones and they light the sky. */
   gems: number;
+  /**
+   * What the world's own history adds. Two people at the same level no longer see the same place,
+   * because they have not lived in it identically.
+   */
+  visitors: number;
+  landmarks: number;
+  sightings: number;
 };
 
-export function worldState(level: number, gems: number): WorldState {
+export function worldState(
+  level: number,
+  gems: number,
+  extras: { visitors: number; landmarks: number; sightings: number } = { visitors: 0, landmarks: 0, sightings: 0 },
+): WorldState {
   return {
     level,
     path: Math.min(1, level / 10),
@@ -207,8 +218,12 @@ export function worldState(level: number, gems: number): WorldState {
     river: level >= 5 ? Math.min(1, (level - 4) / 6) : 0,
     mountains: level >= 7,
     falls: level >= 8,
-    stars: level >= 11 ? 26 : Math.min(18, gems * 2),
+    // Sightings put lights in the sky: the things somebody noticed are the things that shine.
+    stars: level >= 11 ? 26 : Math.min(26, gems * 2 + extras.sightings * 2),
     gems,
+    visitors: Math.min(6, extras.visitors),
+    landmarks: Math.min(8, extras.landmarks),
+    sightings: extras.sightings,
   };
 }
 

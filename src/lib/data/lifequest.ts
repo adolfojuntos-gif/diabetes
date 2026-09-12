@@ -26,6 +26,9 @@ import { grantAwards, journeyState, unseenAwards, type JourneyState } from "./jo
 import { rollDays, type DayRoll, type JourneyReport } from "../engines/journey";
 import { provenance, HABIT_RULES } from "../engines/rules";
 import { narrateAward, engineCelebration, type Narration } from "../ai/gamemaster";
+import { tickAndRecord, unseenEvents, extras as worldExtrasFor, newsLine } from "./world";
+import { worldState } from "../engines/journey";
+import type { WorldEvent } from "../db";
 import {
   weeklyAdventure,
   autoQuestDone,
@@ -271,6 +274,10 @@ export type LifeQuest = {
   /** The guardian's line about what just landed. Written by the engine, warmed by the model. */
   celebration: Narration | null;
   discoveries: number;
+  /** What has changed in the world since they last looked, newest first. */
+  news: WorldEvent[];
+  /** One line summarising that, or null when there is honestly nothing to say. */
+  newsLine: string | null;
 };
 
 /**
@@ -312,17 +319,37 @@ export async function loadLifeQuest(now = new Date()): Promise<LifeQuest> {
       .onConflictDoNothing();
   }
 
+  /*
+   * THE WORLD TICKS BEFORE ANYTHING IS READ.
+   *
+   * Same discipline as the award ledger: whatever happened today is written first, so the drawing
+   * below already includes it and What's New cannot announce an event the picture does not yet
+   * reflect.
+   *
+   * It runs even in Rest Mode. Rest silences what the app ASKS of somebody; it does not stop the
+   * world existing, and a person coming back from a quiet fortnight should find that things
+   * carried on without them. That is the entire point of the growth event.
+   */
+  const levelNow = (await journeyState(player.worldTheme)).level.level;
+  await tickAndRecord({ now, level: levelNow, rolls, away: standing(rolls).away, theme: player.worldTheme });
+
   const resting = isResting(player, now);
   const { adventure, rows } = resting
     ? { adventure: weeklyAdventure(now, thisWeek(rolls, now)), rows: [] as JourneyQuest[] }
     : await syncQuests(rolls, now);
 
-  const [state, fresh, awardCodes, discovered] = await Promise.all([
+  const [state, fresh, awardCodes, discovered, wExtras, news, line] = await Promise.all([
     journeyState(player.worldTheme),
     unseenAwards(8),
     db.select({ code: journeyAwards.code, xp: journeyAwards.xp }).from(journeyAwards),
     discoveryCount(),
+    worldExtrasFor(now),
+    unseenEvents(8),
+    newsLine(),
   ]);
+
+  // The drawing is rebuilt from the world's own history, not from the level alone.
+  state.world = worldState(state.level.level, state.gems, wExtras);
 
   await touchVisit(now);
 
@@ -378,6 +405,8 @@ export async function loadLifeQuest(now = new Date()): Promise<LifeQuest> {
     })),
     discoveries: discovered,
     celebration,
+    news,
+    newsLine: line,
   };
 }
 

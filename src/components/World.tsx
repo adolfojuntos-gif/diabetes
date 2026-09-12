@@ -151,6 +151,65 @@ function Home({ stage, terrain }: { stage: number; terrain: ThemeKey }) {
   );
 }
 
+/**
+ * The people who arrived and stayed.
+ *
+ * Drawn from the world's event ledger rather than from the level, which is the whole difference
+ * between a world that grows and a world that is generated: two people standing at level seven
+ * have different numbers of figures on the path, because different things happened to them.
+ *
+ * Deliberately small and far off. They are inhabitants, not characters to be clicked.
+ */
+function Visitors({ n, baseline }: { n: number; baseline: number }) {
+  if (n <= 0) return null;
+  return (
+    <g>
+      {Array.from({ length: n }, (_, i) => {
+        const x = 250 + i * 58 + jitter(i, 21, 22);
+        const y = baseline + 10 + jitter(i, 23, 10);
+        const scale = 0.52 + jitter(i, 27, 0.12);
+        return (
+          <g key={i} transform={`translate(${x} ${y}) scale(${scale})`} opacity={0.85}>
+            <circle cx="0" cy="-24" r="6" fill="var(--world-figure)" />
+            <path d="M0 -18 L0 -5 M0 -15 L-6 -8 M0 -15 L6 -9 M0 -5 L-5 4 M0 -5 L5 4" stroke="var(--world-figure)" strokeWidth="3.2" strokeLinecap="round" fill="none" />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+/**
+ * Landmarks: the things that became visible as the map opened. Kept as silhouettes, because a
+ * landmark you can make out completely is scenery, and one you cannot is somewhere to go.
+ */
+function Landmarks({ n, terrain }: { n: number; terrain: ThemeKey }) {
+  if (n <= 0) return null;
+  const spots = [
+    { x: 92, y: 214 },
+    { x: 726, y: 210 },
+    { x: 470, y: 206 },
+    { x: 186, y: 200 },
+    { x: 612, y: 198 },
+    { x: 348, y: 196 },
+    { x: 780, y: 196 },
+    { x: 36, y: 202 },
+  ];
+  return (
+    <g opacity={0.78}>
+      {spots.slice(0, n).map((p, i) =>
+        terrain === "city" ? (
+          <rect key={i} x={p.x - 5} y={p.y - 26} width={10} height={26} rx={1.5} fill="var(--world-island)" />
+        ) : terrain === "coast" ? (
+          <path key={i} d={`M${p.x - 9} ${p.y} L${p.x} ${p.y - 24} L${p.x + 9} ${p.y} Z`} fill="var(--world-island)" />
+        ) : (
+          <rect key={i} x={p.x - 4} y={p.y - 22} width={8} height={22} rx={3} fill="var(--world-island)" />
+        ),
+      )}
+    </g>
+  );
+}
+
 /** The settlement that appears once there is enough here to be a place rather than a camp. */
 function Village({ show, terrain }: { show: boolean; terrain: ThemeKey }) {
   if (!show) return null;
@@ -371,7 +430,7 @@ export function World({
       viewBox="0 0 800 340"
       className={`world ${rest ? "world-rest" : ""} ${className}`}
       role="img"
-      aria-label={`Your world at level ${w.level}: ${w.trees} grown things, ${w.plants} small ones${w.mountains ? ", high ground on the horizon" : ""}${w.river > 0 ? ", water running through it" : ""}.`}
+      aria-label={`Your world at level ${w.level}: ${w.trees} grown things, ${w.plants} small ones${w.visitors > 0 ? `, ${w.visitors} ${w.visitors === 1 ? "person who arrived and stayed" : "people who arrived and stayed"}` : ""}${w.landmarks > 0 ? `, ${w.landmarks} landmarks` : ""}${w.mountains ? ", high ground on the horizon" : ""}${w.river > 0 ? ", water running through it" : ""}.`}
     >
       <defs>
         <linearGradient id="w-sky" x1="0" y1="0" x2="0" y2="1">
@@ -435,7 +494,9 @@ export function World({
           <Undergrowth key={i} x={p.x} y={p.y} scale={p.scale} />
         ))}
 
+        <Landmarks n={w.landmarks} terrain={theme} />
         <Village show={w.level >= 6} terrain={theme} />
+        <Visitors n={w.visitors} baseline={walkY} />
         <Home stage={w.home} terrain={theme} />
         {rest ? <Campfire /> : null}
 
