@@ -187,6 +187,12 @@ export async function addCustomFood(input: {
   fromRestaurantData?: boolean;
   /** "YYYY-MM-DD", the day the figures were read. */
   sourceDate?: string;
+  /**
+   * Portions beyond the first. The Fuel Forge uses it to record the whole batch alongside one
+   * serving, so a recipe can be logged either way without a second food and a second set of
+   * figures to drift from this one.
+   */
+  extraPortions?: { label: string; grams: number }[];
 }): Promise<string> {
   const id = `own-${newId(10)}`;
   const now = new Date();
@@ -223,6 +229,12 @@ export async function addCustomFood(input: {
     sort: 0,
     custom: true,
   });
+  const extra = (input.extraPortions ?? []).filter((p) => p.grams > 0 && p.label.trim().length > 0);
+  if (extra.length > 0) {
+    await db.insert(foodPortions).values(
+      extra.map((p, i) => ({ id: newId(), foodId: id, label: p.label.trim(), grams: p.grams, sort: i + 1, custom: true })),
+    );
+  }
   return id;
 }
 

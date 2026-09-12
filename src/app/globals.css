@@ -977,4 +977,98 @@
     border: 1px solid rgba(255, 255, 255, 0.06);
     font-size: 0.9rem;
   }
+
+  /* ============================== THE FUEL FORGE ===========================
+     A workbench, not a plate. Where the plate is a circle divided up because
+     that is the shape people are taught, the crucible is a single deep vessel
+     with a warm edge, because the recipe in it is one thing being made.
+
+     The heat is one hairline at the top and nothing else. A screen that glows
+     orange around a list of food reads as a warning, and nothing here is one.
+  */
+  .forge-crucible {
+    position: relative;
+    border-radius: 20px;
+    padding: 1.1rem;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018));
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+  }
+  .forge-crucible::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--ember), transparent);
+    opacity: 0.55;
+  }
+
+  .forge-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem 0.4rem 0.7rem;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.9rem;
+  }
+
+  .forge-mark {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+  }
+  .forge-glyph {
+    font-size: 1.75rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /*
+     THE SHARE BAR IS DELIBERATELY NOT IN THE GLUCOSE COLOURS. Juniper, amber
+     and coral mean something specific everywhere else in Steady, and a green
+     protein segment would read as a reading in range. These three are the
+     decorative hues, which mean nothing clinical anywhere, and every segment
+     carries its own label so the colour is never the only thing saying which
+     is which.
+  */
+  .forge-shares {
+    display: flex;
+    gap: 2px;
+    height: 2rem;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.3);
+  }
+  /*
+     `flex-basis: 0` is load-bearing. With the default `auto` the segments size
+     themselves by their LABELS first and only share out what is left, so a
+     four-percent sliver of fat rendered a third of the bar wide. A bar that
+     does not match the figure printed inside it is worse than no bar.
+  */
+  .forge-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-basis: 0;
+    min-width: 2px;
+    overflow: hidden;
+  }
+  .forge-share-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 0 0.4rem;
+    color: var(--ink);
+    opacity: 0.85;
+  }
+  .forge-share-carbohydrate { background: rgba(166, 139, 255, 0.28); }
+  .forge-share-protein { background: rgba(111, 210, 240, 0.24); }
+  .forge-share-fat { background: rgba(255, 255, 255, 0.1); }
 }

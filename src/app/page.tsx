@@ -362,6 +362,10 @@ export default async function QuestPage() {
             <h3>Build your plate</h3>
             <p className="hint mt-1">Put a meal together and see what you are working with.</p>
           </Link>
+          <Link href="/quest/forge" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
+            <h3>The Fuel Forge</h3>
+            <p className="hint mt-1">Work a recipe out once and keep it. After that, logging it is one tap.</p>
+          </Link>
           <Link href="/quest/guess" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
             <h3>Guess the Carbs</h3>
             <p className="hint mt-1">Build a feel for a portion. No score, and nothing to get wrong.</p>
