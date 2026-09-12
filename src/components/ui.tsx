@@ -8,6 +8,7 @@ import type { Units } from "@/lib/db/schema";
 import type { TriageResult } from "@/lib/engines/triage";
 import { ACTION_TEXT } from "@/lib/engines/triage";
 import type { Pattern } from "@/lib/engines/patterns";
+import { PatternEvidenceChart } from "./PatternChart";
 
 export function PageHeader({ eyebrow, title, lede, action }: { eyebrow?: string; title: string; lede?: string; action?: React.ReactNode }) {
   return (
@@ -93,8 +94,7 @@ export function TriageBanner({ t, compact = false }: { t: TriageResult; compact?
   );
 }
 
-export function PatternCard({ p, units }: { p: Pattern; units?: Units }) {
-  void units;
+export function PatternCard({ p, units = "mgdl" }: { p: Pattern; units?: Units }) {
   return (
     <article className={`card p-4 sev-${p.severity}`}>
       <div className="flex items-center justify-between gap-2">
@@ -104,6 +104,16 @@ export function PatternCard({ p, units }: { p: Pattern; units?: Units }) {
         </span>
       </div>
       <p className="mt-1 text-sm">{p.evidence}</p>
+      {/**
+       * The chart sits between the finding and the suggestion, because that is the order somebody
+       * reads in: what happened, what it looks like, what to do about it. It is drawn from the
+       * engine's own spec and adds no number the sentence above does not already state.
+       */}
+      {p.chart ? (
+        <div className="mt-3">
+          <PatternEvidenceChart chart={p.chart} severity={p.severity} units={units} />
+        </div>
+      ) : null}
       <p className="mt-2 text-sm muted">{p.suggestion}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Link href={p.href} className="btn btn-secondary btn-sm">See the evidence</Link>

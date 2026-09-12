@@ -81,9 +81,18 @@ export default async function TrendsPage({
       title="Your numbers"
       lede={`Everything here is counted from your own readings over the last ${days} days. Nothing is estimated or filled in.`}
       action={
-        <Link href={`/trends/meals?days=${days}`} className="btn btn-secondary no-print">
-          After meals
-        </Link>
+        <div className="flex flex-wrap gap-2 no-print">
+          <Link href={`/trends/meals?days=${days}`} className="btn btn-secondary">
+            After meals
+          </Link>
+          {/* Both of these explain one thing rather than counting everything, so they sit beside the numbers. */}
+          <Link href="/trends/why" className="btn btn-secondary">
+            Why did this happen
+          </Link>
+          <Link href="/trends/replay" className="btn btn-secondary">
+            Replay a day
+          </Link>
+        </div>
       }
     />
   );
@@ -309,6 +318,12 @@ export default async function TrendsPage({
             is shown next to each one.
           </p>
         ) : null}
+        {/* A hard day is the one somebody wants walked through, so the way in sits next to the list. */}
+        <div className="mt-3 no-print">
+          <Link href="/trends/replay" className="btn btn-ghost btn-sm">
+            Replay one of these days
+          </Link>
+        </div>
       </Card>
 
       {/* -------------------------------- lows --------------------------------- */}

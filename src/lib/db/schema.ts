@@ -800,6 +800,16 @@ export const FOOD_SOURCES = [
   "USDA FoodData Central (SR Legacy)",
   "USDA FoodData Central (Survey FNDDS)",
   "Manufacturer label",
+  /**
+   * A figure a restaurant published about its own menu item, with the restaurant in `brand` and the
+   * day it was read in `sourceDate`.
+   *
+   * Kept separate from the USDA sources for a reason that matters at the plate. A government
+   * reference figure for cooked rice is stable for years. A chain reformulates a sandwich, changes a
+   * supplier or resizes a portion whenever it likes, and the old number stays true-looking. So a
+   * restaurant figure carries a date and the app says how old it is.
+   */
+  "Restaurant published data",
   "You",
 ] as const;
 export type FoodSource = (typeof FOOD_SOURCES)[number];
@@ -820,6 +830,15 @@ export const foods = sqliteTable(
     /** Lowercase comma-separated search terms, including Spanish names. */
     aliases: text("aliases").notNull().default(""),
     source: text("source", { enum: FOOD_SOURCES }).notNull(),
+    /**
+     * When the figure was read from that source, "YYYY-MM-DD". Null for the USDA references, whose
+     * release is the version and which do not drift.
+     *
+     * It exists for restaurant data. A chain's published carbohydrate figure is accurate on the day
+     * it is read and can be wrong a year later with nothing to show it changed, and somebody doses
+     * against these numbers. An undated figure invites more trust than it has earned.
+     */
+    sourceDate: text("source_date"),
     aisle: text("aisle", { enum: GROCERY_AISLES }).notNull().default("other"),
     note: text("note").notNull().default(""),
     /** A food the person added themselves, which they can edit and delete. */

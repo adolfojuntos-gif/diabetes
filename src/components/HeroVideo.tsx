@@ -12,7 +12,40 @@
  *
  * Drop files in `public/hero/` as `<name>.mp4` and `<name>.jpg`.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+
+/**
+ * Whether the person has asked for less motion, read as an external store.
+ *
+ * This used to be an effect that set state on mount. That works and it renders twice every time
+ * the component mounts: once with motion off, then again once the effect has looked. It also means
+ * the first paint always assumes no motion, so a video hero flickered in.
+ *
+ * `useSyncExternalStore` is the hook for exactly this shape, a value that lives outside React and
+ * changes on its own. The subscribe and snapshot functions are defined at module scope because they
+ * have to be stable between renders, or the hook resubscribes on every one.
+ */
+const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeToMotion(onChange: () => void): () => void {
+  const mq = window.matchMedia(MOTION_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+/** True when motion is allowed, which is the question the component actually asks. */
+function motionAllowed(): boolean {
+  return !window.matchMedia(MOTION_QUERY).matches;
+}
+
+/**
+ * On the server there is no media query, and the honest default is the cautious one: render the
+ * poster still. It also keeps the server and the first client render identical for anybody who has
+ * asked for reduced motion, which is who the caution is for.
+ */
+function motionAllowedOnServer(): boolean {
+  return false;
+}
 
 export function HeroVideo({
   name,
@@ -57,15 +90,7 @@ export function HeroVideo({
   zoom?: number;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const [motion, setMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setMotion(!mq.matches);
-    const onChange = () => setMotion(!mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+  const motion = useSyncExternalStore(subscribeToMotion, motionAllowed, motionAllowedOnServer);
 
   useEffect(() => {
     const el = ref.current;

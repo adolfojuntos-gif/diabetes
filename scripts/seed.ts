@@ -3,7 +3,15 @@
  * you like. It creates NO sample readings, meals or insulin — a diabetes app seeded with invented
  * numbers would show invented patterns, which is the one thing this app must never do.
  *
- * For a populated demo, run `npm run demo` instead, which labels itself clearly.
+ * For a populated demo, run `npm run demo -- <email>` instead, which labels itself clearly.
+ *
+ * Takes an ACCOUNT. Without one every query here throws `NoAccountContextError`, which is the
+ * fail-closed default working correctly: there is no single database to seed any more. In practice
+ * this is rarely needed, because signing up seeds the same content into the new account
+ * automatically through `seedAccountReference`. It stays for the case where that seeding was
+ * interrupted, or where the content lists have grown since an account was made.
+ *
+ *   npm run seed -- you@example.com
  */
 import "dotenv/config";
 import { eq } from "drizzle-orm";
@@ -12,6 +20,7 @@ import { RECIPES } from "../src/lib/data/seed/recipes";
 import { EXERCISE_IDEAS } from "../src/lib/data/seed/exerciseIdeas";
 import { PACKING_TEMPLATE } from "../src/lib/data/seed/packing";
 import { newId } from "../src/lib/ids";
+import { runForAccount } from "./_account";
 
 async function main() {
   const now = new Date();
@@ -58,7 +67,7 @@ async function main() {
   console.log("\nNo readings, meals or insulin were created. Those are yours to log.");
 }
 
-main()
+runForAccount("npm run seed -- you@example.com", () => main())
   .then(() => process.exit(0))
   .catch((err) => {
     console.error(err);

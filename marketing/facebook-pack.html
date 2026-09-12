@@ -1,0 +1,578 @@
+<title>Steady Post Pack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #f7f9fc;
+    --raised: #ffffff;
+    --sunk: #eef2f8;
+    --line: #e2e8f0;
+    --line-soft: #eaeff6;
+    --ink: #1c1f1d;
+    --ink-soft: #565c58;
+    --ink-faint: #858b86;
+    --bloom: #7551d8;
+    --bloom-deep: #4e33a0;
+    --bloom-wash: #7551d814;
+    --azure: #2f7fd4;
+    --juniper: #2e6b4f;
+    --coral: #cf4f39;
+    --coral-wash: #cf4f3914;
+    --amber: #a8730f;
+    --amber-wash: #c4861d1a;
+    --amber-line: #c4861d55;
+    --shadow: 0 1px 2px #121c2e0d, 0 8px 24px -16px #121c2e33;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10141c;
+      --raised: #171d27;
+      --sunk: #1d2532;
+      --line: #2a3342;
+      --line-soft: #222b38;
+      --ink: #eef2f8;
+      --ink-soft: #a8b2c1;
+      --ink-faint: #7c8695;
+      --bloom: #a68bec;
+      --bloom-deep: #c3b1f5;
+      --bloom-wash: #a68bec1a;
+      --azure: #6fb0ec;
+      --juniper: #6dbf95;
+      --coral: #ec8570;
+      --coral-wash: #ec85701a;
+      --amber: #e0ac53;
+      --amber-wash: #e0ac531f;
+      --amber-line: #e0ac5352;
+      --shadow: 0 1px 2px #0006, 0 10px 28px -18px #000a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10141c;
+    --raised: #171d27;
+    --sunk: #1d2532;
+    --line: #2a3342;
+    --line-soft: #222b38;
+    --ink: #eef2f8;
+    --ink-soft: #a8b2c1;
+    --ink-faint: #7c8695;
+    --bloom: #a68bec;
+    --bloom-deep: #c3b1f5;
+    --bloom-wash: #a68bec1a;
+    --azure: #6fb0ec;
+    --juniper: #6dbf95;
+    --coral: #ec8570;
+    --coral-wash: #ec85701a;
+    --amber: #e0ac53;
+    --amber-wash: #e0ac531f;
+    --amber-line: #e0ac5352;
+    --shadow: 0 1px 2px #0006, 0 10px 28px -18px #000a;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Nunito, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 860px; margin: 0 auto; padding: 44px 22px 96px; }
+
+  /* ---------- header ---------- */
+  .eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--bloom);
+  }
+  h1 {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-weight: 400; font-size: clamp(50px, 9vw, 78px);
+    line-height: 0.94; letter-spacing: -0.02em; margin: 10px 0 0;
+    text-wrap: balance;
+  }
+  .lede {
+    margin: 16px 0 0; max-width: 60ch; font-size: 18px; color: var(--ink-soft);
+  }
+  .strip {
+    display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 26px;
+    padding-top: 18px; border-top: 2px solid var(--bloom);
+  }
+  .strip div { display: flex; flex-direction: column; }
+  .strip dt {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .strip dd {
+    margin: 2px 0 0; font-size: 15px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- notice ---------- */
+  .notice {
+    margin-top: 40px; padding: 22px 24px;
+    background: var(--amber-wash); border: 1px solid var(--amber-line);
+    border-radius: 4px;
+  }
+  .notice h2 {
+    font-family: Nunito, sans-serif; font-size: 13px; font-weight: 800;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber);
+    margin: 0;
+  }
+  .rules { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 14px; }
+  .rules li { display: grid; grid-template-columns: 26px 1fr; gap: 12px; }
+  .rules b {
+    font-family: "Instrument Serif", Georgia, serif; font-size: 26px;
+    font-weight: 400; line-height: 1; color: var(--coral);
+  }
+  .rules p { margin: 0; max-width: 62ch; }
+  .rules strong { color: var(--ink); }
+  .notice > p.timing {
+    margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--amber-line);
+    max-width: 64ch; font-size: 15px; color: var(--ink-soft);
+  }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 56px; }
+  .shead { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .shead h2 {
+    font-family: "Instrument Serif", Georgia, serif; font-weight: 400;
+    font-size: 34px; line-height: 1.1; letter-spacing: -0.01em; margin: 0;
+    text-wrap: balance;
+  }
+  .shead span {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .sintro { margin: 8px 0 0; max-width: 64ch; color: var(--ink-soft); font-size: 15px; }
+
+  /* ---------- paste cards ---------- */
+  .card {
+    margin-top: 20px; background: var(--raised);
+    border: 1px solid var(--line); border-radius: 4px; box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card > header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px 12px 18px; border-bottom: 1px solid var(--line-soft);
+  }
+  .tag {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--bloom);
+  }
+  .card > header .len {
+    font-size: 12px; font-weight: 700; color: var(--ink-faint);
+    margin-left: auto; font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  button.copy {
+    font-family: inherit; font-size: 12px; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--bloom-deep); background: var(--bloom-wash);
+    border: 1px solid var(--bloom); border-radius: 3px;
+    padding: 6px 12px; cursor: pointer; white-space: nowrap;
+    transition: background 120ms ease, color 120ms ease;
+  }
+  button.copy:hover { background: var(--bloom); color: var(--paper); }
+  button.copy:focus-visible { outline: 2px solid var(--azure); outline-offset: 2px; }
+  button.copy[data-done="1"] { background: var(--juniper); border-color: var(--juniper); color: var(--paper); }
+  @media (prefers-reduced-motion: reduce) { button.copy { transition: none; } }
+
+  .post {
+    padding: 20px 22px 22px; background: var(--sunk);
+    border-left: 3px solid var(--bloom);
+  }
+  .post p { margin: 0; max-width: 64ch; }
+  .post p + p { margin-top: 0.85em; }
+  .post .big {
+    font-size: 18px; font-weight: 800;
+  }
+  .post .scr {
+    font-weight: 800; letter-spacing: 0.04em; color: var(--bloom-deep);
+  }
+  .post .link { font-weight: 800; color: var(--azure); }
+  .post .fine { color: var(--ink-soft); font-size: 15px; }
+
+  /* ---------- drip grid ---------- */
+  .drip { display: grid; gap: 16px; margin-top: 20px; }
+  @media (min-width: 700px) { .drip { grid-template-columns: 1fr 1fr; } }
+  .drip .card { margin-top: 0; display: flex; flex-direction: column; }
+  .drip .post { flex: 1; font-size: 15px; }
+  .day {
+    font-family: "Instrument Serif", Georgia, serif; font-size: 22px;
+    font-weight: 400; line-height: 1; color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .drip .tag { font-size: 11px; }
+
+  /* ---------- table ---------- */
+  .tablewrap { margin-top: 20px; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  thead th {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--ink-faint);
+    background: var(--sunk); border-bottom: 1px solid var(--line);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.n { font-variant-numeric: tabular-nums; color: var(--ink-faint); font-weight: 800; width: 46px; }
+  td.slide { font-weight: 800; white-space: nowrap; }
+  td.sub { color: var(--ink-soft); }
+  tbody tr:last-child td.slide, tbody tr:last-child td.sub { color: var(--coral); }
+
+  /* ---------- Q&A ---------- */
+  .qa { margin-top: 20px; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--line-soft); }
+  .qa .row { background: var(--raised); padding: 16px 18px; display: grid; gap: 8px; }
+  .qa .q { font-weight: 800; color: var(--bloom-deep); }
+  .qa .a { display: flex; gap: 14px; align-items: flex-start; }
+  .qa .a p { margin: 0; max-width: 58ch; color: var(--ink-soft); }
+  .qa .a button.copy { margin-left: auto; }
+
+  /* ---------- final ---------- */
+  .final { border-color: var(--coral); }
+  .final .post { border-left-color: var(--coral); }
+  .final .tag { color: var(--coral); }
+  .final .post p { font-weight: 700; }
+
+  footer {
+    margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-size: 14px; color: var(--ink-faint); max-width: 64ch;
+  }
+  footer code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px; background: var(--sunk); padding: 1px 5px; border-radius: 3px;
+    color: var(--ink-soft);
+  }
+</style>
+
+<div class="page">
+
+  <p class="eyebrow">Facebook post pack</p>
+  <h1>Steady</h1>
+  <p class="lede">Everything the app does, written the way you'd say it to a person — in blocks you
+    can copy straight into a post. Fill in <strong>[LINK]</strong> and <strong>[PRICE]</strong>.</p>
+
+  <dl class="strip">
+    <div><dt>Screens covered</dt><dd>9 of 9</dd></div>
+    <div><dt>Formats</dt><dd>Long · Carousel · Drip · Short</dd></div>
+    <div><dt>Drip runs</dt><dd>9 days</dd></div>
+    <div><dt>Posts total</dt><dd>14</dd></div>
+  </dl>
+
+  <div class="notice">
+    <h2>Two rules for every post</h2>
+    <ol class="rules">
+      <li>
+        <b>1</b>
+        <p><strong>Never write a health outcome.</strong> No "lowers your A1c," no "controls your
+          blood sugar," no "know exactly what to eat." Steady shows you your own numbers and what
+          they line up with. That's the promise — and it's one you can keep.</p>
+      </li>
+      <li>
+        <b>2</b>
+        <p><strong>Never write anything about doses.</strong> The app records insulin and medication
+          and never suggests or changes a dose. Say that out loud: it's a trust feature, not a
+          limitation.</p>
+      </li>
+    </ol>
+    <p class="timing">Timing, not wording: the 43 items in the clinical knowledge layer haven't been
+      reviewed by a clinician yet. So post Steady as a <strong>tracking and pattern app</strong> and
+      hold the words <em>clinical</em>, <em>guidance</em> and <em>medical advice</em> until that
+      review is done — same for taking money. Organic posts describing tracking are fine today.</p>
+  </div>
+
+  <section>
+    <div class="shead">
+      <h2>The one big post</h2>
+      <span>Everything it does</span>
+    </div>
+    <p class="sintro">Paste as-is. Long posts work on Facebook when they're scannable, and the
+      screen names do that work.</p>
+
+    <article class="card">
+      <header>
+        <span class="tag">Post 1</span>
+        <span class="len">~340 words</span>
+        <button class="copy" type="button">Copy</button>
+      </header>
+      <div class="post">
+        <p class="big">I built a diabetes app for people who are tired of logging numbers into nothing.</p>
+        <p>It's called Steady. Your diabetes, one day at a time.</p>
+        <p>Most apps are a diary. You type the number, the number goes in a list, and the list never
+          tells you anything. Steady reads your own numbers back to you.</p>
+        <p>Here's the whole thing:</p>
+        <p><span class="scr">TODAY</span> — your last reading, where today sits, the last 7 days,
+          what needs attention, and the patterns your data actually supports. Not generic tips. Your
+          Tuesdays.</p>
+        <p><span class="scr">LOG</span> — glucose, meals, insulin, movement, sleep, water, symptoms,
+          weight, blood pressure, medication taken. Snap a photo of your plate and it estimates the
+          carbs. Already wear a CGM? Import the file from your meter or sensor instead of typing.</p>
+        <p><span class="scr">TRENDS</span> — time in range, your average, GMI, how steady your days
+          are, a real chart, your mornings vs. your nights, day by day, every low. Plus a page that
+          ranks your own meals by what they did to you afterward. And a "why did this happen" page
+          that shows its evidence.</p>
+        <p><span class="scr">REVIEW</span> — this week against last week. Wins on one side, things
+          worth raising on the other. Printable, so you walk into your appointment with a page
+          instead of a shrug.</p>
+        <p><span class="scr">COPILOT</span> — tell it what's going on in plain words. A guided
+          symptom check. Your lab results explained in English. Appointment prep. A morning
+          check-in.</p>
+        <p><span class="scr">PLAN</span> — a week of meals, a recipe library, a grocery list built
+          from the plan you chose, and your best meals pulled from your own readings.</p>
+        <p><span class="scr">MOVE</span> — exercise ideas filtered by the time and energy you
+          actually have today. Ten minutes and tired is an option.</p>
+        <p><span class="scr">TOOLKIT</span> — questions for your doctor, appointment briefs, your
+          labs, a travel packing checklist, everything the app has learned about you (readable,
+          correctable, deletable), and a share link for whoever helps you.</p>
+        <p><span class="scr">SETTINGS</span> — your targets, your units, export everything, delete
+          everything.</p>
+        <p>What it is not: a medical device. Not a dosing calculator. It records insulin and
+          medication and never once suggests a dose. Your numbers come from the app's own math, not
+          from a chatbot guessing.</p>
+        <p><span class="link">[LINK]</span></p>
+      </div>
+    </article>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>The carousel</h2>
+      <span>Ten slides, in order</span>
+    </div>
+    <p class="sintro">One line per card. Slide 1 is the cover, 2–9 are the screens in the order
+      someone meets them, and 10 carries the disclaimer so it's never optional.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Big text</th><th>Line under it</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="n">1</td><td class="slide">Steady</td><td class="sub">Your diabetes, one day at a time.</td></tr>
+          <tr><td class="n">2</td><td class="slide">Today</td><td class="sub">Your last number, today's range, and what needs attention.</td></tr>
+          <tr><td class="n">3</td><td class="slide">Log</td><td class="sub">Glucose, meals, insulin, sleep, water. Or photograph your plate.</td></tr>
+          <tr><td class="n">4</td><td class="slide">Trends</td><td class="sub">Time in range, your mornings vs. your nights, every low.</td></tr>
+          <tr><td class="n">5</td><td class="slide">Your meals, ranked</td><td class="sub">By what they actually did to you afterward.</td></tr>
+          <tr><td class="n">6</td><td class="slide">Review</td><td class="sub">This week vs. last. Printable for your appointment.</td></tr>
+          <tr><td class="n">7</td><td class="slide">Copilot</td><td class="sub">Tell it what's going on, in plain words.</td></tr>
+          <tr><td class="n">8</td><td class="slide">Plan</td><td class="sub">A week of meals and the grocery list to match.</td></tr>
+          <tr><td class="n">9</td><td class="slide">Share</td><td class="sub">One link for whoever helps you. You choose what they see.</td></tr>
+          <tr><td class="n">10</td><td class="slide">Not a medical device.</td><td class="sub">It records your insulin. It never suggests a dose. [LINK]</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>The nine-day drip</h2>
+      <span>One screen a day</span>
+    </div>
+    <p class="sintro">One idea per post, no link fatigue. If reach drops, put [LINK] in the first
+      comment instead of the post.</p>
+
+    <div class="drip">
+      <article class="card">
+        <header><span class="day">01</span><span class="tag">Today</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>Open the app and the first thing you see isn't a form. It's your last
+          reading, where today sits, and one line about what needs attention. Logging comes second.
+          <span class="link">[LINK]</span></p></div>
+      </article>
+
+      <article class="card">
+        <header><span class="day">02</span><span class="tag">The photo</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>Nobody weighs their rice. So: take a picture of the plate, get a carb
+          estimate, correct it if it's off. An estimate you'll actually make beats a perfect number
+          you skip. <span class="link">[LINK]</span></p></div>
+      </article>
+
+      <article class="card">
+        <header><span class="day">03</span><span class="tag">Trends</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>Time in range. Your average. Your mornings against your nights. Every
+          low, listed. The chart your doctor asks for, without the shoebox of paper.
+          <span class="link">[LINK]</span></p></div>
+      </article>
+
+      <article class="card">
+        <header><span class="day">04</span><span class="tag">Meals ranked</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>This one surprised me. The app ranks your meals by what your glucose did
+          after them. Not a food database's opinion. Yours. Sometimes the "healthy" one loses.
+          <span class="link">[LINK]</span></p></div>
+      </article>
+
+      <article class="card">
+        <header><span class="day">05</span><span class="tag">Review</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>Every week: this week against last. Wins on one side, things worth
+          raising with your care team on the other. Hit print, bring the page.
+          <span class="link">[LINK]</span></p></div>
+      </article>
+
+      <article class="card">
+        <header><span class="day">06</span><span class="tag">Copilot</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>"I feel shaky and I don't know why." Type that. It reads your actual
+          numbers back to you and walks you through a symptom check. It will never tell you to change
+          a dose — that's your doctor's call, and the app is built so it can't.
+          <span class="link">[LINK]</span></p></div>
+      </article>
+
+      <article class="card">
+        <header><span class="day">07</span><span class="tag">Plan &amp; Move</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>A week of meals, a recipe library, and a grocery list built from the plan
+          you picked. Plus exercise ideas filtered by the time and energy you have today. "Ten
+          minutes, exhausted" is a valid answer. <span class="link">[LINK]</span></p></div>
+      </article>
+
+      <article class="card">
+        <header><span class="day">08</span><span class="tag">Share</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>Diabetes is rarely one person's job. One link shares your numbers with
+          whoever helps — a partner, a daughter, a nurse. You pick what they see.
+          <span class="link">[LINK]</span></p></div>
+      </article>
+
+      <article class="card">
+        <header><span class="day">09</span><span class="tag">Your data</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>There's a page listing everything the app has learned about you. You can
+          read it, correct it, or delete it. Export the whole thing whenever you want. That page
+          exists because I'd want it. <span class="link">[LINK]</span></p></div>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>Short posts</h2>
+      <span>Reuse anytime</span>
+    </div>
+    <p class="sintro">For a slow week, a comment thread, or a story card.</p>
+
+    <div class="drip">
+      <article class="card">
+        <header><span class="tag">Short</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>Diabetes apps love to tell you what's healthy. Steady tells you what
+          your own numbers did. Those are different apps. <span class="link">[LINK]</span></p></div>
+      </article>
+      <article class="card">
+        <header><span class="tag">Short</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>Built this for the shoebox-of-paper crowd. Log your day, print the week,
+          walk into the appointment with an actual page. <span class="link">[LINK]</span></p></div>
+      </article>
+      <article class="card">
+        <header><span class="tag">Short</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>It records your insulin. It never suggests a dose. I wrote that into the
+          app so it can't, even if someone asks it to. <span class="link">[LINK]</span></p></div>
+      </article>
+      <article class="card">
+        <header><span class="tag">Short</span><button class="copy" type="button">Copy</button></header>
+        <div class="post"><p>Take a photo of your plate. Get a carb estimate. Fix it if it's wrong.
+          That's it. <span class="link">[LINK]</span></p></div>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>The replies you'll need</h2>
+      <span>Comments, answered</span>
+    </div>
+    <p class="sintro">These five questions arrive every time. Answer them in the thread, not in a DM
+      — the thread is where the next person reads them.</p>
+
+    <div class="qa">
+      <div class="row">
+        <p class="q">Is it free?</p>
+        <div class="a">
+          <p>Free while I'm building it out with real users. [PRICE]/month later, and I'll say so
+            long before anything changes.</p>
+          <button class="copy" type="button">Copy</button>
+        </div>
+      </div>
+      <div class="row">
+        <p class="q">Does it replace my doctor?</p>
+        <div class="a">
+          <p>No, and it's built not to. It doesn't diagnose and it never suggests a dose — it
+            organizes your numbers so your appointment goes better.</p>
+          <button class="copy" type="button">Copy</button>
+        </div>
+      </div>
+      <div class="row">
+        <p class="q">Type 1 or type 2?</p>
+        <div class="a">
+          <p>Both. You set your own targets, and it logs insulin and medication either way.</p>
+          <button class="copy" type="button">Copy</button>
+        </div>
+      </div>
+      <div class="row">
+        <p class="q">Where's my data?</p>
+        <div class="a">
+          <p>Your own database, yours alone. Export it or delete it from Settings whenever you
+            want.</p>
+          <button class="copy" type="button">Copy</button>
+        </div>
+      </div>
+      <div class="row">
+        <p class="q">I already use a CGM.</p>
+        <div class="a">
+          <p>Then skip the typing — import the file from your sensor or meter and the trends fill
+            in.</p>
+          <button class="copy" type="button">Copy</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead">
+      <h2>The line that goes on everything</h2>
+      <span>Pin it</span>
+    </div>
+    <p class="sintro">End every post with this, or pin it to the page once and link it.</p>
+    <article class="card final">
+      <header>
+        <span class="tag">Standing disclaimer</span>
+        <button class="copy" type="button">Copy</button>
+      </header>
+      <div class="post">
+        <p>Steady is not a medical device. It doesn't diagnose, and it never suggests or changes a
+          medication or insulin dose. Talk to your care team about treatment.</p>
+      </div>
+    </article>
+  </section>
+
+  <footer>
+    Drawn from Steady's nine screens and its ten invariants. Plain-text source lives at
+    <code>steady/marketing/FACEBOOK_POSTS.md</code> if you'd rather edit it there.
+  </footer>
+</div>
+
+<script>
+  document.querySelectorAll("button.copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var scope = btn.closest(".card") || btn.closest(".row");
+      var body = scope.querySelector(".post") || scope.querySelector(".a p");
+      var text = body.innerText.replace(/[ \t]+\n/g, "\n").trim();
+      var done = function () {
+        var was = btn.textContent;
+        btn.textContent = "Copied";
+        btn.dataset.done = "1";
+        setTimeout(function () {
+          btn.textContent = was;
+          delete btn.dataset.done;
+        }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { fallback(text, done); });
+      } else {
+        fallback(text, done);
+      }
+    });
+  });
+
+  function fallback(text, done) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) { /* selection is left for manual copy */ }
+    document.body.removeChild(ta);
+  }
+</script>

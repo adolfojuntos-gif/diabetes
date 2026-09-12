@@ -2,8 +2,8 @@
  * Weekly review: this week against last, from the same engines every other screen uses.
  * Pure. Screens format; this computes.
  */
-import { glucoseStats, between, type GlucoseStats, type ReadingLike } from "./stats";
-import { mealResponses, rankMeals, type MealLike, type MealRanking } from "./mealResponse";
+import { glucoseStats, between, type GlucoseStats } from "./stats";
+import { mealResponses, rankMeals, type MealRanking } from "./mealResponse";
 import { detectPatterns, type Pattern, type Snapshot } from "./patterns";
 import { addDays, startOfWeek, dateKey } from "../time";
 import { formatGlucose, unitLabel } from "../units";

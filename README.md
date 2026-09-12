@@ -16,25 +16,32 @@ never suggests or changes a medication or insulin dose.
 cd steady
 npm install
 cp .env.example .env.local
-npm run setup
 npm run dev
 ```
 
-Open http://localhost:3140. The first screen asks nine questions, then never appears again.
+Open http://localhost:3140 and create an account. Signing up is the setup step: it creates a
+database for that account and seeds 28 recipes, 32 exercise ideas, a 52-item packing template and
+174 reference foods into it. Then the first screen asks nine questions and never appears again.
 
-`npm run setup` seeds 28 recipes, 32 exercise ideas and a 52-item packing template. It creates
-**no readings, meals or insulin** on purpose: an app seeded with invented numbers would show
-invented patterns, which is the one thing this app must never do.
+There is no global seeding command, because there is no global database. Every account has its own,
+so anything that seeds has to be told which one. The old `npm run setup` chained `db:push` and
+`seed`, and neither can work without naming an account.
+
+Nothing seeds **readings, meals or insulin**, on purpose: an app seeded with invented numbers would
+show invented patterns, which is the one thing this app must never do.
 
 ## Look at it with data in it
 
+Sign up first, then name that account. Every row goes into its database and no other.
+
 ```bash
-npm run demo
+npm run demo -- you@example.com
 ```
 
 45 days of clearly fictional logs, generated so the pattern engine has something real to find:
 weekend highs, a dawn rise, overnight lows, days after short sleep running higher, and post-meal
-spikes on the takeout meals. `npm run demo:clear` removes exactly what it added.
+spikes on the takeout meals. Each pattern card draws its own evidence, from the engine's numbers.
+`npm run demo -- you@example.com --clear` removes exactly what it added.
 
 ## The AI features
 
@@ -58,9 +65,18 @@ message, and the model cannot raise or lower its verdict.
 | Command | What it does |
 |---|---|
 | `npm run dev` | Development server on 3140 |
-| `npm run setup` | `db:push` + `seed` |
-| `npm run seed` | Recipes, exercise ideas, packing template (idempotent) |
-| `npm run demo` / `demo:clear` | Add or remove fictional demo data |
+| `npm run seed -- <email>` | Recipes, exercise ideas, packing template into one account (idempotent) |
+| `npm run seed:foods -- <email>` | The carbohydrate reference into one account (idempotent) |
+| `npm run demo -- <email>` | Add fictional demo data to one account (`--clear` removes it) |
+| `npm run demo:links -- <email>` | Link the demo meals to reference foods |
+| `npm run demo:premeal -- <email>` | Add before-meal readings to the linked demo meals |
+| `npm run foods:dedupe -- <email>` | Remove duplicate reference entries, keeping logged history |
+| `npm run foods:starter -- <email>` | The old starter food slice. Superseded by signup seeding |
+| `npm run check:limit -- <email>` | The spend limiter, against that account's real audit log |
+| `npm run migrate:all` | Bring the control plane and every account database up to schema |
+| `npm run check:share` | Caregiver links, against a running server |
+| `npm run check:coach` | The coach endpoint's per-account tokens |
+| `npm run sweep:orphans` | List account databases no account row points at |
 | `npm test` | The engine and safety test suite |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run build` | Production build (`output: standalone`) |

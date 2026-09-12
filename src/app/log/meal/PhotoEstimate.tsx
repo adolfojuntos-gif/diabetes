@@ -3,7 +3,7 @@
  * The photo flow. A picture goes to the model as base64, never to disk, and what comes back is an
  * estimate the person edits before it touches the form. Nothing here is presented as a measurement.
  */
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { Notice } from "@/components/ui";
 import type { PhotoAction, PhotoItem, PhotoResult } from "../types";
 
@@ -56,13 +56,26 @@ export function PhotoEstimate({ action, available }: { action: PhotoAction; avai
   const [accepted, setAccepted] = useState(false);
   const [working, setWorking] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  /** Which result has already been copied into the editable list below. */
+  const [absorbed, setAbsorbed] = useState<PhotoResult | null>(null);
 
-  useEffect(() => {
+  /**
+   * The estimate arrives from the action and then becomes EDITABLE, because the whole point is that
+   * a photo estimate is a starting point the person corrects. So it has to be copied into local
+   * state once, and only once, per result.
+   *
+   * Adjusted during render rather than in an effect. An effect that calls setState runs after the
+   * browser has already painted the old list, so the screen showed the previous estimate for a
+   * frame before swapping. Comparing against the result already absorbed re-renders immediately
+   * instead, which is React's documented way to adjust state when an input changes.
+   */
+  if (state !== absorbed) {
+    setAbsorbed(state);
     if (state && state.ok) {
       setItems(state.items);
       setAccepted(false);
     }
-  }, [state]);
+  }
 
   if (!available) {
     return (

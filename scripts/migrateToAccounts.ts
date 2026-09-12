@@ -17,7 +17,7 @@ import { copyFile, mkdir, stat } from "node:fs/promises";
 import { createClient } from "@libsql/client";
 import { eq } from "drizzle-orm";
 import { controlDb, accounts, CONTROL_URL } from "../src/lib/db/control";
-import { handleFor, urlForRef } from "../src/lib/db";
+import { handleFor, urlForRef, ACCOUNTS_DIR } from "../src/lib/db";
 import { newId } from "../src/lib/ids";
 import { hashPassword, normalizeEmail } from "../src/lib/auth/passwords";
 import { applyAccountSchema } from "../src/lib/auth/provision";
@@ -107,7 +107,7 @@ async function main() {
     process.exit(0);
   }
 
-  await mkdir("./data/accounts", { recursive: true });
+  await mkdir(ACCOUNTS_DIR, { recursive: true });
   // A copy, not a move. The original stays as a backup that costs nothing but disk.
   await copyFile(SOURCE, targetPath);
   console.log(`\ncopied ${SOURCE} to ${targetPath} (the original is left in place as a backup)`);

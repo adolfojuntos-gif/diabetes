@@ -4,13 +4,17 @@
  * and that running it twice adds nothing. Dates are in 2019 so the rows cannot land in any window
  * the engines look at, and the batch is deleted at the end.
  *
- *   npx tsx scripts/importcheck.ts
+ * Takes an ACCOUNT. Every query here goes through `db`, which resolves to whichever account is in
+ * context and throws when there is none, so this could not run at all after the database split.
+ *
+ *   npm run check:import -- you@example.com
  */
 import "dotenv/config";
 import { eq, sql, and, lt } from "drizzle-orm";
 import { db, glucoseReadings } from "../src/lib/db";
 import { parseCgmCsv, findHeaderIndex } from "../src/lib/engines/cgmImport";
 import { newId } from "../src/lib/ids";
+import { runForAccount } from "./_account";
 
 const ROWS_PER_SLICE = 4000; // must match Paste.tsx
 const CHUNK_ROWS = 100; // must match actions.ts
@@ -144,4 +148,7 @@ async function main() {
   process.exit(pass ? 0 : 1);
 }
 
-main();
+runForAccount("npm run check:import -- you@example.com", () => main()).catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

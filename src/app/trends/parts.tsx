@@ -183,13 +183,17 @@ function clampY(v: number) {
   return Math.min(Y_MAX, Math.max(Y_MIN, v));
 }
 
-type Pt = { t: number; v: number; band: Band };
+export type Pt = { t: number; v: number; band: Band };
 
 /**
  * Keep the shape of a dense series without drawing 8000 dots: split the x axis into pixel-wide
  * buckets and keep the highest and the lowest reading in each, in time order. Spikes survive.
+ *
+ * Exported because the replay's day curve needs the same guarantee. A CGM day is 288 readings, and
+ * a second copy of this would be a second place for the "peaks survive" property to quietly stop
+ * being true.
  */
-function decimate(pts: Pt[], from: number, to: number, buckets: number): Pt[] {
+export function decimate(pts: Pt[], from: number, to: number, buckets: number): Pt[] {
   const span = to - from || 1;
   const keep = new Map<number, Pt[]>();
   for (const p of pts) {

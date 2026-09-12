@@ -4,12 +4,20 @@
  *
  * Kept separate from `seed.ts` because the reference is the one seeded table that will keep
  * growing, and re-running it should not mean re-running everything else.
+ *
+ * Takes an ACCOUNT. The reference is copied into each account's own database rather than shared, so
+ * there is no one table to seed: without an account every query here throws. Growing the reference
+ * list means running this for each account that should get the new entries, or leaving them to
+ * arrive with `npm run migrate:all` and the next signup.
+ *
+ *   npm run seed:foods -- you@example.com
  */
 import "dotenv/config";
-import { eq } from "drizzle-orm";
 import { db, foods, foodPortions } from "../src/lib/db";
 import { SEED_FOODS } from "../src/lib/data/seed/foods";
 import { newId } from "../src/lib/ids";
+import { runForAccount } from "./_account";
+import { caloriesBelowFloor } from "../src/lib/engines/foods";
 
 async function main() {
   const now = new Date();
@@ -51,24 +59,38 @@ async function main() {
   console.log(`portions: ${portions} added`);
   console.log(`reference now holds ${total} foods`);
 
-  // A reference value people make decisions on should not disagree with itself.
+  /**
+   * A reference value people make decisions on should not disagree with itself.
+   *
+   * This check used to be symmetric and flat: 4 kcal a gram for carbohydrate and protein, 9 for
+   * fat, and a complaint whenever the stated value differed either way. It reported two entries as
+   * broken and BOTH were correct.
+   *
+   * Raw spinach, because fibre is a carbohydrate that is only partly metabolised, so it carries
+   * about 2 kcal a gram rather than 4. And regular beer, because the energy in it is mostly alcohol
+   * at about 7 kcal a gram, and this table has no column for alcohol.
+   *
+   * Macros set a FLOOR on energy, not a target. Below the floor is a data error. Above it is
+   * ordinary. `caloriesBelowFloor` is shared with the restaurant importer so the two cannot
+   * disagree about what a broken row looks like.
+   */
   const bad: string[] = [];
   for (const f of SEED_FOODS) {
-    const implied = 4 * f.carbsG + 4 * f.proteinG + 9 * f.fatG;
-    if (f.caloriesKcal > 20 && Math.abs(implied - f.caloriesKcal) / f.caloriesKcal > 0.25) {
-      bad.push(`${f.id}: states ${f.caloriesKcal} kcal, macros imply ${Math.round(implied)}`);
+    const energy = caloriesBelowFloor(f);
+    if (energy.below) {
+      bad.push(`${f.id}: states ${f.caloriesKcal} kcal, but its macros account for at least ${Math.round(energy.implied)}`);
     }
     if (f.portions.length === 0) bad.push(`${f.id}: no portions`);
   }
   if (bad.length) {
-    console.log(`\n${bad.length} entries look internally inconsistent and are worth checking:`);
+    console.log(`\n${bad.length} entries state less energy than their macros account for:`);
     for (const b of bad.slice(0, 15)) console.log(`  ${b}`);
   } else {
-    console.log("energy check: every entry's calories agree with its macros");
+    console.log("energy check: no entry states less energy than its macros account for");
   }
 }
 
-main()
+runForAccount("npm run seed:foods -- you@example.com", () => main())
   .then(() => process.exit(0))
   .catch((err) => {
     console.error(err);

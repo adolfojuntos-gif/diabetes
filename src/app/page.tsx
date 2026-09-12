@@ -13,7 +13,7 @@ import {
   appointments,
 } from "@/lib/db";
 import { HeroVideo } from "@/components/HeroVideo";
-import { PageHeader, Card, Stat, GlucoseChip, TirBar, Notice, EmptyState, PatternCard, TriageBanner } from "@/components/ui";
+import { Card, Stat, GlucoseChip, TirBar, Notice, EmptyState, PatternCard, TriageBanner } from "@/components/ui";
 import { requireAccount } from "@/lib/auth/session";
 import { getProfile, usesInsulin, loadSnapshot } from "@/lib/data/snapshot";
 import { refreshDerived, inbox } from "@/lib/data/nudges";

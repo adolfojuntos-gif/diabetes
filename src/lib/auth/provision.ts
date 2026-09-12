@@ -14,10 +14,10 @@
  * one that signs in to a database with no tables. Retrying the signup finishes the job.
  */
 import { mkdir } from "node:fs/promises";
-import { eq } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { createClient } from "@libsql/client";
-import { controlDb, accounts, type Account } from "../db/control";
-import { urlForRef, handleFor } from "../db";
+import { controlDb, accounts, signinAttempts, type Account } from "../db/control";
+import { urlForRef, handleFor, ACCOUNTS_DIR } from "../db";
 import { newId } from "../ids";
 import { hashPassword, normalizeEmail } from "./passwords";
 import { ACCOUNT_SCHEMA_SQL } from "../db/accountSchema";
@@ -25,23 +25,71 @@ import { seedAccountReference } from "../data/seedAccount";
 
 export type SignupResult = { ok: true; account: Account } | { ok: false; error: string };
 
+/** `ALTER TABLE <t> ADD <c> ...`, pulled apart so the column can be checked before it is added. */
+const ADD_COLUMN = /^\s*ALTER\s+TABLE\s+[`"]?(\w+)[`"]?\s+ADD\s+(?:COLUMN\s+)?[`"]?(\w+)[`"]?/i;
+
 /**
- * Apply the schema to a fresh account database.
+ * Apply the schema to an account database, new or existing.
  *
  * The statements come from `accountSchema.ts`, generated from the Drizzle schema, because
  * `drizzle-kit push` is a CLI that reads a config file and cannot be called per account at signup.
- * Every statement is `if not exists`, so running this against an existing database is a no-op and
- * the same function doubles as the migration path when a column is added.
+ *
+ * EVERY STATEMENT HAS TO BE SAFE TO RE-RUN, because this is both the installer and the migration
+ * and `bootstrapDeploy` calls it on every single boot. The creates are all `if not exists` and take
+ * care of themselves. A column ADDED to a table that already exists is the exception: SQLite has no
+ * `add column if not exists`, so the second run fails with "duplicate column name".
+ *
+ * That is not hypothetical. Adding `foods.source_date` broke it immediately: the first migration
+ * succeeded, the second failed for every account, and because the deployment logs a failed
+ * migration and carries on, the live app would have booted with a broken migration step forever and
+ * no later column would ever have landed.
+ *
+ * So an ADD COLUMN is checked against `PRAGMA table_info` first. Precise on purpose: catching the
+ * error instead would also swallow a genuinely malformed statement, and a schema step that hides
+ * its own failures is how a table quietly goes missing.
  */
 export async function applyAccountSchema(dbRef: string): Promise<void> {
   const url = urlForRef(dbRef);
   if (url.startsWith("file:")) {
     // libsql will not create the directory for you, and a missing one reads as "unable to open".
-    await mkdir("./data/accounts", { recursive: true }).catch(() => {});
+    await mkdir(ACCOUNTS_DIR, { recursive: true }).catch(() => {});
   }
   const client = createClient({ url, authToken: process.env.ACCOUNT_DATABASE_AUTH_TOKEN });
-  for (const statement of ACCOUNT_SCHEMA_SQL) {
-    await client.execute(statement);
+
+  /** Columns a table already has, so an ADD can be skipped rather than attempted. */
+  const columnsOf = async (table: string): Promise<Set<string>> => {
+    try {
+      const info = await client.execute(`PRAGMA table_info(\`${table}\`)`);
+      return new Set(info.rows.map((r) => String(r.name)));
+    } catch {
+      // No such table yet. The CREATE earlier in the list will make it with the column included.
+      return new Set();
+    }
+  };
+
+  try {
+    for (const statement of ACCOUNT_SCHEMA_SQL) {
+      const add = ADD_COLUMN.exec(statement);
+      if (add) {
+        const [, table, column] = add;
+        if ((await columnsOf(table)).has(column)) continue;
+      }
+      await client.execute(statement);
+    }
+  } finally {
+    /**
+     * Closed, which it was not before.
+     *
+     * This opens its own connection rather than using the cached handle, and left it open. One
+     * leaked handle per account is invisible at signup and is a migration over a thousand accounts
+     * opening a thousand connections and releasing none. On Windows it also blocks deleting the
+     * file, which showed up as an occasional unexplained test failure with no assertion attached.
+     */
+    try {
+      client.close();
+    } catch {
+      /* a handle that will not close is not a reason to fail a migration that succeeded */
+    }
   }
 }
 
@@ -116,4 +164,60 @@ export async function changePassword(accountId: string, password: string): Promi
   if (password.length < 10) return { ok: false, error: "Use at least 10 characters." };
   await controlDb().update(accounts).set({ passwordHash: await hashPassword(password) }).where(eq(accounts.id, accountId));
   return { ok: true };
+}
+
+/* ---------------------------- how many accounts, how fast ---------------------------- */
+
+/**
+ * Signups allowed from one address in a day.
+ *
+ * Sign-IN was rate limited and signup was not, on a public URL where anybody can reach the form.
+ * That mattered because the AI spend caps are PER ACCOUNT: they do their job perfectly and are the
+ * wrong shape for this, since total spend is unbounded in the number of accounts. A script creating
+ * accounts spends the free tier once per account, and nothing stopped it.
+ *
+ * Six, because a household sharing a connection is real and a person setting one up for a parent
+ * is real, while a hundred from one address in an afternoon is not.
+ */
+const MAX_SIGNUPS_PER_IP = 6;
+const SIGNUP_WINDOW_MS = 24 * 60 * 60_000;
+
+/**
+ * Counted from `signin_attempts` rather than a new table, using a reserved email marker.
+ *
+ * The alternative was another table for one counter. This reuses the row shape that already exists,
+ * already has an index on `at` and `ip`, and is already pruned by whatever prunes that table. The
+ * marker is not a valid email, so it cannot collide with a real sign-in attempt.
+ */
+const SIGNUP_MARKER = "signup@local";
+
+export async function tooManySignups(ip: string | null): Promise<boolean> {
+  // No address to attribute it to. Counting nothing would be a hole, so this fails CLOSED on the
+  // only thing it can: an unattributable signup is allowed, because refusing every visitor behind
+  // a proxy that strips the header would break the product for them entirely.
+  if (!ip) return false;
+  try {
+    const since = new Date(Date.now() - SIGNUP_WINDOW_MS);
+    const rows = await controlDb()
+      .select({ n: sql<number>`count(*)` })
+      .from(signinAttempts)
+      .where(and(eq(signinAttempts.email, SIGNUP_MARKER), eq(signinAttempts.ip, ip), gt(signinAttempts.at, since)));
+    return Number(rows[0]?.n ?? 0) >= MAX_SIGNUPS_PER_IP;
+  } catch {
+    /**
+     * Fails OPEN, deliberately, and it is the right way round here. If the control database cannot
+     * be read then signup is about to fail anyway, and the cost of wrongly refusing somebody their
+     * first account is higher than the cost of one extra account getting through.
+     */
+    return false;
+  }
+}
+
+/** Record a signup against an address, so the next one can be counted. */
+export async function recordSignup(ip: string | null): Promise<void> {
+  try {
+    await controlDb().insert(signinAttempts).values({ id: newId(), at: new Date(), email: SIGNUP_MARKER, ip, ok: true });
+  } catch {
+    /* never block a signup on its own audit write */
+  }
 }

@@ -21,7 +21,10 @@ export function parseForm<T extends z.ZodTypeAny>(schema: T, fd: FormData): { da
     if (k.startsWith("$")) continue;
     if (k.endsWith("[]")) {
       const key = k.slice(0, -2);
-      (obj[key] as unknown[] | undefined) ? (obj[key] as unknown[]).push(v) : (obj[key] = [v]);
+      // A repeated field name, e.g. `canView[]`, collects into an array.
+      const existing = obj[key] as unknown[] | undefined;
+      if (existing) existing.push(v);
+      else obj[key] = [v];
     } else obj[k] = v;
   }
   const r = schema.safeParse(obj);

@@ -11,8 +11,6 @@
     "db:push": "drizzle-kit push",
     "seed": "tsx scripts/seed.ts",
     "demo": "tsx scripts/demo.ts",
-    "demo:clear": "tsx scripts/demo.ts --clear",
-    "setup": "npm run db:push && npm run seed && npm run seed:foods",
     "test": "tsx --test tests/*.test.ts",
     "seed:foods": "tsx scripts/seedFoods.ts",
     "schema:build": "drizzle-kit generate --name=account && node scripts/buildAccountSchema.mjs",
@@ -20,7 +18,14 @@
     "migrate:all": "tsx scripts/migrateAllAccounts.ts",
     "check:share": "tsx scripts/checkShareScoping.ts",
     "sweep:orphans": "tsx scripts/sweepOrphanAccounts.ts",
-    "check:coach": "tsx scripts/checkCoachTokens.ts"
+    "check:coach": "tsx scripts/checkCoachTokens.ts",
+    "demo:links": "tsx scripts/demoFoodLinks.ts",
+    "demo:premeal": "tsx scripts/demoPreMeal.ts",
+    "foods:dedupe": "tsx scripts/dedupeFoods.ts",
+    "foods:starter": "tsx scripts/starterFoods.ts",
+    "check:limit": "tsx scripts/checkSpendLimit.ts",
+    "check:import": "tsx scripts/importcheck.ts",
+    "foods:restaurant": "tsx scripts/importRestaurant.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.123.0",

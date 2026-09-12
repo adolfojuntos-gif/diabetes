@@ -17,10 +17,11 @@ import { readdir, stat, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { config } from "dotenv";
 import { controlDb, accounts } from "../src/lib/db/control";
+import { ACCOUNTS_DIR } from "../src/lib/db";
 
 config({ path: ".env.local", quiet: true });
 
-const DIR = "./data/accounts";
+const DIR = ACCOUNTS_DIR;
 const DELETE = process.argv.includes("--delete");
 
 async function main() {

@@ -57,6 +57,13 @@ export type Pattern = {
   href: string;
   /** Machine-readable evidence for the model and for tests. */
   data: Record<string, number | string | null>;
+  /**
+   * How to draw this finding, when drawing it says something the sentence cannot.
+   *
+   * Optional, and left off on purpose where a picture would be decoration. A pattern whose whole
+   * content is "you have not logged any movement" is not clearer as a chart.
+   */
+  chart?: PatternChart;
 };
 
 export type ExerciseLike = { at: Date; minutes: number; intensity: string; kind: string };
@@ -89,6 +96,37 @@ export type PatternReport = {
 };
 
 const fmt = (n: number | null, dp = 0) => (n === null ? "—" : String(round(n, dp)));
+
+/**
+ * A gauge track long enough to hold the value being drawn.
+ *
+ * A fixed maximum is right where the scale is bounded: time in range cannot exceed 100%. It is
+ * wrong wherever the measurement has no ceiling, and the failure is quiet rather than loud. The
+ * share of readings under target was drawn on a track ending at 12%, chosen because 4% is the
+ * consensus goal and 12% is a bad month. At 51% the needle sat at the end of the track and the
+ * picture said "off the scale" when the number said something far more specific.
+ *
+ * So: keep the useful resolution for ordinary values, and grow rather than clip for the rest.
+ */
+function trackMax(value: number | null, base: number): number {
+  const v = value === null || !Number.isFinite(value) ? 0 : value;
+  if (v <= base) return base;
+  // Round up to a readable step so the track does not end on an arbitrary figure.
+  const step = base >= 100 ? 50 : base >= 50 ? 20 : 10;
+  return Math.ceil(v / step) * step;
+}
+
+/**
+ * Pick the singular or the plural to follow a count.
+ *
+ * The chart noun sits directly after a number, so it has to agree with it. "1 readings under 54"
+ * was on screen: the count is computed and the word was fixed, which is fine until the count is one.
+ * English is the component's problem only if the component knows the count, and it should not have
+ * to, so the engine says the word.
+ */
+function plural(n: number, one: string, many: string): string {
+  return n === 1 ? one : many;
+}
 
 /** Mean of a list or null. */
 function mean(xs: number[]): number | null {
@@ -127,6 +165,13 @@ export function detectPatterns(s: Snapshot): PatternReport {
       doctorQuestion: `I had ${veryLow.length} reading${veryLow.length === 1 ? "" : "s"} under 54 mg/dL in the last ${label}. What should we look at to reduce these?`,
       href: "/trends",
       data: { count: veryLow.length, lowest: Math.min(...veryLow.map((r) => r.valueMgdl)), lastDate: dateKey(last.at) },
+      chart: {
+        kind: "tally",
+        count: veryLow.length,
+        of: null,
+        noun: plural(veryLow.length, "reading under 54", "readings under 54"),
+        tone: "bad",
+      },
     });
   }
 
@@ -146,6 +191,13 @@ export function detectPatterns(s: Snapshot): PatternReport {
       doctorQuestion: `I've had ${nightEvents.length} overnight lows in the last ${label}. What could be behind them, and what should I check at bedtime?`,
       href: "/trends?block=overnight",
       data: { episodes: nightEvents.length, lowest: Math.min(...nightEvents.map((e) => e.nadir)) },
+      chart: {
+        kind: "tally",
+        count: nightEvents.length,
+        of: null,
+        noun: plural(nightEvents.length, "overnight low episode", "overnight low episodes"),
+        tone: "bad",
+      },
     });
   }
 
@@ -160,6 +212,13 @@ export function detectPatterns(s: Snapshot): PatternReport {
       doctorQuestion: `About ${fmt(all.pct.very_low + all.pct.low, 1)}% of my readings are below ${low}. Can we go over what's causing the lows?`,
       href: "/trends",
       data: { episodes: events.length, lowPct: round(all.pct.very_low + all.pct.low, 1) },
+      chart: {
+        kind: "gauge",
+        unit: "percent",
+        value: all.pct.very_low + all.pct.low,
+        max: trackMax(all.pct.very_low + all.pct.low, 12),
+        good: { from: 0, to: 4 },
+      },
     });
   }
 
@@ -175,6 +234,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: "Whatever you're doing this fortnight is working. Worth noticing what that is.",
         href: "/trends",
         data: { tir: round(all.timeInRange), n: all.n },
+        chart: { kind: "gauge", unit: "percent", value: all.timeInRange, max: 100, good: { from: 70, to: 100 } },
       });
     } else if (all.timeInRange < 50) {
       patterns.push({
@@ -187,6 +247,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
         doctorQuestion: `My time in range over the last ${label} was about ${fmt(all.timeInRange)}%. Where would you start?`,
         href: "/trends",
         data: { tir: round(all.timeInRange), highPct: round(all.pct.high + all.pct.very_high) },
+        chart: { kind: "gauge", unit: "percent", value: all.timeInRange, max: 100, good: { from: 70, to: 100 } },
       });
     }
   }
@@ -202,6 +263,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
       doctorQuestion: `My glucose variability is around ${fmt(all.cv)}%. Is that something we should work on, and how?`,
       href: "/trends",
       data: { cv: round(all.cv, 1) },
+      chart: { kind: "gauge", unit: "percent", value: all.cv, max: trackMax(all.cv, 60), good: { from: 0, to: 36 } },
     });
   }
 
@@ -231,6 +293,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
         doctorQuestion: `My ${worst.label.toLowerCase()} readings are the ones most often out of range. What would you like me to track?`,
         href: `/trends?block=${worst.key}`,
         data: { block: worst.key, tir: round(worst.tir), n: worst.n },
+        chart: { kind: "gauge", unit: "percent", value: worst.tir, max: 100, good: { from: 70, to: 100 } },
       });
     }
   }
@@ -251,6 +314,15 @@ export function detectPatterns(s: Snapshot): PatternReport {
       doctorQuestion: `My glucose rises about ${fmt(dawnMean - earlyMean)} mg/dL between the middle of the night and breakfast. Could this be the dawn phenomenon, and what do you suggest?`,
       href: "/trends?block=morning",
       data: { earlyMean: round(earlyMean), dawnMean: round(dawnMean), rise: round(dawnMean - earlyMean) },
+      chart: {
+        kind: "compare",
+        unit: "mgdl",
+        better: "lower",
+        bars: [
+          { label: "2 to 5am", value: earlyMean },
+          { label: "6 to 9am", value: dawnMean },
+        ],
+      },
     });
   }
 
@@ -274,6 +346,15 @@ export function detectPatterns(s: Snapshot): PatternReport {
             : "Weekdays are the higher ones for you. Work meals, stress and desk hours are common reasons. A short walk after lunch is the easiest experiment.",
         href: "/trends",
         data: { weekendMean: round(me), weekdayMean: round(mw) },
+        chart: {
+          kind: "compare",
+          unit: "mgdl",
+          better: "lower",
+          bars: [
+            { label: "Weekdays", value: mw },
+            { label: "Weekends", value: me },
+          ],
+        },
       });
     }
   }
@@ -295,6 +376,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
         doctorQuestion: `Certain meals raise my glucose by more than 50 mg/dL (for example ${top[0]}). How should I handle those?`,
         href: "/plan",
         data: { spikeShare: round(ranking.spikeShare * 100), covered: ranking.covered.length, worst: top.join("; ") },
+        chart: { kind: "gauge", unit: "percent", value: ranking.spikeShare * 100, max: 100, good: { from: 0, to: 15 } },
       });
     } else if (ranking.spikeShare <= 0.15) {
       patterns.push({
@@ -305,6 +387,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: "The best-meals list is built from exactly these. Lean on it when planning the week.",
         href: "/plan",
         data: { spikeShare: round(ranking.spikeShare * 100), covered: ranking.covered.length },
+        chart: { kind: "gauge", unit: "percent", value: ranking.spikeShare * 100, max: 100, good: { from: 0, to: 15 } },
       });
     }
     const worstTag = ranking.byTag[0];
@@ -317,6 +400,13 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: `Next time you eat something tagged “${worstTag.tag}”, try a reading at 1 hour as well as 2. It may peak earlier than you think.`,
         href: "/plan",
         data: { tag: worstTag.tag, meanRise: round(worstTag.meanRise), n: worstTag.n },
+        chart: {
+          kind: "gauge",
+          unit: "mgdl",
+          value: worstTag.meanRise,
+          max: trackMax(worstTag.meanRise, 120),
+          good: { from: 0, to: 50 },
+        },
       });
     }
   }
@@ -330,6 +420,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
         "Pick one meal a day this week and take a reading before and two hours after. That's enough to start ranking your meals.",
       href: "/log",
       data: { covered: ranking.covered.length, total: responses.length },
+      chart: { kind: "tally", count: ranking.covered.length, of: responses.length, noun: "meals with readings either side", tone: "watch" },
     });
   }
 
@@ -355,6 +446,15 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: "That's your body telling you what works. The exercise page has ideas sized to the time you actually have.",
         href: "/move",
         data: { afterMean: round(ma), overallMean: round(all.mean), sessions: ex.length },
+        chart: {
+          kind: "compare",
+          unit: "mgdl",
+          better: "lower",
+          bars: [
+            { label: "After you moved", value: ma },
+            { label: "Overall", value: all.mean ?? ma },
+          ],
+        },
       });
     }
   }
@@ -368,6 +468,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
       suggestion: "A 10-minute walk after your biggest meal is the single easiest experiment in this app. Log it and watch the 2-hour reading.",
       href: "/move",
       data: { sessions: 0 },
+      chart: { kind: "tally", count: 0, of: null, noun: "sessions logged", tone: "watch" },
     });
   } else if (s.windowDays >= 7 && exMinutes >= 150 * (s.windowDays / 7)) {
     patterns.push({
@@ -378,6 +479,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
       suggestion: "150 minutes a week is the level most guidelines point to, and you're there.",
       href: "/move",
       data: { minutes: exMinutes, sessions: ex.length },
+      chart: { kind: "tally", count: ex.length, of: null, noun: plural(ex.length, "session logged", "sessions logged"), tone: "good" },
     });
   }
 
@@ -410,6 +512,15 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: "Sleep is one of the few levers that moves glucose without touching food. A consistent bedtime for a week is the experiment.",
         href: "/log/sleep",
         data: { shortMean: round(ms), goodMean: round(mg), shortDays: shortDays.length, goodDays: goodDays.length },
+        chart: {
+          kind: "compare",
+          unit: "mgdl",
+          better: "lower",
+          bars: [
+            { label: "After 7+ hours", value: mg },
+            { label: "After under 6 hours", value: ms },
+          ],
+        },
       });
     }
     const avg = mean(sleep.map((x) => x.minutes));
@@ -422,6 +533,15 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: "Even 30 minutes earlier to bed changes the next morning's number for many people.",
         href: "/log/sleep",
         data: { avgMinutes: Math.round(avg), nights: sleep.length },
+        chart: {
+          kind: "compare",
+          unit: "minutes",
+          better: "higher",
+          bars: [
+            { label: "Your average", value: avg },
+            { label: "Your goal", value: s.sleepGoalMinutes },
+          ],
+        },
       });
     }
   }
@@ -443,6 +563,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: "When glucose runs high, the body loses water. A glass with each reading is an easy anchor.",
         href: "/log/water",
         data: { hitDays: hit, loggedDays: days.length },
+        chart: { kind: "tally", count: hit, of: days.length, noun: "days at your goal", tone: "watch" },
       });
     } else if (days.length >= 5 && hit / days.length >= 0.8) {
       patterns.push({
@@ -453,6 +574,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: "Keep it up.",
         href: "/log/water",
         data: { hitDays: hit, loggedDays: days.length },
+        chart: { kind: "tally", count: hit, of: days.length, noun: "days at your goal", tone: "good" },
       });
     }
   }
@@ -475,6 +597,13 @@ export function detectPatterns(s: Snapshot): PatternReport {
         suggestion: "Patterns need days, not perfect days. One reading a day, any time, keeps the picture alive.",
         href: "/log",
         data: { missingDays: missing.length },
+        chart: {
+          kind: "tally",
+          count: missing.length,
+          of: s.windowDays,
+          noun: plural(s.windowDays, "day with no reading", "days with no reading"),
+          tone: "watch",
+        },
       });
     }
   }
@@ -498,6 +627,7 @@ export function detectPatterns(s: Snapshot): PatternReport {
             "This is about the log, not about dosing: if those doses happened, adding them makes the weekly review honest. If they didn't, that's a useful thing to mention to your care team.",
           href: "/log/insulin",
           data: { unmatched, meals: mealsWithCarbs.length },
+          chart: { kind: "tally", count: unmatched, of: mealsWithCarbs.length, noun: "meals with no bolus logged", tone: "watch" },
         });
       }
     }

@@ -1,6 +1,5 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rm } from "node:fs/promises";
 
 /**
  * Billing, tested without Stripe.
@@ -17,7 +16,7 @@ import { rm } from "node:fs/promises";
  * temporary file, and it has to run before anything imports `db/control`, which reads the variable
  * once at module load. Moving it down this list makes these tests write to the real control plane.
  */
-import { CONTROL_DIR, CONTROL_PATH } from "./_controlEnv";
+import { CONTROL_DIR, CONTROL_PATH, cleanupControl } from "./_controlEnv";
 import { createClient } from "@libsql/client";
 import { controlDb, accounts, subscriptions, billingEvents } from "../src/lib/db/control";
 import { CONTROL_SCHEMA_SQL } from "../src/lib/db/controlSchema";
@@ -412,5 +411,42 @@ test("teardown", async () => {
   } catch {
     /* ignore */
   }
-  await rm(CONTROL_DIR, { recursive: true, force: true }).catch(() => {});
+  await cleanupControl();
+});
+
+/* ------------------------- unlimited signup was the hole ------------------------- */
+
+test("signups from one address are capped, because the spend caps are per account", async () => {
+  /**
+   * The per-account AI caps do their job and are the wrong shape for this. Total spend is unbounded
+   * in the NUMBER of accounts, and signup had no limit at all on a public URL, so a script could
+   * spend the free tier once per account indefinitely. Sign-in was rate limited throughout; signup
+   * was not.
+   */
+  const { tooManySignups, recordSignup } = await import("../src/lib/auth/provision");
+  const ip = `203.0.113.${Math.floor(Math.random() * 200) + 1}`;
+
+  assert.equal(await tooManySignups(ip), false, "a first signup must be allowed");
+
+  // A household or somebody setting an account up for a parent is real, so the limit is not one.
+  for (let i = 0; i < 5; i++) {
+    await recordSignup(ip);
+    assert.equal(await tooManySignups(ip), false, `signup ${i + 2} from one address should still be allowed`);
+  }
+
+  await recordSignup(ip);
+  assert.equal(await tooManySignups(ip), true, "the cap never engaged");
+
+  // Another address is unaffected, or one busy office would lock out everybody else.
+  assert.equal(await tooManySignups("198.51.100.7"), false, "the limit leaked across addresses");
+});
+
+test("a signup with no address to attribute is allowed rather than refused", async () => {
+  /**
+   * Deliberately open in this one direction. Some proxies strip the header, and refusing every
+   * visitor behind one would break the product for them completely, which is a worse failure than
+   * one unattributable account getting through.
+   */
+  const { tooManySignups } = await import("../src/lib/auth/provision");
+  assert.equal(await tooManySignups(null), false);
 });

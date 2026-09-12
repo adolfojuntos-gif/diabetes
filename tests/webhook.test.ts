@@ -1,6 +1,5 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rm } from "node:fs/promises";
 
 /**
  * The webhook route, driven directly with a Request object. No server, no network, no Stripe account.
@@ -14,7 +13,7 @@ import { rm } from "node:fs/promises";
  * IMPORT ORDER: `_controlEnv` first, and the Stripe variables set before the route is imported,
  * because `stripeConfig()` reads them per call but the module-level client is built once.
  */
-import { CONTROL_DIR, CONTROL_PATH } from "./_controlEnv";
+import { CONTROL_DIR, CONTROL_PATH, cleanupControl } from "./_controlEnv";
 
 const WEBHOOK_SECRET = "whsec_test_secret_for_local_assertions_only";
 process.env.STRIPE_SECRET_KEY = "sk_test_local_assertions_only";
@@ -279,5 +278,5 @@ test("teardown", async () => {
   } catch {
     /* ignore */
   }
-  await rm(CONTROL_DIR, { recursive: true, force: true }).catch(() => {});
+  await cleanupControl();
 });

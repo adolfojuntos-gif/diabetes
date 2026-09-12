@@ -320,3 +320,39 @@ test("an account with no control row gets the free plan, never the paid one", as
   closeHandle(orphan.url);
   await cleanup(orphan.client);
 });
+
+test("the account schema can be applied twice, because the deployment applies it on every boot", async () => {
+  /**
+   * Adding `foods.source_date` broke this the moment it was generated. The first migration
+   * succeeded and the second failed for every account with "duplicate column name", because SQLite
+   * has no `add column if not exists`. The deployment logs a failed migration and carries on, so
+   * the live app would have booted with a permanently broken migration step and no column added
+   * after that one would ever have landed.
+   *
+   * Applied to a real file twice, because that is what a boot does.
+   */
+  await mkdir(DIR, { recursive: true });
+  const ref = `file:${DIR}/reapply-${newId(6)}.db`;
+
+  const { applyAccountSchema } = await import("../src/lib/auth/provision");
+  await applyAccountSchema(ref);
+  await applyAccountSchema(ref);
+
+  // And the second pass has to have left the schema intact rather than merely not thrown.
+  const client = createClient({ url: ref });
+  try {
+    const tables = await client.execute("select count(*) n from sqlite_master where type = 'table'");
+    assert.ok(Number(tables.rows[0].n) >= ACCOUNT_SCHEMA_TABLES, "tables went missing on the second pass");
+
+    const info = await client.execute("PRAGMA table_info(`foods`)");
+    const columns = info.rows.map((r) => String(r.name));
+    assert.ok(columns.includes("source_date"), "the added column is missing");
+    assert.equal(columns.filter((c) => c === "source_date").length, 1, "the column was added twice");
+  } finally {
+    try {
+      client.close();
+    } catch {
+      /* ignore */
+    }
+  }
+});

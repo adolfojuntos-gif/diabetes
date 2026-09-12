@@ -6,8 +6,13 @@ import { requireAccount } from "@/lib/auth/session";
 import { recentCoachMessages, markCoachRead, getOrCreateMorning, getOrCreateWeekly, coachConfig } from "@/lib/data/coach";
 import { fmtDayLong, fmtTime, parseDateKey, relative } from "@/lib/time";
 import type { TriageLevel } from "@/lib/db";
+import { coachTokenFor } from "@/lib/auth/tokens";
+import { noteTo } from "../_shared/server";
+import { FormNote, param, type SP } from "../_shared/ui";
 
 export const dynamic = "force-dynamic";
+
+const PATH = "/toolkit/checkins";
 
 const LEVEL_LABEL: Record<TriageLevel, string> = {
   emergency: "Emergency",
@@ -36,9 +41,32 @@ async function generateNow(fd: FormData) {
   });
 }
 
-export default async function Checkins() {
+/**
+ * Mint this account's scheduling token and show it once.
+ *
+ * The screen used to tell people to send a bearer token "matching COACH_API_SECRET in your
+ * environment". That was true when one secret gated the endpoint for one person, and since the
+ * split it is doubly wrong: the endpoint authenticates a PER-ACCOUNT token, and there was no way
+ * for anybody to obtain theirs. So the instruction described a variable that does nothing and asked
+ * for something the interface could not produce.
+ *
+ * Minting ROTATES, because only the digest is stored and an existing token cannot be shown again.
+ * The copy says so, since silently breaking somebody's working cron would be worse than the
+ * inconvenience of saying it.
+ */
+async function revealToken() {
+  "use server";
+  const token = await requireAccount(async (account) => coachTokenFor(account.id));
+  noteTo(PATH, `Your scheduling token: ${token}`);
+}
+
+export default async function Checkins({ searchParams }: { searchParams?: SP }) {
   return requireAccount(async () => {
-  const [messages, cfg] = await Promise.all([recentCoachMessages(12), Promise.resolve(coachConfig())]);
+  const [messages, cfg, note] = await Promise.all([
+    recentCoachMessages(12),
+    Promise.resolve(coachConfig()),
+    param(searchParams, "m"),
+  ]);
 
   return (
     <div className="page">
@@ -47,6 +75,10 @@ export default async function Checkins() {
         title="Your morning brief and week in review"
         lede="A short read on what yesterday looked like, and one small thing worth doing today. The numbers in it are computed by this app, not written by a model."
       />
+
+      {/* The minted token arrives here, once. It is never stored in readable form, so this is the
+          only moment it exists as something a person can copy. */}
+      <FormNote message={note} />
 
       <div className="grid gap-3 sm:grid-cols-2 mb-6">
         <Card>
@@ -74,12 +106,25 @@ export default async function Checkins() {
       <Notice>
         These can also be delivered on a schedule. Point a cron or an automation at{" "}
         <code>POST /api/coach/morning</code> and <code>POST /api/coach/weekly</code> with a{" "}
-        <code>Bearer</code> token matching <code>COACH_API_SECRET</code> in your environment. The caller owns
-        the clock and the delivery; this app keeps the data, the safety check, the model call and the
-        audit. Asking twice on the same day returns the same message rather than writing a second one.
+        <code>Bearer</code> token belonging to this account. The caller owns the clock and the
+        delivery; this app keeps the data, the safety check, the model call and the audit. Asking
+        twice on the same day returns the same message rather than writing a second one.
         {!cfg.modelKeySet ? " With no API key set, the app's own engine writes these and says so." : ""}
-        {!cfg.apiSecretSet ? " COACH_API_SECRET is not set yet, so the scheduled routes currently refuse every request." : ""}
       </Notice>
+
+      <Card className="mt-3">
+        <h3>Your scheduling token</h3>
+        <p className="hint mt-1 prose-measure">
+          This token stands for this account and nothing else. Anyone holding it can ask Steady to
+          write your check-ins, so treat it like a password. Showing a new one replaces the old one,
+          which means an automation already using the previous token will stop working.
+        </p>
+        <form action={revealToken} className="mt-3">
+          <SubmitButton className="btn btn-secondary btn-sm" pendingText="Minting…">
+            Show a new token
+          </SubmitButton>
+        </form>
+      </Card>
 
       <h2 className="mt-8 mb-3">Recent check-ins</h2>
       {messages.length === 0 ? (

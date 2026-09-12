@@ -181,7 +181,19 @@ export function ImportForm({ action, finish }: { action: ChunkAction; finish: ()
     setProgress(null);
   }
 
-  const ready = raw.current.trim().length > 0 || text.trim().length > 0;
+  /**
+   * Derived from STATE, not from the ref.
+   *
+   * This read `raw.current` during render. React does not re-render when a ref changes, so whether
+   * the Import button was enabled depended on some other piece of state happening to change in the
+   * same handler and force a render. It did, which is why it worked, and that is the whole problem:
+   * it worked by accident and would have broken silently the moment those sibling updates moved.
+   *
+   * `lineCount` is set on both paths, the file picker and the textarea, and it is exactly the
+   * question being asked here. Reading the ref inside `run()` is still correct, because an event
+   * handler runs after render and wants the latest value.
+   */
+  const ready = lineCount > 0;
   const pct = progress ? Math.round((progress.done / progress.total) * 100) : 0;
 
   return (

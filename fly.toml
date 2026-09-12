@@ -1,4 +1,4 @@
-# Steady. One machine, one SQLite file on a volume. No database service to run.
+# Steady. One machine, SQLite files on a volume. No database service to run.
 app = "steady-diabetes"
 primary_region = "dfw"
 
@@ -6,11 +6,33 @@ primary_region = "dfw"
 
 [env]
   PORT = "8080"
+
+  # WHERE THE DATA LIVES, and all three of these have to point at the volume.
+  #
+  # The volume is mounted at /data and the app runs from /app, so a relative default writes into
+  # the container and is deleted on the next restart. That is what would have happened to every
+  # account database and to the control plane: signup would work, the app would work, and the data
+  # would be gone after a redeploy with nothing failing or logging on the way.
+  CONTROL_DATABASE_URL = "file:/data/control.db"
+  ACCOUNTS_DIR = "/data/accounts"
+  # The pre-migration single database. Only `migrate:accounts` and drizzle-kit read it now.
   DATABASE_URL = "file:/data/steady.db"
+
+  # Absolute, and deliberately not derived from a request header, because Stripe redirects a
+  # browser here after checkout and a success URL built from a header is an open redirect.
+  APP_URL = "https://steady-diabetes.fly.dev"
+
   NEXT_PUBLIC_APP_NAME = "Steady"
   NEXT_PUBLIC_APP_TAGLINE = "Your diabetes, one day at a time."
-  # Fictional demo data on first boot, so a prospect sees a working app rather than empty states.
+
+  # A demo account created on first boot, so a prospect opening the link sees a working app rather
+  # than a sign-in form. Its password is a secret, not set here. Seeded once, on creation only:
+  # re-seeding every restart would wipe anything somebody did while looking at it.
+  DEMO_EMAIL = "demo@steady-diabetes.fly.dev"
   SEED_DEMO = "1"
+
+  # One SQLite connection per account, evicted least recently used. Below the file descriptor limit.
+  MAX_OPEN_ACCOUNT_DBS = "128"
 
 [[mounts]]
   source = "steady_data"
@@ -21,7 +43,7 @@ primary_region = "dfw"
   force_https = true
   auto_stop_machines = "suspend"
   auto_start_machines = true
-  # One machine only. Two machines would mean two SQLite files disagreeing with each other.
+  # One machine only. Two would mean two sets of SQLite files disagreeing with each other.
   min_machines_running = 0
 
 [[vm]]

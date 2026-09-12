@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { APP_NAME } from "@/lib/brand";
 import { SubmitButton } from "@/components/Form";
+import { headers } from "next/headers";
 import { optionalAccount, createSession } from "@/lib/auth/session";
-import { signUp } from "@/lib/auth/provision";
+import { signUp, tooManySignups, recordSignup } from "@/lib/auth/provision";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,34 @@ async function create(fd: FormData) {
     redirect(`/signup?e=${encodeURIComponent("The two passwords do not match.")}&email=${encodeURIComponent(email)}`);
   }
 
+  /**
+   * Rate limited by address, which sign-in already was and this was not.
+   *
+   * It matters because the AI spend caps are per ACCOUNT. They work exactly as intended and are the
+   * wrong shape for unlimited account creation: total spend is unbounded in the number of accounts,
+   * so a script could spend the free tier once per account, over and over, on a public URL.
+   *
+   * Checked after the password match so somebody mistyping their confirmation twice does not burn
+   * through their own allowance, and before any database is created.
+   */
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
+  if (await tooManySignups(ip)) {
+    redirect(
+      `/signup?e=${encodeURIComponent(
+        "That is several new accounts from this connection today. Try again tomorrow, or get in touch if you need more.",
+      )}&email=${encodeURIComponent(email)}`,
+    );
+  }
+
   const result = await signUp(email, password);
   if (!result.ok) {
     redirect(`/signup?e=${encodeURIComponent(result.error)}&email=${encodeURIComponent(email)}`);
   }
+
+  // Recorded only for a signup that actually created an account, so a rejected attempt does not
+  // count against the limit.
+  await recordSignup(ip);
 
   await createSession(result.account.id);
   redirect("/welcome");

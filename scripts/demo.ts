@@ -5,9 +5,19 @@
  * The generator is a crude physiological sketch, not a model of anyone: a basal curve with a dawn
  * rise, meal bumps sized by carbohydrate, a dip after exercise, occasional lows in the small hours,
  * and one deliberately bad weekend. It exists so the pattern engine has something to find.
+ *
+ * It takes an ACCOUNT, because there is no single database any more. Without one every write here
+ * would throw `NoAccountContextError`, which is the fail-closed default working as intended: this
+ * script wrote to whatever database was in context, and after the split there is none.
+ *
+ *   npm run demo -- you@example.com
+ *   npm run demo -- you@example.com --clear
  */
 import "dotenv/config";
 import { like, or, eq } from "drizzle-orm";
+import { withAccount } from "../src/lib/db";
+import { controlDb, accounts } from "../src/lib/db/control";
+import { normalizeEmail } from "../src/lib/auth/passwords";
 import {
   db,
   profile,
@@ -105,7 +115,14 @@ async function clear() {
   console.log("Demo data removed. Seeded recipes, exercise ideas and packing items were left alone.");
 }
 
-async function main() {
+/**
+ * Exported so the deployment bootstrap can call it directly rather than spawning this file.
+ * Spawning meant a shell command path, and a shell command path means one behaviour on Linux and
+ * another on Windows, which is a difference nobody wants to discover during a boot.
+ *
+ * Assumes an account is already in context. `run()` below is the command-line wrapper.
+ */
+export async function writeDemoData() {
   if (process.argv.includes("--clear")) return clear();
   await clear();
 
@@ -264,9 +281,42 @@ async function main() {
   console.log("Open the app and the pattern engine should find: weekend highs, a dawn rise, overnight lows, short-sleep days running higher, and post-meal spikes on the takeout meals.");
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+/** Resolve the account named on the command line, then run everything inside its context. */
+async function run() {
+  const email = process.argv.slice(2).find((a) => a.includes("@"));
+  if (!email) {
+    console.error("Which account? Pass an email:  npm run demo -- you@example.com");
+    process.exit(2);
+  }
+
+  const rows = await controlDb().select().from(accounts).where(eq(accounts.email, normalizeEmail(email))).limit(1);
+  const account = rows[0];
+  if (!account) {
+    console.error(`No account for ${email}. Sign up first, or check the address.`);
+    process.exit(2);
+  }
+  if (!account.provisionedAt) {
+    console.error(`${email} has no database yet, so its signup did not finish.`);
+    process.exit(2);
+  }
+
+  console.log(`Writing demo data into ${account.email} (${account.dbRef}).`);
+  await withAccount({ accountId: account.id, dbRef: account.dbRef }, () => writeDemoData());
+}
+
+/**
+ * Only run the command-line path when this file IS the command.
+ *
+ * Without the guard, importing it for its exported function runs the CLI wrapper as a side effect
+ * of the import, which resolves an account from `process.argv` and exits the whole process with
+ * "Which account?" before the caller gets anywhere. That is what the deployment bootstrap does, so
+ * the boot would have died on an import.
+ */
+if (process.argv[1]?.endsWith("demo.ts")) {
+  run()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

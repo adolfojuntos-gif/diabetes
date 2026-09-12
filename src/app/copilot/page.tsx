@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 import { db, conversations, messages as messagesTable } from "@/lib/db";
 import { requireAccount } from "@/lib/auth/session";
 import { PageHeader, Card, Notice, EmptyState } from "@/components/ui";

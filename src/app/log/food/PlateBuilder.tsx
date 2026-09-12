@@ -28,6 +28,12 @@ export type FoodCard = {
   brand: string | null;
   category: string;
   source: string;
+  /**
+   * Whose figure this is, and how old it is, both already worded by the server. The component
+   * prints them and decides nothing: `ageNote` is empty when there is nothing worth saying, which
+   * is the case for every undated food.
+   */
+  provenance: { who: string; ageNote: string };
   note: string;
   custom: boolean;
   per100: { carbsG: number; proteinG: number; fatG: number; fiberG: number; caloriesKcal: number };
@@ -37,7 +43,18 @@ export type FoodCard = {
   timesLogged: number;
 };
 
-type Line = { key: string; foodId: string; name: string; portionLabel: string; grams: number; carbsG: number; count: number };
+type Line = {
+  key: string;
+  foodId: string;
+  name: string;
+  portionLabel: string;
+  grams: number;
+  carbsG: number;
+  count: number;
+  /** Carried onto the plate so provenance is still visible at the moment of logging. */
+  who: string;
+  ageNote: string;
+};
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -90,6 +107,8 @@ export function PlateBuilder({
           grams: portion.grams,
           carbsG: showNet ? portion.netCarbsG : portion.carbsG,
           count: 1,
+          who: food.provenance.who,
+          ageNote: food.provenance.ageNote,
         },
       ];
     });
@@ -179,9 +198,12 @@ export function PlateBuilder({
               ) : null}
 
               {food.note ? <p className="muted text-sm mt-2">{food.note}</p> : null}
-              <div className="flex items-center justify-between gap-3 mt-3">
-                <span className="hint">Source: {food.source}</span>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => add(food, portion)}>
+              <div className="flex items-end justify-between gap-3 mt-3">
+                <div className="min-w-0">
+                  <span className="hint">{food.provenance.who}</span>
+                  {food.provenance.ageNote ? <p className="muted text-sm mt-0.5">{food.provenance.ageNote}</p> : null}
+                </div>
+                <button type="button" className="btn btn-secondary btn-sm shrink-0" onClick={() => add(food, portion)}>
                   Add to plate
                 </button>
               </div>
@@ -216,6 +238,8 @@ export function PlateBuilder({
                   <div className="hint">
                     {l.count} × {l.portionLabel} · <span className="num">{r1(l.carbsG * l.count)} g</span>
                   </div>
+                  <div className="hint truncate">{l.who}</div>
+                  {l.ageNote ? <p className="muted text-xs mt-0.5">{l.ageNote}</p> : null}
                 </div>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => bump(l.key, -1)} aria-label={`One less ${l.name}`}>
                   −

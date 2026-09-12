@@ -1,0 +1,1 @@
+ALTER TABLE `foods` ADD `source_date` text;

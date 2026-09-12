@@ -573,7 +573,7 @@ export default async function LabsPage({ searchParams }: { searchParams?: SP }) 
 
       <div className="mt-8 no-print">
         <Notice>
-          Steady shows the laboratory's own range and the laboratory's own flag, and nothing else. It does not decide whether
+          Steady shows the laboratory&apos;s own range and the laboratory&apos;s own flag, and nothing else. It does not decide whether
           a value is normal for you, and it does not interpret a single result. That reading belongs with the clinician who
           ordered the test.
         </Notice>

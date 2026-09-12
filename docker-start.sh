@@ -1,16 +1,19 @@
 #!/bin/sh
-# Bring the database up to the current schema, seed the content tables, and start the server.
-# Both steps are idempotent, so a restart or a redeploy is safe.
+# Bring the deployment up to the current schema, then start the server.
+#
+# One step now, not four. The old script pushed a schema to a single database and then ran three
+# seed scripts that each need an account named on the command line, so on the new architecture every
+# one of them exited immediately. Each failure was swallowed by a `|| echo`, which meant the machine
+# started anyway with no control database and served an error page for every request.
+#
+# `bootstrapDeploy.ts` does the whole job and is idempotent, so a restart, a suspend and resume, or
+# a redeploy are all safe. It exits non-zero if the control plane cannot be prepared, and that
+# SHOULD stop the boot: a server whose control database has no tables has nothing useful to serve,
+# and a machine that refuses to start is a problem visible in the deploy output.
 set -e
-echo "steady: pushing schema to $DATABASE_URL"
-./node_modules/.bin/drizzle-kit push --force || echo "steady: schema push reported a problem, continuing"
-echo "steady: seeding content tables"
-./node_modules/.bin/tsx scripts/seed.ts || echo "steady: seed reported a problem, continuing"
-echo "steady: seeding the carbohydrate reference"
-./node_modules/.bin/tsx scripts/seedFoods.ts || echo "steady: food seed reported a problem, continuing"
-if [ "$SEED_DEMO" = "1" ]; then
-  echo "steady: writing fictional demo data"
-  ./node_modules/.bin/tsx scripts/demo.ts || echo "steady: demo seed reported a problem, continuing"
-fi
+
+echo "steady: bootstrapping"
+./node_modules/.bin/tsx scripts/bootstrapDeploy.ts
+
 echo "steady: starting server on $PORT"
 exec node server.js

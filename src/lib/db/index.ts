@@ -85,12 +85,24 @@ export function openHandleCount(): number {
   return handles().size;
 }
 
+/**
+ * Where account databases live.
+ *
+ * Configurable because the default is relative to the working directory, and on a deployment the
+ * working directory is NOT the persistent disk. On Fly the volume is mounted at `/data` and the app
+ * runs from `/app`, so every account database was about to be written inside the container and
+ * deleted on the next restart, taking every account's records with it. The control database had the
+ * same problem. Nothing would have failed or logged: signup would work, the app would work, and the
+ * data would be gone after a deploy.
+ */
+export const ACCOUNTS_DIR = (process.env.ACCOUNTS_DIR ?? "./data/accounts").replace(/\/+$/, "");
+
 /** Turn a stored `dbRef` into a libsql URL. A path is local; a bare name is a Turso database. */
 export function urlForRef(dbRef: string): string {
   if (dbRef.startsWith("file:") || dbRef.startsWith("libsql:") || dbRef.startsWith("http")) return dbRef;
   const host = process.env.TURSO_ORG_HOST;
   if (host) return `libsql://${dbRef}-${host}`;
-  return `file:./data/accounts/${dbRef}.db`;
+  return `file:${ACCOUNTS_DIR}/${dbRef}.db`;
 }
 
 export function handleFor(dbRef: string): Db {

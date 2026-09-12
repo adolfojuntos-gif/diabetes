@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { desc, gte } from "drizzle-orm";
-import { db, glucoseReadings, SYMPTOMS, type Symptom } from "@/lib/db";
+import { db, glucoseReadings, type Symptom } from "@/lib/db";
 import { requireAccount } from "@/lib/auth/session";
 import { PageHeader, Card, Notice, TriageBanner, GlucoseChip } from "@/components/ui";
 import { SubmitButton } from "@/components/Form";

@@ -217,3 +217,103 @@ export function carbWeight(carbsG: number): { label: string; tone: "low" | "mode
   if (carbsG <= 45) return { label: "A moderate amount", tone: "moderate" };
   return { label: "A large amount", tone: "high" };
 }
+
+/* ------------------------------ how old a figure is ------------------------------ */
+
+/**
+ * How much a figure's age should be trusted, and what to say about it.
+ *
+ * Only restaurant data carries a date. The USDA references do not drift: a release is a version,
+ * and cooked rice contains what it contained. A chain is different in kind. It reformulates, changes
+ * a supplier, resizes a portion, and the number somebody wrote down a year ago still looks exactly
+ * as authoritative as it did on the day.
+ *
+ * Somebody doses insulin against these figures, so the age is shown rather than implied. The bands
+ * are deliberately generous: this is not a warning, it is a date.
+ */
+export type FigureAge = {
+  /** Days since the figure was read, or null when the source carries no date. */
+  days: number | null;
+  /** "fresh" under six months, "aging" under eighteen, "stale" beyond it. */
+  band: "undated" | "fresh" | "aging" | "stale";
+  /** One short phrase for the screen. Empty when there is nothing worth saying. */
+  note: string;
+};
+
+const DAY_MS = 86_400_000;
+
+export function figureAge(sourceDate: string | null | undefined, now = new Date()): FigureAge {
+  if (!sourceDate) return { days: null, band: "undated", note: "" };
+
+  // "YYYY-MM-DD" parsed as a local date, matching how it was written.
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(sourceDate.trim());
+  if (!m) return { days: null, band: "undated", note: "" };
+  const then = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  if (Number.isNaN(then.getTime())) return { days: null, band: "undated", note: "" };
+
+  const days = Math.floor((now.getTime() - then.getTime()) / DAY_MS);
+  /**
+   * A date in the future is a typo, not a fresher figure. Treated as undated rather than as
+   * negative days, which would otherwise read as the most trustworthy number in the table.
+   */
+  if (days < 0) return { days: null, band: "undated", note: "" };
+
+  const months = days / 30.4;
+  if (months < 6) return { days, band: "fresh", note: "" };
+  if (months < 18) {
+    return { days, band: "aging", note: `Read about ${Math.round(months)} months ago. Worth a glance at the menu.` };
+  }
+  return {
+    days,
+    band: "stale",
+    note: `Read over ${Math.floor(months / 12)} year${Math.floor(months / 12) === 1 ? "" : "s"} ago. Restaurants change recipes, so check this one before you rely on it.`,
+  };
+}
+
+/** Who a figure came from, in the fewest words that stay accurate. */
+export function sourceLabel(source: string, brand: string | null | undefined): string {
+  if (source === "Restaurant published data") return brand ? `Published by ${brand}` : "Published by the restaurant";
+  if (source === "You") return "You added this";
+  if (source === "Manufacturer label") return "From the label";
+  return source;
+}
+
+/* ---------------------------- does a row hold together? ---------------------------- */
+
+/**
+ * The calories a row's macros account for.
+ *
+ * Fibre is counted at about 2 kcal a gram rather than 4. It is a carbohydrate and it is only
+ * partly metabolised, and ignoring that overstates the energy in anything green. Raw spinach at the
+ * real USDA figures is the example: 3.6 g of carbohydrate of which 2.2 g is fibre, and a flat
+ * 4 kcal a gram implies 30 kcal against a true 23.
+ */
+export function impliedCalories(f: { carbsG: number; proteinG: number; fatG: number; fiberG: number }): number {
+  const fibre = Math.min(Math.max(f.fiberG, 0), Math.max(f.carbsG, 0));
+  const digestibleCarb = Math.max(0, f.carbsG - fibre);
+  return digestibleCarb * 4 + fibre * 2 + Math.max(0, f.proteinG) * 4 + Math.max(0, f.fatG) * 9;
+}
+
+/**
+ * Whether a row's stated calories are impossible given its macros.
+ *
+ * ASYMMETRIC ON PURPOSE, because the physics is asymmetric. Macros set a FLOOR on energy: a food
+ * cannot contain less energy than the carbohydrate, protein and fat in it already account for, so a
+ * stated value materially below the floor is a data error. Above the floor is ordinary, because the
+ * table has no column for the things that also carry energy. Alcohol is the clearest case, at about
+ * 7 kcal a gram: regular beer states 43 kcal per 100 g against macros implying 16, and the
+ * difference is the alcohol, not a mistake.
+ *
+ * A symmetric check flagged both beer and spinach as broken data when both were correct, which is
+ * the kind of false alarm that teaches people to ignore a validator.
+ */
+export function caloriesBelowFloor(
+  f: { carbsG: number; proteinG: number; fatG: number; fiberG: number; caloriesKcal: number },
+  tolerance = 0.25,
+): { below: true; implied: number; shortfall: number } | { below: false; implied: number } {
+  const implied = impliedCalories(f);
+  // Nothing to check against. Plenty of published data gives carbohydrate and no energy at all.
+  if (implied <= 0 || f.caloriesKcal <= 0) return { below: false, implied };
+  if (f.caloriesKcal >= implied * (1 - tolerance)) return { below: false, implied };
+  return { below: true, implied, shortfall: implied - f.caloriesKcal };
+}

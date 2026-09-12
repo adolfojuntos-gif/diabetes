@@ -1,11 +1,31 @@
 /**
- * A starter slice of the carbohydrate reference, inserted directly so the search can be exercised
- * while the full reference list is still being written. Every figure here is a genuine per-100g
- * value with its source named, and the full seed skips ids that already exist, so nothing is
- * duplicated or overwritten later.
+ * A starter slice of the carbohydrate reference, from before the full reference list existed.
+ *
+ * WHAT THIS IS FOR NOW: almost nothing. Every new account is seeded with all 174 reference foods by
+ * `seedAccountReference`, so there is no longer a state where a database has search but no foods.
+ * It is kept because the per-100g figures and the notes here are hand-checked against named sources,
+ * and that is worth not throwing away.
+ *
+ * TWO BUGS FIXED HERE, and the second is the one that mattered.
+ *
+ * It opened `data/steady.db`, which since the database split is only the pre-migration backup, so
+ * it wrote foods into a table no account reads and reported how many it had added.
+ *
+ * And it skipped a food only when the ID already existed. Six of the eight entries below share an
+ * id with the canonical reference and were correctly skipped. Two do not: `egg-whole-cooked`
+ * against the canonical `egg-cooked`, whose NAME is identical, and `bread-white` against
+ * `white-bread`. So running this on a modern account inserted exactly two foods that then appeared
+ * twice in search with different figures, which is the precise mess `foods:dedupe` was written to
+ * clean up. A seeding script skipping on id alone cannot see that, so it now skips on name too.
+ *
+ *   npm run foods:starter -- you@example.com
  */
-import { createClient } from "@libsql/client";
+import "dotenv/config";
 import { randomBytes } from "node:crypto";
+import { clientFromArgv } from "./_account";
+import { foodKey } from "./_foodName";
+
+const USAGE = "npm run foods:starter -- you@example.com";
 
 const A = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
 const newId = (n = 14) => Array.from(randomBytes(n), (b) => A[b & 63]).join("");
@@ -13,6 +33,22 @@ const newId = (n = 14) => Array.from(randomBytes(n), (b) => A[b & 63]).join("");
 const SR = "USDA FoodData Central (SR Legacy)";
 const FN = "USDA FoodData Central (Survey FNDDS)";
 const LB = "Manufacturer label";
+
+type Starter = {
+  id: string;
+  name: string;
+  category: string;
+  carbs: number;
+  protein: number;
+  fat: number;
+  fiber: number;
+  kcal: number;
+  aliases: string;
+  source: string;
+  aisle: string;
+  note: string;
+  portions: [string, number][];
+};
 
 const FOODS = [
   { id: "rice-white-cooked", name: "Rice, white, cooked", category: "grains and starches", carbs: 28, protein: 2.7, fat: 0.3, fiber: 0.4, kcal: 130, aliases: "arroz,arroz blanco,white rice", source: SR, aisle: "grains", note: "Mostly starch with very little fibre, so the portion is what decides the rise.", portions: [["1/2 cup cooked", 79], ["1 cup cooked", 158], ["restaurant scoop", 250]] },
@@ -37,32 +73,70 @@ const FOODS = [
   { id: "oatmeal-cooked", name: "Oatmeal, cooked", category: "breakfast", carbs: 12, protein: 2.5, fat: 1.4, fiber: 1.7, kcal: 71, aliases: "avena,oatmeal,oats", source: SR, aisle: "grains", note: "Soluble fibre is what makes plain oats behave differently from instant sweetened packets.", portions: [["1 cup", 234], ["1/2 cup", 117]] },
 ];
 
-const url = process.env.DATABASE_URL ?? "file:./data/steady.db";
-const client = createClient({ url });
+async function main() {
+  const { client } = await clientFromArgv(USAGE);
+  try {
+    const rows = (await client.execute("select id,name from foods")).rows;
+    const haveId = new Set(rows.map((r) => String(r.id)));
+    const haveName = new Map(rows.map((r) => [foodKey(String(r.name)), String(r.id)]));
 
-const have = new Set((await client.execute("select id from foods")).rows.map((r) => String(r.id)));
-const now = Math.floor(Date.now() / 1000);
-let added = 0;
-let portions = 0;
+    const now = Math.floor(Date.now() / 1000);
+    let added = 0;
+    let portions = 0;
+    let skippedById = 0;
+    const skippedByName: string[] = [];
 
-for (const f of FOODS) {
-  if (have.has(f.id)) continue;
-  await client.execute({
-    sql:
-      "insert into foods (id,name,brand,category,carbs_g,protein_g,fat_g,fiber_g,calories_kcal,aliases,source,aisle,note,custom,times_used,last_used_at,created_at)" +
-      " values (?,?,null,?,?,?,?,?,?,?,?,?,?,0,0,null,?)",
-    args: [f.id, f.name, f.category, f.carbs, f.protein, f.fat, f.fiber, f.kcal, f.aliases, f.source, f.aisle, f.note, now],
-  });
-  added++;
-  let sort = 0;
-  for (const [label, grams] of f.portions) {
-    await client.execute({
-      sql: "insert into food_portions (id,food_id,label,grams,sort,custom) values (?,?,?,?,?,0)",
-      args: [newId(), f.id, label, grams, sort++],
-    });
-    portions++;
+    for (const f of FOODS as Starter[]) {
+      if (haveId.has(f.id)) {
+        skippedById++;
+        continue;
+      }
+      /**
+       * The guard that stops this script recreating the duplicate problem. A food already present
+       * under a different id is the same food, and inserting it gives search two answers to one
+       * question, which is worse than either answer alone.
+       */
+      const clash = haveName.get(foodKey(f.name));
+      if (clash) {
+        skippedByName.push(`${f.id} would duplicate ${clash} ("${f.name}")`);
+        continue;
+      }
+
+      await client.execute({
+        sql:
+          "insert into foods (id,name,brand,category,carbs_g,protein_g,fat_g,fiber_g,calories_kcal,aliases,source,aisle,note,custom,times_used,last_used_at,created_at)" +
+          " values (?,?,null,?,?,?,?,?,?,?,?,?,?,0,0,null,?)",
+        args: [f.id, f.name, f.category, f.carbs, f.protein, f.fat, f.fiber, f.kcal, f.aliases, f.source, f.aisle, f.note, now],
+      });
+      added++;
+      let sort = 0;
+      for (const [label, grams] of f.portions) {
+        await client.execute({
+          sql: "insert into food_portions (id,food_id,label,grams,sort,custom) values (?,?,?,?,?,0)",
+          args: [newId(), f.id, label, grams, sort++],
+        });
+        portions++;
+      }
+    }
+
+    const total = (await client.execute("select count(*) n from foods")).rows[0].n;
+    console.log(`starter reference: ${added} foods added, ${portions} portions. This account now holds ${total} foods.`);
+    console.log(`skipped ${skippedById} already present by id.`);
+    for (const s of skippedByName) console.log(`  skipped ${s}`);
+    if (added === 0) {
+      console.log(`
+Nothing to add. The canonical reference already covers all of this, which is expected.`);
+    }
+  } finally {
+    try {
+      client.close();
+    } catch {
+      /* a handle that will not close is not worth failing over */
+    }
   }
 }
 
-const total = (await client.execute("select count(*) n from foods")).rows[0].n;
-console.log(`starter reference: ${added} foods added, ${portions} portions. The table now holds ${total} foods.`);
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
