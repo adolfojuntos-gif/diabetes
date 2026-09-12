@@ -929,3 +929,52 @@
 @media (prefers-reduced-motion: reduce) {
   .ceremony-title, .ceremony-world, .ceremony-then, .morning { animation: none !important; }
 }
+
+@layer components {
+  /*
+    THE PLATE. Four quarters on a round board, which is the one place in this app where a shape
+    carries meaning: people are taught the plate method as a circle divided up, and a grid of four
+    cards would lose that instantly.
+
+    No quarter is styled as better than another. Same fill, same border, same type, and the only
+    difference between them is whether anything is in one yet.
+  */
+  .plate-board {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 28px;
+    background: var(--line);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  /*
+    An ellipse was the obvious way to make this read as a plate, and it clipped the corner of every
+    quarter: the word VEGETABLES was cut in half by the curve. The 2x2 split and the divider lines
+    already say plate perfectly well, so the shape gives way to the words rather than the other way
+    round. A generous radius keeps it from looking like a spreadsheet.
+  */
+  @media (min-width: 640px) {
+    .plate-board { border-radius: 36px; }
+  }
+  .plate-quarter {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.022));
+    padding: 1rem;
+    min-height: 9.5rem;
+    backdrop-filter: blur(10px);
+  }
+  /* An empty quarter is an invitation, so it recedes rather than reading as a gap to be filled. */
+  .plate-quarter-empty { background: rgba(255, 255, 255, 0.015); }
+
+  .plate-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem 0.4rem 0.7rem;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.9rem;
+  }
+}
