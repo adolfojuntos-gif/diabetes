@@ -1081,6 +1081,41 @@ export const worldEvents = sqliteTable(
 
 export type WorldEvent = typeof worldEvents.$inferSelect;
 
+/**
+ * Rounds of Guess the Carbs.
+ *
+ * The reference figure is DENORMALISED onto the row on purpose, exactly as `meal_items` does it.
+ * A food edited or deleted next month must not silently rewrite what somebody was shown in
+ * September, because the whole value of looking back at these is seeing what you thought at the
+ * time against what you were told at the time.
+ *
+ * There is no score column and there will not be one. What is stored is what was asked, what was
+ * guessed and what the reference said; anything resembling a running accuracy would turn a
+ * learning tool into one more thing to be bad at.
+ */
+export const carbGuesses = sqliteTable(
+  "carb_guesses",
+  {
+    id: text("id").primaryKey(),
+    at: ts("at").notNull(),
+    /** "YYYY-MM-DD:n", which is also the round's seed. Unique, so a round is answered once. */
+    roundKey: text("round_key").notNull(),
+    foodId: text("food_id"),
+    foodName: text("food_name").notNull(),
+    portionLabel: text("portion_label").notNull(),
+    grams: real("grams").notNull(),
+    /** What the reference said at the time, for that exact weight. */
+    referenceCarbsG: real("reference_carbs_g").notNull(),
+    guessG: real("guess_g").notNull(),
+    /** Where the figure came from, kept so an old round can still explain itself. */
+    source: text("source").notNull().default(""),
+    engineVersion: text("engine_version").notNull().default("0"),
+  },
+  (t) => [uniqueIndex("carb_guess_round_uq").on(t.roundKey), index("carb_guess_at_idx").on(t.at)],
+);
+
+export type CarbGuess = typeof carbGuesses.$inferSelect;
+
 export type JourneyQuest = typeof journeyQuests.$inferSelect;
 export type Discovery = typeof discoveries.$inferSelect;
 export type PlayerState = typeof playerState.$inferSelect;

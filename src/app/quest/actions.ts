@@ -24,10 +24,21 @@ import {
 import { THEME_KEYS } from "@/lib/game/themes";
 import { ARCHETYPE_KEYS } from "@/lib/game/archetypes";
 import { markSeen } from "@/lib/data/journey";
+import { answer as answerGuess } from "@/lib/data/guess";
 import { markWorldSeen } from "@/lib/data/world";
 
 function refresh() {
-  for (const p of ["/", "/quest/journey", "/quest/journal", "/quest/world", "/quest/you", "/quest/unlocked", "/quest/recap", "/today"])
+  for (const p of [
+    "/",
+    "/quest/journey",
+    "/quest/journal",
+    "/quest/world",
+    "/quest/you",
+    "/quest/guess",
+    "/quest/unlocked",
+    "/quest/recap",
+    "/today",
+  ])
     revalidatePath(p);
 }
 
@@ -88,6 +99,24 @@ export async function dismissMorning(fd: FormData): Promise<void> {
     await markMorningSeen(p.data.date);
     refresh();
     redirect(p.data.to && p.data.to.startsWith("/") ? p.data.to : "/");
+  });
+}
+
+/**
+ * Submit a guess.
+ *
+ * The guess is recorded here and the reveal is then read back on the next render from the stored
+ * round, which is why the redirect carries the round and the number rather than the answer. It
+ * keeps the reference figure off every URL, out of history, and out of anything a person might
+ * screenshot and share.
+ */
+export async function submitGuess(fd: FormData): Promise<void> {
+  return requireAccount(async () => {
+    const p = parseForm(z.object({ roundKey: zStr(40), guess: z.coerce.number().min(0).max(500) }), fd);
+    if ("error" in p) redirect("/quest/guess");
+    await answerGuess(p.data.roundKey, p.data.guess);
+    refresh();
+    redirect(`/quest/guess?r=${encodeURIComponent(p.data.roundKey)}&g=${p.data.guess}`);
   });
 }
 

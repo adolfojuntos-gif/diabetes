@@ -358,6 +358,10 @@ export default async function QuestPage() {
 
         {/* ------------------------------ the rest ----------------------------- */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mt-6">
+          <Link href="/quest/guess" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
+            <h3>Guess the Carbs</h3>
+            <p className="hint mt-1">Build a feel for a portion. No score, and nothing to get wrong.</p>
+          </Link>
           <Link href="/quest/forest" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
             <h3>The Food Forest</h3>
             <p className="hint mt-1">Everything you have eaten, grown into a place.</p>
