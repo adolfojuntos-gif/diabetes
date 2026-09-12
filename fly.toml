@@ -28,7 +28,11 @@ primary_region = "dfw"
   # A demo account created on first boot, so a prospect opening the link sees a working app rather
   # than a sign-in form. Its password is a secret, not set here. Seeded once, on creation only:
   # re-seeding every restart would wipe anything somebody did while looking at it.
-  DEMO_EMAIL = "demo@steady-diabetes.fly.dev"
+  DEMO_EMAIL = "adolfojuntos@gmail.com"
+  # Where the demo account used to live. `bootstrapDeploy` moves it rather than creating a second
+  # one at the new address and orphaning the world that was already there. Once the move has
+  # happened this does nothing, and it can be deleted.
+  DEMO_EMAIL_WAS = "demo@steady-diabetes.fly.dev"
   SEED_DEMO = "1"
 
   # One SQLite connection per account, evicted least recently used. Below the file descriptor limit.

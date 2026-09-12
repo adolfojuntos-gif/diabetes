@@ -70,6 +70,33 @@ async function main() {
     return;
   }
 
+  /*
+   * RENAMING THE DEMO ACCOUNT, when DEMO_EMAIL has been pointed somewhere new.
+   *
+   * Without this, changing DEMO_EMAIL silently forks the deployment: the lookup below finds no
+   * account at the new address, a fresh one is created and seeded, and the world somebody had
+   * actually been using stays behind on the old address with nothing pointing at it. The data is
+   * not lost, but it is orphaned, which is worse than an error because nothing reports it.
+   *
+   * So the old address is named in DEMO_EMAIL_WAS and the account is moved rather than replaced.
+   * It is only ever a rename: same id, same database, same sessions, same history. It does nothing
+   * unless DEMO_EMAIL_WAS is set, and nothing once the move has happened, so it is safe to leave
+   * configured and safe to remove.
+   */
+  const previousEmail = process.env.DEMO_EMAIL_WAS;
+  if (previousEmail && normalizeEmail(previousEmail) !== normalizeEmail(email)) {
+    const [atNew] = await controlDb().select().from(accounts).where(eq(accounts.email, normalizeEmail(email))).limit(1);
+    const [atOld] = await controlDb().select().from(accounts).where(eq(accounts.email, normalizeEmail(previousEmail))).limit(1);
+    if (atNew) {
+      console.log(`steady: ${email} already exists, so ${previousEmail} was left alone`);
+    } else if (!atOld) {
+      console.log(`steady: nothing at ${previousEmail} to rename`);
+    } else {
+      await controlDb().update(accounts).set({ email: normalizeEmail(email) }).where(eq(accounts.id, atOld.id));
+      console.log(`steady: renamed the demo account from ${previousEmail} to ${email}, same database and history`);
+    }
+  }
+
   const existing = await controlDb().select().from(accounts).where(eq(accounts.email, normalizeEmail(email))).limit(1);
   if (existing[0]) {
     /**
