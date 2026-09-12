@@ -4,7 +4,7 @@
  * The account schema as executable statements, so a new account's database can be created inside a
  * request. Generated from `src/lib/db/schema.ts` via `drizzle-kit generate`.
  *
- * 41 tables, 41 indexes. Every statement is create-if-not-exists, so applying this to
+ * 41 tables, 42 indexes. Every statement is create-if-not-exists, so applying this to
  * an existing database is a no-op and the same list doubles as the migration path.
  */
 
@@ -91,6 +91,7 @@ export const ACCOUNT_SCHEMA_SQL: string[] = [
   "CREATE TABLE IF NOT EXISTS `world_events` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`key` text NOT NULL,\n\t`kind` text NOT NULL,\n\t`title` text NOT NULL,\n\t`body` text NOT NULL,\n\t`at` integer NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`seen_at` integer,\n\t`engine_version` text DEFAULT '0' NOT NULL\n)",
   "CREATE UNIQUE INDEX IF NOT EXISTS `world_event_key_uq` ON `world_events` (`key`)",
   "CREATE INDEX IF NOT EXISTS `world_event_at_idx` ON `world_events` (`at`)",
+  "ALTER TABLE `player_state` ADD `archetype` text DEFAULT '' NOT NULL",
 ];
 
 /**

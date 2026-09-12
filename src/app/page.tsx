@@ -284,7 +284,8 @@ export default async function QuestPage() {
                 <h3 className="mt-1">{adventure.name}</h3>
                 <p className="text-sm mt-1 prose-measure muted">{adventure.opening}</p>
                 <p className="hint mt-2">
-                  Finish all three and {adventure.reward} opens. {questsDone} of {quests.length} done.
+                  Finish {quests.length === 1 ? "it" : `all ${quests.length}`} and {adventure.reward} opens. {questsDone} of{" "}
+                  {quests.length} done.
                 </p>
                 <div className="grid gap-2 mt-3">
                   {quests.map((x) => (
@@ -328,6 +329,12 @@ export default async function QuestPage() {
           <div className="flex items-end justify-between gap-3 mb-3">
             <div>
               <h2>Who you are becoming</h2>
+              {q.archetype ? (
+                <p className="hint mt-1">
+                  {q.archetype.glyph} {q.archetype.name}, so {q.dimensions[0].name} leads the list. The order is the only thing your
+                  choice changes here: nothing below is worth more or less for it.
+                </p>
+              ) : null}
               <p className="hint mt-1 prose-measure">
                 Seven of these, and not one is a score. There is no overall number here and there never will be.
               </p>
@@ -358,6 +365,12 @@ export default async function QuestPage() {
           <Link href="/quest/journey" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
             <h3>Your journey</h3>
             <p className="hint mt-1">The whole story, month by month, in your own numbers.</p>
+          </Link>
+          <Link href="/quest/you" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
+            <h3>{q.archetype ? q.archetype.name : "Who are you here?"}</h3>
+            <p className="hint mt-1">
+              {q.archetype ? q.archetype.line : "Not a personality test. It changes what the world offers you, never what it pays."}
+            </p>
           </Link>
           <Link href="/quest/world" className="card p-4 hover:shadow-[var(--shadow-lift)] transition-shadow">
             <h3>Change your world</h3>

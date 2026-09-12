@@ -1,0 +1,1 @@
+ALTER TABLE `player_state` ADD `archetype` text DEFAULT '' NOT NULL;

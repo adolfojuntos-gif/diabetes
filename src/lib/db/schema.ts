@@ -1032,6 +1032,12 @@ export const playerState = sqliteTable("player_state", {
    * player and for somebody whose whole history was backfilled: they get the ceremony for the
    * region they are actually standing in, once, and not one for every level they passed through.
    */
+  /**
+   * Who they chose to be here. It changes which quests come up and the order the identities are
+   * read in, and nothing about what anything is worth. Empty until they pick, which is not the
+   * same as the default: an unanswered question must not look like an answer.
+   */
+  archetype: text("archetype").notNull().default(""),
   regionSeenLevel: integer("region_seen_level").notNull().default(0),
   /** The last morning the greeting was shown, "YYYY-MM-DD". One a day, never twice. */
   morningSeenDate: text("morning_seen_date").notNull().default(""),

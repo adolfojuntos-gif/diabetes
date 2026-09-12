@@ -22,6 +22,7 @@
  */
 import type { DayRoll } from "./journey";
 import { weekKey, parseDateKey } from "../time";
+import { FAVOUR_WEIGHT } from "../game/archetypes";
 
 /* ------------------------------- identities ------------------------------- */
 
@@ -443,14 +444,29 @@ export const NOVELTY_WEEKS = 2;
  * leaves too few to fill a week the exclusion is relaxed rather than the week being short, because
  * a thin pool is a content problem and must not become a broken screen.
  */
-export function weeklyAdventure(now: Date, weekDays: DayRoll[], recent: string[] = []): Adventure {
+export function weeklyAdventure(
+  now: Date,
+  weekDays: DayRoll[],
+  recent: string[] = [],
+  /** Quest codes this person's archetype leans toward. A tilt on the ranking, never a filter. */
+  favoured: string[] = [],
+): Adventure {
   const wk = weekKey(now);
   const seed = hash(wk);
   const a = ADVENTURES[seed % ADVENTURES.length];
 
+  const likes = new Set(favoured);
+  /*
+   * Relevance first, taste second, then a stable jitter. The order of those three is the whole
+   * design: a favour bonus large enough to outrank the gap weight would offer an Explorer another
+   * walk while they have not logged a meal in a fortnight.
+   */
   const rank = (pool: QuestTemplate[]) =>
     pool
-      .map((t, i) => ({ t, w: (t.weight?.(weekDays) ?? 0) * 3 + ((hash(`${wk}:${t.code}`) >> i) & 7) }))
+      .map((t, i) => ({
+        t,
+        w: (t.weight?.(weekDays) ?? 0) * 3 + (likes.has(t.code) ? FAVOUR_WEIGHT : 0) + ((hash(`${wk}:${t.code}`) >> i) & 7),
+      }))
       .sort((x, y) => y.w - x.w)
       .map((x) => x.t);
 
@@ -483,7 +499,8 @@ export function weeklyAdventure(now: Date, weekDays: DayRoll[], recent: string[]
   const newestFirst = [...recent].reverse();
   const autos = rank(afford(allAutos, 2, newestFirst.filter((c) => allAutos.some((t) => t.code === c))));
   const manualPool = afford(allManuals, 1, newestFirst.filter((c) => allManuals.some((t) => t.code === c)));
-  const manual = manualPool[hash(`m:${wk}`) % manualPool.length];
+  // Ranked rather than drawn, so taste tilts the pick without ever excluding anything.
+  const manual = rank(manualPool)[0];
 
   const chosen = [autos[0], autos[1], manual].filter(Boolean);
   return {

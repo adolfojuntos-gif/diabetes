@@ -11,19 +11,44 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAccount } from "@/lib/auth/session";
 import { parseForm, zStr } from "@/lib/actions";
-import { completeQuest, addDiscovery, startRest, endRest, setWorldTheme, markRegionSeen, markMorningSeen } from "@/lib/data/lifequest";
+import {
+  completeQuest,
+  addDiscovery,
+  startRest,
+  endRest,
+  setWorldTheme,
+  setArchetype,
+  markRegionSeen,
+  markMorningSeen,
+} from "@/lib/data/lifequest";
 import { THEME_KEYS } from "@/lib/game/themes";
+import { ARCHETYPE_KEYS } from "@/lib/game/archetypes";
 import { markSeen } from "@/lib/data/journey";
 import { markWorldSeen } from "@/lib/data/world";
 
 function refresh() {
-  for (const p of ["/", "/quest/journey", "/quest/journal", "/quest/world", "/quest/unlocked", "/quest/recap", "/today"]) revalidatePath(p);
+  for (const p of ["/", "/quest/journey", "/quest/journal", "/quest/world", "/quest/you", "/quest/unlocked", "/quest/recap", "/today"])
+    revalidatePath(p);
 }
 
 /**
  * Switch which world they are building in. It is a view change and nothing else: no points move,
  * no level changes, nothing is reset, and it can be done as often as they like.
  */
+/**
+ * Choose who you are here. Changeable at any time and free: it tilts what the app offers and
+ * changes nothing about what anything is worth, so there is no wrong answer to regret.
+ */
+export async function chooseArchetype(fd: FormData): Promise<void> {
+  return requireAccount(async () => {
+    const p = parseForm(z.object({ archetype: z.enum(ARCHETYPE_KEYS) }), fd);
+    if ("error" in p) redirect("/quest/you");
+    await setArchetype(p.data.archetype);
+    refresh();
+    redirect("/");
+  });
+}
+
 export async function chooseWorld(fd: FormData): Promise<void> {
   return requireAccount(async () => {
     const p = parseForm(z.object({ theme: z.enum(THEME_KEYS) }), fd);

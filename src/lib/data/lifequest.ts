@@ -25,6 +25,7 @@ import { getProfile } from "./snapshot";
 import { grantAwards, journeyState, unseenAwards, type JourneyState } from "./journey";
 import { rollDays, type DayRoll, type JourneyReport } from "../engines/journey";
 import { provenance, HABIT_RULES } from "../engines/rules";
+import { archetypeOf, leadFirst, type Archetype, type ArchetypeKey } from "../game/archetypes";
 import { narrateAward, engineCelebration, type Narration } from "../ai/gamemaster";
 import { tickAndRecord, unseenEvents, extras as worldExtrasFor, newsLine } from "./world";
 import { worldState } from "../engines/journey";
@@ -76,6 +77,15 @@ export async function startRest(days: number, now = new Date()): Promise<void> {
  * Change which world the drawing shows. Nothing in the ledger is touched, because nothing in the
  * ledger knows what a theme is.
  */
+/**
+ * Choose, or change, who they are here. Free and reversible: what somebody wants out of this in
+ * March is not what they wanted in January, and nothing about the ledger depends on the answer.
+ */
+export async function setArchetype(key: ArchetypeKey, now = new Date()): Promise<void> {
+  await getPlayer(now);
+  await db.update(playerState).set({ archetype: key, updatedAt: now }).where(eq(playerState.id, 1));
+}
+
 export async function setWorldTheme(theme: "forest" | "coast" | "city", now = new Date()): Promise<void> {
   await getPlayer(now);
   await db.update(playerState).set({ worldTheme: theme, updatedAt: now }).where(eq(playerState.id, 1));
@@ -157,9 +167,26 @@ export async function syncQuests(rolls: DayRoll[], now = new Date()): Promise<{ 
   const recentWeeks = [...new Set(recentRows.map((r) => r.weekKey))].filter((w) => w !== wk).slice(0, NOVELTY_WEEKS);
   const recent = recentRows.filter((r) => recentWeeks.includes(r.weekKey)).map((r) => r.code);
 
-  const adventure = weeklyAdventure(now, week, recent);
+  const player = await getPlayer(now);
+  const chosen = player.archetype ? archetypeOf(player.archetype) : null;
+  const adventure = weeklyAdventure(now, week, recent, chosen?.favours ?? []);
 
-  for (const q of adventure.quests) {
+  /*
+   * A WEEK IS WRITTEN ONCE AND THEN LEFT ALONE, and the check is on the WEEK rather than on each
+   * key, which is the part the first version got wrong.
+   *
+   * Inserting by key is idempotent for identical picks and useless for different ones: the moment
+   * anything upstream changes what is chosen, a mid-week visit adds a second set of quests beside
+   * the first. Somebody on Wednesday was shown five quests under a heading that said three, which
+   * is what rendering the page rather than reading the code caught.
+   *
+   * Changing archetype, tuning the picker, adding a template: none of them may reach into a week
+   * already underway. The quest somebody was given on Monday is the quest they finish on Sunday.
+   */
+  const already = await db.select({ id: journeyQuests.id }).from(journeyQuests).where(eq(journeyQuests.weekKey, wk)).limit(1);
+  const weekIsOpen = already.length === 0;
+
+  for (const q of weekIsOpen ? adventure.quests : []) {
     await db
       .insert(journeyQuests)
       .values({
@@ -292,6 +319,8 @@ export type LifeQuest = {
   news: WorldEvent[];
   /** One line summarising that, or null when there is honestly nothing to say. */
   newsLine: string | null;
+  /** Who they chose to be here, or null if they have not been asked yet. */
+  archetype: Archetype | null;
 };
 
 /**
@@ -400,7 +429,8 @@ export async function loadLifeQuest(now = new Date()): Promise<LifeQuest> {
     standing: standing(rolls),
     resting,
     restUntil: player.restUntil,
-    dimensions: dimensionScores(awardCodes),
+    // Their own identity reads first. The scores are untouched; only the order changes.
+    dimensions: leadFirst(dimensionScores(awardCodes), player.archetype ? archetypeOf(player.archetype) : null),
     /*
      * Only the region they are standing in now, never the ones passed on the way. Somebody whose
      * three months of history was backfilled jumps from nothing to level 7 in one write, and
@@ -421,6 +451,7 @@ export async function loadLifeQuest(now = new Date()): Promise<LifeQuest> {
     celebration,
     news,
     newsLine: line,
+    archetype: player.archetype ? archetypeOf(player.archetype) : null,
   };
 }
 
