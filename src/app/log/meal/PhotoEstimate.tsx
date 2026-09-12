@@ -134,8 +134,13 @@ export function PhotoEstimate({ action, available }: { action: PhotoAction; avai
     }
   }
 
-  const total = items ? items.reduce((a, i) => a + (Number(i.carbsG) || 0), 0) : 0;
-  const totalCal = items ? items.reduce((a, i) => a + (Number(i.caloriesKcal) || 0), 0) : 0;
+  const total = items ? items.reduce((a, i) => a + (i.carbsG ?? 0), 0) : 0;
+  const totalCal = items ? items.reduce((a, i) => a + (i.caloriesKcal ?? 0), 0) : 0;
+  /*
+   * Counted separately and shown, because a total that silently omits two of five items is worse
+   * than no total: it looks complete. `Number(null) || 0` used to fold them in as zeroes.
+   */
+  const missing = items ? items.filter((i) => i.carbsG === null).length : 0;
 
   function edit(idx: number, patch: Partial<PhotoItem>) {
     setItems((prev) => (prev ? prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)) : prev));
@@ -146,8 +151,8 @@ export function PhotoEstimate({ action, available }: { action: PhotoAction; avai
     if (!items || items.length === 0) return;
     const keep = items.filter((i) => i.name.trim().length > 0);
     setField("meal-name", keep.map((i) => i.name.trim()).join(", ").slice(0, 200));
-    setField("meal-carbs", String(Math.round(keep.reduce((a, i) => a + (Number(i.carbsG) || 0), 0))));
-    setField("meal-calories", String(Math.round(keep.reduce((a, i) => a + (Number(i.caloriesKcal) || 0), 0))));
+    setField("meal-carbs", String(Math.round(keep.reduce((a, i) => a + (i.carbsG ?? 0), 0))));
+    setField("meal-calories", String(Math.round(keep.reduce((a, i) => a + (i.caloriesKcal ?? 0), 0))));
     setField("meal-estimate-source", "photo");
     setField("meal-items", JSON.stringify(keep));
     setAccepted(true);
@@ -243,8 +248,12 @@ export function PhotoEstimate({ action, available }: { action: PhotoAction; avai
                             id={`it-carbs-${i}`}
                             className="input num w-24"
                             inputMode="numeric"
-                            value={String(it.carbsG)}
-                            onChange={(e) => edit(i, { carbsG: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 })}
+                            value={it.carbsG === null ? "" : String(it.carbsG)}
+                            placeholder={it.match === "none" ? "look up" : ""}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/[^0-9.]/g, "");
+                              edit(i, { carbsG: raw === "" ? null : Number(raw) || 0 });
+                            }}
                           />
                         </td>
                         <td className="py-1 pr-2">
@@ -255,12 +264,27 @@ export function PhotoEstimate({ action, available }: { action: PhotoAction; avai
                             id={`it-cal-${i}`}
                             className="input num w-24"
                             inputMode="numeric"
-                            value={String(it.caloriesKcal)}
-                            onChange={(e) => edit(i, { caloriesKcal: Number(e.target.value.replace(/[^0-9.]/g, "")) || 0 })}
+                            value={it.caloriesKcal === null ? "" : String(it.caloriesKcal)}
+                            onChange={(e) => {
+                              const raw = e.target.value.replace(/[^0-9.]/g, "");
+                              edit(i, { caloriesKcal: raw === "" ? null : Number(raw) || 0 });
+                            }}
                           />
                         </td>
                         <td className="py-1">
-                          <span className="pill">{CONFIDENCE_LABEL[it.confidence]}</span>
+                          {/*
+                            Where the figure came from, which is the thing worth knowing. The model's
+                            confidence is about what it SAW; the reference is what MEASURED it, and they
+                            are different claims. An unmatched row says so plainly and stays blank.
+                          */}
+                          {it.match === "none" ? (
+                            <span className="pill pill-amber">Not in the reference</span>
+                          ) : (
+                            <span className="pill" title={it.source ?? ""}>
+                              {it.matchedName ?? CONFIDENCE_LABEL[it.confidence]}
+                            </span>
+                          )}
+                          <span className="hint block mt-1">{CONFIDENCE_LABEL[it.confidence]} it is this food</span>
                         </td>
                       </tr>
                     ))}
@@ -275,6 +299,16 @@ export function PhotoEstimate({ action, available }: { action: PhotoAction; avai
                 <span className="text-sm muted num">
                   {Math.round(total)} g carbs · {Math.round(totalCal)} kcal
                 </span>
+                {/*
+                  Said out loud, next to the total, because a partial total is the one number here
+                  somebody could act on while believing it is complete.
+                */}
+                {missing > 0 ? (
+                  <span className="text-sm" style={{ color: "var(--amber)" }}>
+                    {missing} item{missing === 1 ? " is" : "s are"} not in the reference and {missing === 1 ? "is" : "are"} not
+                    counted above. Look {missing === 1 ? "it" : "them"} up before using this total.
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"

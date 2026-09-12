@@ -61,13 +61,24 @@ export type ChunkAction = (input: { text: string; batch: string | null }) => Pro
 
 /* --------------------------- meal photo flow --------------------------- */
 
-/** Same shape as `EstimatedItem` in `@/lib/ai/mealPhoto`, restated so a client file needs no server import. */
+/**
+ * Same shape as `EstimatedItem` in `@/lib/ai/mealPhoto`, restated so a client file needs no server
+ * import.
+ *
+ * `carbsG` is NULL when the carbohydrate reference had no match for the identified food. Not
+ * zero: a zero adds nothing to a total and looks measured, and the difference between those is
+ * the whole safety argument. The screen shows a blank and asks the person to look it up.
+ */
 export type PhotoItem = {
   name: string;
   portion: string;
-  carbsG: number;
-  caloriesKcal: number;
+  carbsG: number | null;
+  caloriesKcal: number | null;
   confidence: "low" | "medium" | "high";
+  /** The reference row the figures came from, or null when nothing matched. */
+  matchedName: string | null;
+  source: string | null;
+  match: "none" | "weak" | "good";
 };
 
 export type PhotoResult =
