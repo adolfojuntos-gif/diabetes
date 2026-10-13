@@ -7,379 +7,381 @@
   <meta name="description" content="Provider-prescribed weekly weight-loss treatment, metabolic peptides, copper-peptide skin care and athlete collagen. Free online visit, shipped to your door." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Lexend:wght@300;400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="utility">
-    <p>Prescription treatments need a free online visit with a licensed provider. <a href="#safety">Read Important Safety Information</a></p>
+    <p>Prescription treatments require a free online visit with a licensed provider. <a href="#safety">Important Safety Information</a></p>
   </div>
 
-  <header class="nav">
-    <a class="logo" href="#top">Arcline</a>
-    <nav class="nav-links" aria-label="Main">
-      <a href="#results">Results</a>
-      <a href="#how-it-works">How it works</a>
-      <a href="#shop">Treatments</a>
-      <a href="#take">How to take it</a>
-      <a href="#faq">Questions</a>
+  <header class="masthead">
+    <nav class="mast-left" aria-label="Main">
+      <a href="#numbers">Results</a>
+      <a href="#formulary">Treatments</a>
+      <a href="#taking">How to take it</a>
     </nav>
-    <div class="nav-actions">
-      <button class="cart-btn" id="cartBtn" type="button">Cart (<span id="cartCount">0</span>)</button>
-      <a class="btn btn-primary btn-sm" href="#quiz">See if I qualify</a>
+    <a class="wordmark" href="#top">Arcline</a>
+    <div class="mast-right">
+      <a href="#questions" class="hide-sm">Questions</a>
+      <button class="cart-btn" id="cartBtn" type="button">Bag <span id="cartCount">0</span></button>
+      <a class="btn btn-brass btn-sm" href="#check">Start</a>
     </div>
   </header>
 
   <main id="top">
-    <!-- HERO -->
-    <section class="hero wrap">
-      <div class="hero-copy">
-        <p class="eyebrow">Once-a-week weight-loss treatment</p>
-        <h1>Lose weight and keep it off, with one shot a week.</h1>
-        <p class="lede">Feel full sooner. Think about food less. In medical studies, adults lost an average of <strong>35 to 48 pounds</strong>.<sup>*</sup></p>
-        <p class="lede">A licensed provider can prescribe it after a free online visit. Your medicine ships to your door.</p>
-        <div class="hero-ctas">
-          <a class="btn btn-primary btn-lg" href="#quiz">See if I qualify</a>
-          <a class="btn btn-outline btn-lg" href="#shop">View all treatments</a>
+    <!-- HERO: typographic, the number is the thesis -->
+    <section class="hero">
+      <div class="frame hero-grid">
+        <div class="hero-copy">
+          <p class="kicker">Weekly GLP-1 treatment · prescribed online</p>
+          <h1>Weight loss<br />you can <em>measure.</em></h1>
+          <p class="lede">One shot a week helps you feel full sooner and think about food less. A licensed provider decides if it is right for you, after a free online visit.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-brass btn-lg" href="#check">See if I qualify</a>
+            <a class="btn btn-ghost-light btn-lg" href="#formulary">Explore treatments</a>
+          </div>
         </div>
-        <p class="footnote"><sup>*</sup>Average weight loss in 15- to 17-month studies of semaglutide 2.4 mg (about 35 lb) and tirzepatide 15 mg (about 48 lb), used with diet and exercise. Results vary. See <a href="#results">study details</a>.</p>
+        <aside class="hero-figure" aria-label="Average weight loss in medical studies">
+          <p class="fig-label">Average weight lost in medical studies</p>
+          <div class="fig-row"><span class="fig-num">48</span><span class="fig-unit">lb</span><span class="fig-what">tirzepatide 15 mg<br /><small>17 months<sup>2</sup></small></span></div>
+          <div class="fig-row"><span class="fig-num">35</span><span class="fig-unit">lb</span><span class="fig-what">semaglutide 2.4 mg<br /><small>15 months<sup>1</sup></small></span></div>
+          <p class="fig-note">Averages from adults starting at about 231 lb, alongside diet and exercise. Placebo groups lost 6–7 lb. Results vary.</p>
+        </aside>
       </div>
-      <figure class="hero-img">
+    </section>
+    <div class="hero-photo-band">
+      <figure class="hero-photo frame">
         <img src="img/hero-walk.jpg" alt="A smiling woman in her fifties out for a morning walk" width="1600" height="2000" />
         <figcaption>Model for illustration only.</figcaption>
       </figure>
-    </section>
+    </div>
 
-    <!-- KEY NUMBERS -->
-    <section class="numbers" aria-label="Key numbers from medical studies">
-      <div class="wrap numbers-grid">
-        <div><p class="big">35<span>lb</span></p><p>Average weight loss with <b>semaglutide</b> in the STEP 1 study<sup>1</sup></p></div>
-        <div><p class="big">48<span>lb</span></p><p>Average weight loss with <b>tirzepatide</b> 15 mg in the SURMOUNT-1 study<sup>2</sup></p></div>
-        <div><p class="big">1<span>shot</span></p><p>A week. Same day each week, at home, in under a minute</p></div>
-        <div><p class="big">$0</p><p>For your online visit. You pay only if a provider prescribes</p></div>
-      </div>
-    </section>
-
-    <!-- WHAT IS IT -->
-    <section class="section wrap split">
-      <figure class="split-img">
-        <img src="img/kitchen.jpg" alt="A man in his sixties cooking a healthy salmon dinner at home" width="1600" height="1200" loading="lazy" />
-        <figcaption>Model for illustration only.</figcaption>
-      </figure>
-      <div>
-        <p class="eyebrow">What is a GLP-1 peptide?</p>
-        <h2>It works with a hormone your body already makes.</h2>
-        <p>When you eat, your gut releases a natural hormone called GLP-1. It tells your brain, <em>"I'm full."</em> Semaglutide and tirzepatide copy that hormone and make it last longer.</p>
-        <p>The result is simple. You feel full with smaller meals, and you think about food less. Many people call this "quieting the food noise."</p>
-        <ul class="ticks">
-          <li><b>Feel full sooner.</b> Smaller portions feel like enough.</li>
-          <li><b>Fewer cravings.</b> Snacking and late-night eating get easier to skip.</li>
-          <li><b>Steadier blood sugar.</b> Fewer highs and crashes after meals.</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- RESULTS -->
-    <section id="results" class="section section-mist">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow">Results from medical studies</p>
-          <h2>How many people reached each goal</h2>
-          <p>The share of adults who lost at least 5%, 10%, 15%, or 20% of their body weight, at the highest dose.</p>
+    <!-- CHAPTER: how it works -->
+    <section class="chapter" id="how">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">I</p>
+          <h2>How it works</h2>
+          <p>A natural "I'm full" signal, made to last longer.</p>
+        </header>
+        <div class="chapter-body">
+          <p class="intro">When you eat, your gut releases a hormone called <b>GLP-1</b>. It tells your brain you have had enough. Semaglutide and tirzepatide copy that hormone and keep the signal going for a whole week.</p>
+          <div class="mechanisms">
+            <div>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="18" r="10" /><path d="M10 42c2-8 8-12 14-12s12 4 14 12" /><path d="M20 17h8M24 13v8" /></svg>
+              <h3>Your brain</h3>
+              <p>Gets the message that you are full, so smaller meals feel like enough.</p>
+            </div>
+            <div>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M16 8c-6 6-8 14-4 22s14 12 20 8 6-14 0-18-8-6-6-12" /></svg>
+              <h3>Your stomach</h3>
+              <p>Empties more slowly, so you stay full for longer after you eat.</p>
+            </div>
+            <div>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 30c6 0 6-12 12-12s6 12 12 12 6-12 12-12 4 6 4 6" /><path d="M4 40h40" /></svg>
+              <h3>Your blood sugar</h3>
+              <p>Stays steadier after meals, with fewer highs and crashes.</p>
+            </div>
+          </div>
+          <figure class="inline-photo">
+            <img src="img/kitchen.jpg" alt="A man in his sixties cooking a healthy salmon dinner at home" width="1600" height="1200" loading="lazy" />
+            <figcaption>Treatment works best with small, steady changes to how you eat and move. Model for illustration only.</figcaption>
+          </figure>
         </div>
-        <div class="table-wrap">
-          <table class="results">
-            <thead>
-              <tr><th scope="col">Weight lost</th><th scope="col">Semaglutide 2.4 mg<sup>1</sup><span>68 weeks</span></th><th scope="col">Tirzepatide 15 mg<sup>2</sup><span>72 weeks</span></th></tr>
-            </thead>
+      </div>
+    </section>
+
+    <!-- CHAPTER: results -->
+    <section class="chapter chapter-porcelain" id="numbers">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">II</p>
+          <h2>Who reaches their goal</h2>
+          <p>Out of every 100 people in the studies, at the highest dose.</p>
+        </header>
+        <div class="chapter-body">
+          <div class="goal-picker" role="radiogroup" aria-label="Choose a weight-loss goal">
+            <span class="goal-label">Lost at least</span>
+            <button type="button" role="radio" data-goal="5" aria-checked="false">5%</button>
+            <button type="button" role="radio" data-goal="10" aria-checked="false">10%</button>
+            <button type="button" role="radio" data-goal="15" aria-checked="true">15%</button>
+            <button type="button" role="radio" data-goal="20" aria-checked="false">20%</button>
+          </div>
+          <div class="arrays">
+            <figure>
+              <div class="dots" id="dotsSema" aria-hidden="true"></div>
+              <figcaption><span class="array-num" id="numSema">51</span><span>of 100 people<br /><b>semaglutide 2.4 mg</b><sup>1</sup></span></figcaption>
+            </figure>
+            <figure>
+              <div class="dots dots-alt" id="dotsTirz" aria-hidden="true"></div>
+              <figcaption><span class="array-num" id="numTirz">71</span><span>of 100 people<br /><b>tirzepatide 15 mg</b><sup>2</sup></span></figcaption>
+            </figure>
+          </div>
+          <p class="sr-only" id="goalSummary" aria-live="polite"></p>
+
+          <div class="calc">
+            <div class="calc-in">
+              <h3>Your numbers</h3>
+              <label for="calcWeight">Your weight today, in pounds</label>
+              <input id="calcWeight" type="number" inputmode="numeric" min="100" max="700" value="220" />
+            </div>
+            <dl class="calc-out" aria-live="polite">
+              <div><dt>Semaglutide average <small>14.9%</small></dt><dd id="calcSema">33 lb</dd></div>
+              <div><dt>Tirzepatide average <small>20.9%</small></dt><dd id="calcTirz">46 lb</dd></div>
+            </dl>
+            <p class="small">An example based on study averages. Your own results may be more or less.</p>
+          </div>
+
+          <ol class="refs">
+            <li>STEP 1. Wilding JPH et al. <i>N Engl J Med</i> 2021;384:989–1002. 1,961 adults, 68 weeks. Average starting weight 232 lb; placebo lost 2.4% (about 6 lb).</li>
+            <li>SURMOUNT-1. Jastreboff AM et al. <i>N Engl J Med</i> 2022;387:205–216. 2,539 adults, 72 weeks. Average starting weight 231 lb; placebo lost 3.1% (about 7 lb).</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER: first year -->
+    <section class="chapter" id="year">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">III</p>
+          <h2>Your first year</h2>
+          <p>The dose starts low and rises slowly, so your body can adjust.</p>
+        </header>
+        <div class="chapter-body">
+          <ol class="year">
+            <li><p class="when">Weeks 1–4</p><div><h3>Getting started</h3><p>A low starting dose. Many people feel less hungry within two weeks.</p></div></li>
+            <li><p class="when">Months 2–4</p><div><h3>Building up</h3><p>Your provider raises the dose every four weeks. Weight starts to come off.</p></div></li>
+            <li><p class="when">Months 4–12</p><div><h3>The biggest change</h3><p>Most weight loss happens here. Clothes fit differently and energy often improves.</p></div></li>
+            <li><p class="when">Month 12 on</p><div><h3>Keeping it off</h3><p>You stay on the dose that works for you, with your care team's support.</p></div></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER: getting started, on forest -->
+    <section class="chapter chapter-forest" id="start">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">IV</p>
+          <h2>Getting started</h2>
+          <p>Three steps, all from home.</p>
+        </header>
+        <div class="chapter-body">
+          <ol class="start-steps">
+            <li>
+              <h3>Answer a few questions</h3>
+              <p>About two minutes. Your health, your goals. No insurance needed.</p>
+            </li>
+            <li>
+              <img src="img/telehealth.jpg" alt="A woman at home on a video call with a doctor" width="1600" height="1200" loading="lazy" />
+              <h3>Meet a licensed provider</h3>
+              <p>They review your answers, usually within a day, and prescribe only if it is right for you.</p>
+            </li>
+            <li>
+              <img src="img/delivery.jpg" alt="An opened shipping box with cold packs and an injection pen" width="1600" height="1200" loading="lazy" />
+              <h3>Open your door</h3>
+              <p>A licensed US pharmacy ships your medicine cold, with everything you need.</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER: formulary -->
+    <section class="chapter" id="formulary">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">V</p>
+          <h2>The formulary</h2>
+          <p>Every treatment we offer, with its results, how fast it works, and its price.</p>
+        </header>
+        <div class="chapter-body">
+          <div class="filters" id="tabs" role="tablist" aria-label="Filter treatments"></div>
+          <div class="formulary" id="grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skin + athletes: split portrait panels -->
+    <section class="panels">
+      <a class="panel" href="#formulary" data-filter="skin">
+        <img src="img/skin.jpg" alt="A woman in her forties applying serum to her cheek" width="1600" height="2000" loading="lazy" />
+        <div><p class="kicker">Skin and repair</p><h3>Copper peptides for firmer-looking skin</h3><p>No prescription needed.</p><span class="panel-link">Shop skin care</span></div>
+      </a>
+      <a class="panel" href="#formulary" data-filter="athlete">
+        <img src="img/athlete.jpg" alt="A man in his forties tying his running shoe on a track" width="1600" height="2000" loading="lazy" />
+        <div><p class="kicker">Athletes</p><h3>Collagen for joints that keep up</h3><p>Tested and safe for drug-tested sport.</p><span class="panel-link">Shop for athletes</span></div>
+      </a>
+    </section>
+
+    <!-- CHAPTER: taking it -->
+    <section class="chapter" id="taking">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">VI</p>
+          <h2>Taking your weekly shot</h2>
+          <p>Under a minute, once a week. Always follow your prescription's directions.</p>
+        </header>
+        <div class="chapter-body">
+          <div class="taking">
+            <ol class="taking-steps">
+              <li><b>Wash your hands.</b> Check the pen's label and date. The liquid should be clear. Attach a new needle.</li>
+              <li><b>Choose a spot.</b> Your belly (2 inches from your belly button), the front of your thigh, or the back of your upper arm.</li>
+              <li><b>Clean the skin</b> with an alcohol pad and let it dry.</li>
+              <li><b>Set your dose.</b> Turn the dial to the dose your provider prescribed. Never change it yourself.</li>
+              <li><b>Give the shot.</b> Press the needle straight in. Hold the button and slowly count to 6.</li>
+              <li><b>Finish up.</b> Needle into a sharps container. Pen back in the fridge.</li>
+            </ol>
+            <figure class="body-map">
+              <svg viewBox="0 0 200 360" role="img" aria-labelledby="bmTitle">
+                <title id="bmTitle">Where to inject: belly, front of thighs, back of upper arms</title>
+                <g class="outline">
+                  <circle cx="100" cy="38" r="24" />
+                  <path d="M70 70 Q100 62 130 70 L142 190 L118 196 L112 340 L90 340 L84 196 L58 190 Z" />
+                  <path d="M70 72 L40 170 L52 174 L78 100" /><path d="M130 72 L160 170 L148 174 L122 100" />
+                </g>
+                <g class="site"><ellipse cx="100" cy="150" rx="26" ry="14" /><ellipse cx="90" cy="232" rx="10" ry="22" /><ellipse cx="112" cy="232" rx="10" ry="22" /><ellipse cx="54" cy="118" rx="9" ry="16" /><ellipse cx="146" cy="118" rx="9" ry="16" /></g>
+              </svg>
+              <figcaption>Shaded areas are safe places to inject. Use a different one each week.</figcaption>
+            </figure>
+          </div>
+          <dl class="other-use">
+            <div><dt>Skin serums</dt><dd>3–4 drops on clean skin, morning and night. Sunscreen every morning.</dd></div>
+            <div><dt>Collagen powder</dt><dd>One scoop in water, 30–60 minutes before exercise.</dd></div>
+            <div><dt>Daily shots</dt><dd>Tesamorelin is one small shot in the belly each day.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHAPTER: pricing -->
+    <section class="chapter chapter-porcelain" id="pricing">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">VII</p>
+          <h2>Pricing</h2>
+          <p>You see the full price before you pay anything.</p>
+        </header>
+        <div class="chapter-body">
+          <table class="price-table">
+            <thead><tr><th scope="col"><span class="sr-only">Included</span></th><th scope="col">Weight-loss care<span>$99 a month</span></th><th scope="col">Skin &amp; athletes<span>from $42 a month</span></th></tr></thead>
             <tbody>
-              <tr><th scope="row">At least 5%</th><td><div class="meter"><span style="width:86.4%"></span></div><b>86 in 100</b></td><td><div class="meter alt"><span style="width:90.9%"></span></div><b>91 in 100</b></td></tr>
-              <tr><th scope="row">At least 10%</th><td><div class="meter"><span style="width:69.1%"></span></div><b>69 in 100</b></td><td><div class="meter alt"><span style="width:83.5%"></span></div><b>84 in 100</b></td></tr>
-              <tr><th scope="row">At least 15%</th><td><div class="meter"><span style="width:50.5%"></span></div><b>51 in 100</b></td><td><div class="meter alt"><span style="width:70.6%"></span></div><b>71 in 100</b></td></tr>
-              <tr><th scope="row">At least 20%</th><td><div class="meter"><span style="width:32%"></span></div><b>32 in 100</b></td><td><div class="meter alt"><span style="width:56.7%"></span></div><b>57 in 100</b></td></tr>
+              <tr><th scope="row">Online visit with a licensed provider</th><td>Included</td><td>Not needed</td></tr>
+              <tr><th scope="row">Personal dose plan</th><td>Included</td><td>–</td></tr>
+              <tr><th scope="row">Message your care team any time</th><td>Included</td><td>Included</td></tr>
+              <tr><th scope="row">Medicine or product</th><td>At pharmacy cost, shown before you pay</td><td>Included</td></tr>
+              <tr><th scope="row">Shipping</th><td>Free, cold-packed</td><td>Free on subscriptions</td></tr>
+              <tr><th scope="row">Cancel any time</th><td>Yes</td><td>Yes, 60-day money back</td></tr>
             </tbody>
           </table>
-        </div>
-
-        <div class="calc">
-          <div>
-            <h3>What would that look like for you?</h3>
-            <p>Type your weight to see what the average results would mean for you.</p>
-            <label for="calcWeight">Your weight in pounds</label>
-            <input id="calcWeight" type="number" inputmode="numeric" min="100" max="700" value="220" />
-          </div>
-          <div class="calc-out" aria-live="polite">
-            <div><p>With semaglutide<br /><small>14.9% average</small></p><p class="calc-num" id="calcSema">33 lb</p></div>
-            <div><p>With tirzepatide<br /><small>20.9% average</small></p><p class="calc-num" id="calcTirz">46 lb</p></div>
-            <p class="footnote">An example only, based on study averages. Your results may be more or less.</p>
-          </div>
-        </div>
-
-        <ol class="refs">
-          <li>STEP 1: Wilding JPH et al. <i>N Engl J Med</i> 2021;384:989–1002. 1,961 adults, average starting weight 232 lb. Placebo group lost 2.4% (about 6 lb).</li>
-          <li>SURMOUNT-1: Jastreboff AM et al. <i>N Engl J Med</i> 2022;387:205–216. 2,539 adults, average starting weight 231 lb. Placebo group lost 3.1% (about 7 lb).</li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- WHAT TO EXPECT -->
-    <section class="section wrap">
-      <div class="section-head">
-        <p class="eyebrow">What to expect</p>
-        <h2>Your first year, step by step</h2>
-        <p>Your dose starts low and goes up slowly. This gives your body time to adjust.</p>
-      </div>
-      <ol class="timeline">
-        <li><p class="when">Weeks 1–4</p><h3>Getting started</h3><p>You take a low starting dose. Many people notice they are less hungry within the first two weeks.</p></li>
-        <li><p class="when">Months 2–4</p><h3>Building up</h3><p>Your provider raises your dose every 4 weeks. Weight starts to come off steadily.</p></li>
-        <li><p class="when">Months 4–12</p><h3>Biggest changes</h3><p>Most weight loss happens here. Clothes fit differently and energy often improves.</p></li>
-        <li><p class="when">Month 12 and on</p><h3>Keeping it off</h3><p>You stay on the dose that works for you. Your care team helps you keep your results.</p></li>
-      </ol>
-    </section>
-
-    <!-- HOW IT WORKS / GETTING STARTED -->
-    <section id="how-it-works" class="section section-mist">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow">How it works</p>
-          <h2>Three steps. No waiting room.</h2>
-        </div>
-        <div class="steps">
-          <article>
-            <p class="step-n">Step 1</p>
-            <h3>Answer a few questions</h3>
-            <p>Tell us about your health and goals. It takes about 2 minutes. No insurance needed.</p>
-          </article>
-          <article>
-            <img src="img/telehealth.jpg" alt="A woman at home talking with a doctor on a video call" width="1600" height="1200" loading="lazy" />
-            <p class="step-n">Step 2</p>
-            <h3>Talk with a licensed provider</h3>
-            <p>A provider reviews your answers, usually within one day. If treatment is right for you, they prescribe it.</p>
-          </article>
-          <article>
-            <img src="img/delivery.jpg" alt="An opened shipping box with cold packs and an injection pen" width="1600" height="1200" loading="lazy" />
-            <p class="step-n">Step 3</p>
-            <h3>Get it at your door</h3>
-            <p>A licensed US pharmacy ships it in a cold box with everything you need. Message your care team any time.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- SHOP -->
-    <section id="shop" class="section wrap">
-      <div class="section-head">
-        <p class="eyebrow">Our treatments</p>
-        <h2>Choose by your goal</h2>
-        <p>Select any treatment to see how it works, how fast it works, and how to use it.</p>
-      </div>
-      <div class="tabs" id="tabs" role="tablist" aria-label="Filter treatments"></div>
-      <div class="grid" id="grid"></div>
-    </section>
-
-    <!-- SKIN & ATHLETES FEATURE -->
-    <section class="section section-mist">
-      <div class="wrap feature-pair">
-        <article class="feature">
-          <img src="img/skin.jpg" alt="A woman in her forties applying serum to her cheek" width="1600" height="2000" loading="lazy" />
-          <div>
-            <p class="eyebrow">Skin and repair</p>
-            <h3>Peptides your skin already knows</h3>
-            <p>Copper peptides help skin look firmer and smoother. Line-smoothing peptides soften the look of wrinkles. No prescription needed.</p>
-            <a class="text-link" href="#shop" data-filter="skin">Shop skin care</a>
-          </div>
-        </article>
-        <article class="feature">
-          <img src="img/athlete.jpg" alt="A man in his forties tying his running shoe on a track" width="1600" height="2000" loading="lazy" />
-          <div>
-            <p class="eyebrow">Athletes</p>
-            <h3>Joints that keep up with training</h3>
-            <p>Collagen peptides with vitamin C, taken before exercise. Tested and safe for drug-tested sports.</p>
-            <a class="text-link" href="#shop" data-filter="athlete">Shop for athletes</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- HOW TO TAKE IT -->
-    <section id="take" class="section wrap">
-      <div class="section-head">
-        <p class="eyebrow">How to take your weekly shot</p>
-        <h2>It takes less than a minute.</h2>
-        <p>These are general steps for a weekly pen. Always follow the directions that come with your medicine and your provider's plan.</p>
-      </div>
-      <div class="take">
-        <ol class="take-steps">
-          <li><h3>Wash your hands</h3><p>Check the pen's label and date. The liquid should be clear. Attach a new needle.</p></li>
-          <li><h3>Pick a spot</h3><p>Your belly (2 inches away from your belly button), the front of your thigh, or the back of your upper arm.</p></li>
-          <li><h3>Clean the skin</h3><p>Wipe the spot with an alcohol pad. Let it dry for a few seconds.</p></li>
-          <li><h3>Set your dose</h3><p>Turn the dial to the dose your provider prescribed. Never change it on your own.</p></li>
-          <li><h3>Give the shot</h3><p>Press the needle straight into your skin. Hold the button down and slowly count to 6.</p></li>
-          <li><h3>Throw away and store</h3><p>Put the needle in a sharps container. Put the pen back in the fridge.</p></li>
-        </ol>
-        <figure class="body-map">
-          <svg viewBox="0 0 200 360" role="img" aria-labelledby="bmTitle">
-            <title id="bmTitle">Where to inject: belly, front of thighs, back of upper arms</title>
-            <g fill="none" stroke="currentColor" stroke-width="2" opacity=".45">
-              <circle cx="100" cy="38" r="24" />
-              <path d="M70 70 Q100 62 130 70 L142 190 L118 196 L112 340 L90 340 L84 196 L58 190 Z" />
-              <path d="M70 72 L40 170 L52 174 L78 100" /><path d="M130 72 L160 170 L148 174 L122 100" />
-            </g>
-            <g class="site"><ellipse cx="100" cy="150" rx="26" ry="14" /><ellipse cx="90" cy="232" rx="10" ry="22" /><ellipse cx="112" cy="232" rx="10" ry="22" /><ellipse cx="54" cy="118" rx="9" ry="16" /><ellipse cx="146" cy="118" rx="9" ry="16" /></g>
-          </svg>
-          <figcaption><span class="dot"></span>Places to inject. Use a different one each week.</figcaption>
-        </figure>
-      </div>
-      <div class="take-other">
-        <div><h3>Skin serums</h3><p>3–4 drops on clean skin, morning and night. Moisturizer after. Sunscreen every morning.</p></div>
-        <div><h3>Collagen powder</h3><p>One scoop in water, 30–60 minutes before exercise. Any time on rest days.</p></div>
-        <div><h3>Daily shots</h3><p>Tesamorelin is one small shot in the belly each day. Your kit has a step-by-step card.</p></div>
-      </div>
-    </section>
-
-    <!-- PRICING -->
-    <section class="section section-ink">
-      <div class="wrap">
-        <div class="section-head">
-          <p class="eyebrow">Clear pricing</p>
-          <h2>You see the full price before you pay.</h2>
-        </div>
-        <div class="pricing">
-          <div class="plan">
-            <h3>Weight-loss care</h3>
-            <p class="price">$99<span> a month</span></p>
-            <p class="sub">Medicine is billed separately at pharmacy cost.</p>
-            <ul>
-              <li>Online visit with a licensed provider</li>
-              <li>A dose plan made for you</li>
-              <li>Message your care team any time</li>
-              <li>Monthly check-ins</li>
-              <li>Help with side effects, 7 days a week</li>
-            </ul>
-            <a class="btn btn-light btn-block" href="#quiz">See if I qualify</a>
-          </div>
-          <div class="plan">
-            <h3>Skin and athletes</h3>
-            <p class="price">from $42<span> a month</span></p>
-            <p class="sub">No prescription needed. Save 15% when you subscribe.</p>
-            <ul>
-              <li>Copper peptide and line-smoothing serums</li>
-              <li>Collagen peptides for athletes</li>
-              <li>Free shipping on subscriptions</li>
-              <li>60-day money-back promise</li>
-            </ul>
-            <a class="btn btn-outline-light btn-block" href="#shop" data-filter="skin">Shop now</a>
+          <div class="price-ctas">
+            <a class="btn btn-forest" href="#check">See if I qualify</a>
+            <a class="btn btn-line" href="#formulary" data-filter="skin">Shop skin &amp; athletes</a>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- QUIZ -->
-    <section id="quiz" class="section wrap">
-      <div class="quiz">
-        <p class="eyebrow">2-minute check</p>
+    <!-- CHECK -->
+    <section class="check" id="check">
+      <div class="frame check-inner">
+        <p class="kicker">Two-minute check</p>
         <h2 id="quizQ">What is your main goal?</h2>
         <div class="quiz-opts" id="quizOpts"></div>
-        <div class="quiz-progress" aria-hidden="true"><span id="quizBar"></span></div>
+        <p class="quiz-step" id="quizStep" aria-live="polite"></p>
       </div>
     </section>
 
-    <!-- REFERRAL -->
-    <section class="section section-mist">
-      <div class="wrap referral">
-        <div>
-          <p class="eyebrow">Share with a friend</p>
-          <h2>Give $50. Get $50.</h2>
-          <p>Your friend gets $50 off their first month. You get $50 when they join. There is no limit.</p>
+    <!-- CHAPTER: questions -->
+    <section class="chapter" id="questions">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">VIII</p>
+          <h2>Questions</h2>
+          <p>Plain answers to what people ask most.</p>
+        </header>
+        <div class="chapter-body faq">
+          <details><summary>Is this the same as Ozempic® or Wegovy®?</summary><p>Ozempic and Wegovy are brand names for semaglutide. Mounjaro and Zepbound are brand names for tirzepatide. Your provider prescribes the medicine that is right for you, and you will see exactly which product you are getting before you pay.</p></details>
+          <details><summary>Who can get weight-loss medicine?</summary><p>Usually adults with a BMI of 30 or more, or 27 or more with a health problem linked to weight, like high blood pressure or prediabetes. A licensed provider makes the final decision.</p></details>
+          <details><summary>How fast does it work?</summary><p>Many people feel less hungry in the first week or two. Weight comes off slowly as the dose goes up. Most of it happens between months 4 and 12.</p></details>
+          <details><summary>What are the side effects?</summary><p>The most common are nausea, diarrhea, and constipation. They happen most when the dose goes up and usually get better. Rare but serious problems include pancreatitis and gallbladder problems. Your provider will go over these with you.</p></details>
+          <details><summary>Does the shot hurt?</summary><p>Most people feel only a small pinch. The needle is very short and thin.</p></details>
+          <details><summary>Do skin and collagen products need a prescription?</summary><p>No. The serums are cosmetics and the collagen is a supplement. They ship right away.</p></details>
+          <details><summary>Do you sell BPC-157 or TB-500?</summary><p>No. They are not approved for people. The FDA limits making them, and they are banned in drug-tested sports. Our athlete products are legal, tested, and safe for competition.</p></details>
+          <details><summary>Can I give a friend a discount?</summary><p>Yes. Share your link and your friend gets $50 off their first month. You get $50 when they join.</p>
+            <form class="ref-form" id="refForm"><label for="refEmail">Your email</label><div><input id="refEmail" type="email" placeholder="name@email.com" required /><button class="btn btn-forest" type="submit">Get my link</button></div><p class="small" id="refMsg"></p></form>
+          </details>
+          <details><summary>Can I cancel?</summary><p>Yes, any time, from your account. There are no fees to cancel.</p></details>
         </div>
-        <form class="ref-form" id="refForm">
-          <label for="refEmail">Your email</label>
-          <div><input id="refEmail" type="email" placeholder="name@email.com" required /><button class="btn btn-primary" type="submit">Get my link</button></div>
-          <p class="footnote" id="refMsg"></p>
-        </form>
       </div>
     </section>
 
-    <!-- FAQ -->
-    <section id="faq" class="section wrap">
-      <div class="section-head"><p class="eyebrow">Questions</p><h2>Common questions</h2></div>
-      <div class="faq">
-        <details><summary>Is this the same as Ozempic® or Wegovy®?</summary><p>Ozempic and Wegovy are brand names for semaglutide. Mounjaro and Zepbound are brand names for tirzepatide. Your provider prescribes the medicine that is right for you, and you will see exactly which product you are getting before you pay.</p></details>
-        <details><summary>Who can get weight-loss medicine?</summary><p>Usually adults with a BMI of 30 or more, or 27 or more with a health problem linked to weight, like high blood pressure or prediabetes. A licensed provider makes the final decision.</p></details>
-        <details><summary>How fast does it work?</summary><p>Many people feel less hungry in the first week or two. Weight comes off slowly as the dose goes up. Most of the weight loss happens between months 4 and 12.</p></details>
-        <details><summary>What are the side effects?</summary><p>The most common are nausea, diarrhea, and constipation. They happen most when the dose goes up and usually get better. Your care team can help. Rare but serious problems include pancreatitis and gallbladder problems. Your provider will go over these with you.</p></details>
-        <details><summary>Does it hurt?</summary><p>Most people feel only a small pinch. The needle is very short and thin.</p></details>
-        <details><summary>Do skin and collagen products need a prescription?</summary><p>No. The serums are cosmetics and the collagen is a supplement. They ship right away.</p></details>
-        <details><summary>Do you sell BPC-157 or TB-500?</summary><p>No. They are not approved for people. The FDA limits making them, and they are banned in drug-tested sports. Our athlete products are legal, tested, and safe for competition.</p></details>
-        <details><summary>Can I cancel?</summary><p>Yes, any time, from your account. There are no fees to cancel.</p></details>
-      </div>
-    </section>
-
-    <!-- ISI -->
-    <section id="safety" class="section section-mist">
-      <div class="wrap isi">
-        <h2>Important Safety Information</h2>
-        <div class="boxed">
-          <h3>Warning: possible thyroid tumors, including cancer</h3>
-          <p>In studies with rodents, semaglutide and tirzepatide caused thyroid tumors, including cancer. It is not known if they cause these tumors in people. Do not use them if you or any of your family have ever had medullary thyroid carcinoma (MTC), or if you have Multiple Endocrine Neoplasia syndrome type 2 (MEN 2). Tell your provider if you get a lump or swelling in your neck, trouble swallowing, a hoarse voice, or shortness of breath.</p>
+    <!-- SAFETY -->
+    <section class="chapter chapter-porcelain" id="safety">
+      <div class="frame chapter-grid">
+        <header class="chapter-head">
+          <p class="chapter-n">IX</p>
+          <h2>Important Safety Information</h2>
+          <p>Please read this before you start.</p>
+        </header>
+        <div class="chapter-body isi">
+          <div class="boxed">
+            <h3>Warning: possible thyroid tumors, including cancer</h3>
+            <p>In studies with rodents, semaglutide and tirzepatide caused thyroid tumors, including cancer. It is not known if they cause these tumors in people. Do not use them if you or any of your family have ever had medullary thyroid carcinoma (MTC), or if you have Multiple Endocrine Neoplasia syndrome type 2 (MEN 2). Tell your provider if you get a lump or swelling in your neck, trouble swallowing, a hoarse voice, or shortness of breath.</p>
+          </div>
+          <h3>Possible serious side effects</h3>
+          <ul>
+            <li><b>Pancreatitis.</b> Stop and call your provider if you have severe stomach pain that does not go away, with or without vomiting.</li>
+            <li><b>Gallbladder problems,</b> such as gallstones.</li>
+            <li><b>Low blood sugar,</b> especially if you also take insulin or a sulfonylurea.</li>
+            <li><b>Kidney problems.</b> Diarrhea and vomiting can cause dehydration. Drink plenty of fluids.</li>
+            <li><b>Serious allergic reactions.</b> Get help right away if your face, lips, or throat swell, or you have trouble breathing.</li>
+            <li><b>Changes in vision</b> in people with type 2 diabetes, and <b>faster heart rate.</b></li>
+            <li><b>Depression or thoughts of suicide.</b> Call your provider if your mood changes.</li>
+          </ul>
+          <h3>Most common side effects</h3>
+          <p>Nausea, diarrhea, vomiting, constipation, stomach pain, headache, tiredness, upset stomach, dizziness, bloating, burping, gas, and heartburn.</p>
+          <h3>Before you start</h3>
+          <p>Tell your provider about all your health conditions and medicines, and if you are pregnant, planning to get pregnant, or breastfeeding. Tell them if you are having surgery that needs anesthesia. Do not use these medicines together with other GLP-1 medicines.</p>
+          <p class="small">This is not all the information about these medicines. Talk with your provider and read the Medication Guide that comes with your prescription. You are encouraged to report side effects to the FDA at www.fda.gov/medwatch or 1-800-FDA-1088.</p>
         </div>
-        <h3>Possible serious side effects</h3>
-        <ul>
-          <li><b>Pancreatitis.</b> Stop and call your provider if you have severe stomach pain that does not go away, with or without vomiting.</li>
-          <li><b>Gallbladder problems,</b> such as gallstones.</li>
-          <li><b>Low blood sugar,</b> especially if you also take insulin or a sulfonylurea.</li>
-          <li><b>Kidney problems.</b> Diarrhea and vomiting can cause dehydration. Drink plenty of fluids.</li>
-          <li><b>Serious allergic reactions.</b> Get help right away if your face, lips, or throat swell, or you have trouble breathing.</li>
-          <li><b>Changes in vision</b> in people with type 2 diabetes, and <b>faster heart rate.</b></li>
-          <li><b>Depression or thoughts of suicide.</b> Call your provider if your mood changes.</li>
-        </ul>
-        <h3>Most common side effects</h3>
-        <p>Nausea, diarrhea, vomiting, constipation, stomach pain, headache, tiredness, upset stomach, dizziness, bloating, burping, gas, and heartburn.</p>
-        <h3>Before you start</h3>
-        <p>Tell your provider about all your health conditions and medicines, and if you are pregnant, planning to get pregnant, or breastfeeding. Tell them if you are having surgery that needs anesthesia. These medicines should not be used together with other GLP-1 medicines.</p>
-        <p class="footnote">This is not all the information about these medicines. Talk with your provider and read the Medication Guide that comes with your prescription. You are encouraged to report side effects to the FDA at www.fda.gov/medwatch or 1-800-FDA-1088.</p>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <div class="wrap">
-      <div class="footer-top">
-        <span class="logo">Arcline</span>
-        <p>Weight loss, metabolic health, skin, and recovery, backed by medical studies.</p>
-      </div>
-      <p class="footnote">Prescription products require an online visit with a licensed healthcare provider, who decides whether a prescription is right for you. Arcline does not practice medicine. Medical care is provided by independent licensed providers. Prescription medicines are filled by state-licensed pharmacies. Ozempic®, Wegovy®, Mounjaro®, Zepbound®, Egrifta®, Matrixyl® and Argireline® are trademarks of their owners. Arcline is not connected with them. Statements about supplements and cosmetics have not been evaluated by the Food and Drug Administration. Those products are not intended to diagnose, treat, cure, or prevent any disease. People in photos are models. Individual results vary.</p>
-      <p class="footnote">© 2026 Arcline · <a href="#top">Privacy</a> · <a href="#top">Terms</a> · <a href="#top">Telehealth consent</a></p>
+    <div class="frame">
+      <p class="wordmark wordmark-light">Arcline</p>
+      <p class="small">Prescription products require an online visit with a licensed healthcare provider, who decides whether a prescription is right for you. Arcline does not practice medicine. Medical care is provided by independent licensed providers. Prescription medicines are filled by state-licensed pharmacies. Ozempic®, Wegovy®, Mounjaro®, Zepbound®, Egrifta®, Matrixyl® and Argireline® are trademarks of their owners. Arcline is not connected with them. Statements about supplements and cosmetics have not been evaluated by the Food and Drug Administration. Those products are not intended to diagnose, treat, cure, or prevent any disease. People in photos are models. Individual results vary.</p>
+      <p class="small">© 2026 Arcline · <a href="#top">Privacy</a> · <a href="#top">Terms</a> · <a href="#top">Telehealth consent</a></p>
     </div>
   </footer>
 
-  <!-- Sticky safety tray, like brand-medicine sites -->
-  <aside class="isi-tray" id="isiTray" aria-label="Important Safety Information summary">
-    <div class="isi-tray-inner">
-      <p><b>Important Safety Information:</b> Semaglutide and tirzepatide may cause thyroid tumors, including cancer. Do not use if you or your family have had MTC or MEN 2.</p>
-      <a class="text-link" href="#safety">Read more</a>
-    </div>
+  <aside class="isi-tray" aria-label="Important Safety Information summary">
+    <p><b>Important Safety Information.</b> Semaglutide and tirzepatide may cause thyroid tumors, including cancer. Do not use if you or your family have had MTC or MEN 2. <a href="#safety">Read more</a></p>
   </aside>
 
   <!-- Product details -->
-  <div class="modal" id="modal" hidden>
-    <div class="modal-backdrop" data-close></div>
-    <article class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
-      <button class="modal-x" data-close type="button" aria-label="Close">×</button>
+  <div class="sheet" id="modal" hidden>
+    <div class="sheet-backdrop" data-close></div>
+    <article class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <button class="close" data-close type="button" aria-label="Close">Close</button>
       <div id="modalBody"></div>
     </article>
   </div>
 
-  <!-- Cart -->
-  <aside class="drawer" id="drawer" hidden>
-    <div class="modal-backdrop" data-close-cart></div>
-    <div class="drawer-panel" role="dialog" aria-label="Your cart">
-      <div class="drawer-head"><h2>Your cart</h2><button class="modal-x" data-close-cart type="button" aria-label="Close">×</button></div>
+  <!-- Bag -->
+  <aside class="bag" id="drawer" hidden>
+    <div class="sheet-backdrop" data-close-cart></div>
+    <div class="bag-panel" role="dialog" aria-label="Your bag">
+      <div class="bag-head"><h2>Your bag</h2><button class="close" data-close-cart type="button">Close</button></div>
       <div id="cartItems"></div>
-      <div class="drawer-foot">
+      <div class="bag-foot">
         <div class="total"><span>Subtotal</span><strong id="cartTotal">$0</strong></div>
-        <p class="footnote" id="cartNote"></p>
-        <button class="btn btn-primary btn-block" id="checkoutBtn" type="button">Checkout</button>
+        <p class="small" id="cartNote"></p>
+        <button class="btn btn-forest btn-block" id="checkoutBtn" type="button">Checkout</button>
       </div>
     </div>
   </aside>

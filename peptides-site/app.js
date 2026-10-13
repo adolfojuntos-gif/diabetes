@@ -1,14 +1,14 @@
 (function () {
-  // A photo that fails to load leaves its grey frame instead of a broken-image icon.
+  // A photo that fails to load leaves its tinted frame instead of a broken-image icon.
   document.addEventListener("error", (e) => e.target.tagName === "IMG" && (e.target.style.visibility = "hidden"), true);
   const P = window.PRODUCTS;
   const byId = Object.fromEntries(P.map((p) => [p.id, p]));
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const img = (p) => `<img src="${p.img}" alt="${esc(p.name)} product photo" width="800" height="800" loading="lazy" />`;
-  const kind = (p) => (p.rx ? "Prescription · free online visit" : "No prescription needed");
+  const kind = (p) => (p.rx ? "Prescription" : "No prescription");
 
-  /* ---------- Treatments ---------- */
+  /* ---------- Formulary ---------- */
   let active = "all";
   function renderTabs() {
     $("#tabs").innerHTML = window.CATEGORIES.map(
@@ -20,21 +20,21 @@
     $("#grid").innerHTML = list
       .map(
         (p) => `
-      <article class="card">
-        <div class="card-img">${img(p)}</div>
-        <div class="card-body">
-          <p class="card-kind">${kind(p)}</p>
+      <article class="entry">
+        <div class="entry-img">${img(p)}</div>
+        <div class="entry-main">
+          <p class="entry-kind"><span class="${p.rx ? "tag-rx" : "tag-otc"}">${kind(p)}</span> ${esc(p.form)}</p>
           <h3>${esc(p.name)}</h3>
           <p>${esc(p.tagline)}</p>
-          <dl class="card-facts">
+          <dl class="entry-facts">
             <div><dt>Results</dt><dd>${esc(p.headline)}</dd></div>
             <div><dt>How fast</dt><dd>${esc(p.speed)}</dd></div>
           </dl>
-          <p class="card-price">$${p.price} <small>${esc(p.priceNote)}</small></p>
-          <div class="card-actions">
-            <button class="btn btn-primary" type="button" data-add="${p.id}">${p.rx ? "See if I qualify" : "Add to cart"}</button>
-            <button class="btn btn-outline" type="button" data-more="${p.id}">Learn more</button>
-          </div>
+        </div>
+        <div class="entry-side">
+          <p class="entry-price">$${p.price}<small>${esc(p.priceNote)}</small></p>
+          <button class="btn btn-forest" type="button" data-add="${p.id}">${p.rx ? "See if I qualify" : "Add to bag"}</button>
+          <button class="text-btn" type="button" data-more="${p.id}">Full details</button>
         </div>
       </article>`
       )
@@ -66,30 +66,30 @@
     const p = byId[id];
     lastFocus = document.activeElement;
     $("#modalBody").innerHTML = `
-      <div class="m-top">
-        <div class="m-img">${img(p)}</div>
+      <header class="sheet-top">
+        <div class="sheet-img">${img(p)}</div>
         <div>
-          <p class="card-kind">${kind(p)} · ${esc(p.form)}</p>
+          <p class="entry-kind"><span class="${p.rx ? "tag-rx" : "tag-otc"}">${kind(p)}</span> ${esc(p.form)}</p>
           <h2 id="mTitle">${esc(p.name)}</h2>
-          <p class="m-head">${esc(p.headline)}</p>
+          <p class="sheet-head">${esc(p.headline)}</p>
           <p>${esc(p.description)}</p>
-          <div class="m-cta">
-            <p class="card-price">$${p.price} <small>${esc(p.priceNote)}</small></p>
-            <button class="btn btn-primary" type="button" data-add="${p.id}">${p.rx ? "See if I qualify" : "Add to cart"}</button>
+          <div class="sheet-cta">
+            <p class="entry-price">$${p.price}<small>${esc(p.priceNote)}</small></p>
+            <button class="btn btn-forest" type="button" data-add="${p.id}">${p.rx ? "See if I qualify" : "Add to bag"}</button>
           </div>
         </div>
-      </div>
-      <div class="m-cols">
+      </header>
+      <div class="sheet-cols">
         <section><h3>How it works</h3><ul>${p.how.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></section>
-        <section><h3>How fast it works</h3><ol class="tl">${p.timeline
-          .map(([t, d]) => `<li><b>${esc(t)}</b><span>${esc(d)}</span></li>`)
-          .join("")}</ol></section>
+        <section><h3>How fast it works</h3><dl class="sheet-tl">${p.timeline
+          .map(([t, d]) => `<div><dt>${esc(t)}</dt><dd>${esc(d)}</dd></div>`)
+          .join("")}</dl></section>
         <section><h3>How to use it</h3><ol>${p.use.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></section>
       </div>
-      <div class="m-safety"><h3>Safety information</h3><p>${esc(p.safety)}</p><p class="footnote">Source: ${esc(p.source)}</p></div>`;
+      <div class="sheet-safety"><h3>Safety information</h3><p>${esc(p.safety)}</p><p class="small">Source: ${esc(p.source)}</p></div>`;
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
-    $("#modal .modal-x").focus();
+    $("#modal .close").focus();
   }
   function closeModal() {
     if ($("#modal").hidden) return;
@@ -112,7 +112,7 @@
     }
   });
 
-  /* ---------- Cart ---------- */
+  /* ---------- Bag ---------- */
   let cart = [];
   try {
     cart = JSON.parse(localStorage.getItem("arcline_cart") || "[]").filter((id) => byId[id]);
@@ -134,12 +134,12 @@
     $("#cartItems").innerHTML = items.length
       ? items
           .map(
-            (p) => `<div class="ci">${img(p)}<div><b>${esc(p.name)}</b><small>${
+            (p) => `<div class="bag-item">${img(p)}<div><b>${esc(p.name)}</b><small>${
               p.rx ? "Needs a provider's approval" : esc(p.form)
-            }</small><span>$${p.price}${p.rx ? " a month" : ""}</span></div><button class="text-link" type="button" data-rm="${p.id}">Remove</button></div>`
+            }</small><span>$${p.price}${p.rx ? " a month" : ""}</span></div><button class="text-btn" type="button" data-rm="${p.id}">Remove</button></div>`
           )
           .join("")
-      : `<p class="empty">Your cart is empty.</p>`;
+      : `<p class="empty">Your bag is empty.</p>`;
     $("#cartTotal").textContent = "$" + items.reduce((s, p) => s + p.price, 0);
     const hasRx = items.some((p) => p.rx);
     $("#cartNote").textContent = hasRx
@@ -156,7 +156,7 @@
   });
   const openCart = () => {
     $("#drawer").hidden = false;
-    $("#drawer .modal-x").focus();
+    $("#drawer .close").focus();
   };
   const closeCart = () => ($("#drawer").hidden = true);
   $("#cartBtn").addEventListener("click", openCart);
@@ -165,11 +165,29 @@
     // Connect this to your payment provider and telehealth intake. Prescription items go to the health questions first.
     if (cart.some((id) => byId[id].rx)) {
       closeCart();
-      location.hash = "#quiz";
+      location.hash = "#check";
     } else {
       $("#cartNote").textContent = "Checkout is not connected yet. This is a preview of the store.";
     }
   });
+
+  /* ---------- 100-person arrays ---------- */
+  const GOALS = { 5: [86, 91], 10: [69, 84], 15: [51, 71], 20: [32, 57] };
+  const dots = (n) => Array.from({ length: 100 }, (_, k) => `<i class="${k < n ? "on" : ""}"></i>`).join("");
+  function setGoal(g) {
+    const [s, t] = GOALS[g];
+    $("#dotsSema").innerHTML = dots(s);
+    $("#dotsTirz").innerHTML = dots(t);
+    $("#numSema").textContent = s;
+    $("#numTirz").textContent = t;
+    $("#goalSummary").textContent = `At least ${g}% weight loss: ${s} of 100 people on semaglutide, ${t} of 100 on tirzepatide.`;
+    document.querySelectorAll("[data-goal]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.goal === String(g))));
+  }
+  document.querySelector(".goal-picker").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-goal]");
+    if (b) setGoal(b.dataset.goal);
+  });
+  setGoal(15);
 
   /* ---------- Weight calculator ---------- */
   function calc() {
@@ -192,7 +210,7 @@
     } catch {}
   });
 
-  /* ---------- 2-minute check ---------- */
+  /* ---------- Two-minute check ---------- */
   const first = {
     q: "What is your main goal?",
     a: [["Lose weight", "weight"], ["Lose belly fat and improve metabolic health", "metabolic"], ["Firmer, smoother skin", "skin"], ["Train harder and recover better", "athlete"]],
@@ -211,26 +229,25 @@
     i = 0,
     goal = null;
   function renderQuiz() {
-    const total = goal ? steps.length : 3;
-    $("#quizBar").style.width = (i / total) * 100 + "%";
     if (goal && i >= steps.length) {
       const recs = recommend[goal].map((id) => byId[id]);
       $("#quizQ").textContent = "Your best match";
+      $("#quizStep").textContent = "";
       $("#quizOpts").innerHTML =
         recs
           .map(
-            (p) => `<div class="rec">${img(p)}<div><b>${esc(p.name)}</b><small>${esc(p.headline)}</small></div><button class="btn btn-primary" type="button" data-rec="${p.id}">${
-              p.rx ? "Start my visit" : "Add to cart"
+            (p) => `<div class="rec">${img(p)}<div><b>${esc(p.name)}</b><small>${esc(p.headline)}</small></div><button class="btn btn-brass" type="button" data-rec="${p.id}">${
+              p.rx ? "Start my visit" : "Add to bag"
             }</button></div>`
           )
           .join("") +
-        (recs.some((p) => p.rx) ? `<p class="footnote">A licensed provider makes the final decision after reviewing your health history.</p>` : "") +
-        `<button class="text-link" type="button" data-restart>Start over</button>`;
-      $("#quizBar").style.width = "100%";
+        (recs.some((p) => p.rx) ? `<p class="small">A licensed provider makes the final decision after reviewing your health history.</p>` : "") +
+        `<button class="text-btn" type="button" data-restart>Start over</button>`;
       return;
     }
     const s = steps[i];
     $("#quizQ").textContent = s.q;
+    $("#quizStep").textContent = goal ? `Question ${i + 1} of ${steps.length}` : "Question 1";
     $("#quizOpts").innerHTML = s.a.map(([t, v]) => `<button class="opt" type="button" data-v="${v || ""}">${t}</button>`).join("");
   }
   $("#quizOpts").addEventListener("click", (e) => {
