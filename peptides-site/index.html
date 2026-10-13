@@ -188,8 +188,8 @@
       <h2>Your friends will ask what you're doing differently.</h2>
       <p>Send them your link. They get $50 off their first month, you get $50 in credit when they join. No limit.</p>
     </div>
-    <form class="ref-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Link copied ✓'; navigator.clipboard && navigator.clipboard.writeText(location.origin + '/?ref=friend');">
-      <input type="email" placeholder="Your email" required aria-label="Email" />
+    <form class="ref-form" onsubmit="event.preventDefault(); const b=this.querySelector('button'); const done=()=>b.textContent='Link copied ✓'; try { navigator.clipboard.writeText(location.origin + '/?ref=friend').then(done, ()=>b.textContent='Link ready'); } catch { b.textContent='Link ready'; }">
+      <input id="refEmail" type="email" placeholder="Your email" required aria-label="Email" />
       <button class="btn btn-primary">Get my link</button>
     </form>
   </section>

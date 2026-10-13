@@ -194,7 +194,10 @@
     closeCart();
     // Wire this to Stripe Checkout / your telehealth intake. Rx items go through the assessment first.
     if (cart.some((id) => byId[id].rx)) location.hash = "#quiz";
-    else alert("Checkout is not connected yet. Hook this button to your payment provider.");
+    else {
+      openCart();
+      $("#cartNote").textContent = "Checkout isn't connected yet. This is a preview of the store.";
+    }
   });
 
   /* ---------- Results chart ---------- */
