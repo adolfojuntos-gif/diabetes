@@ -4,9 +4,9 @@ A static marketing and shop site for weight-loss, metabolic, skin and athlete pe
 
 ```
 index.html        page structure and copy
-styles.css        forest-and-brass "medical monograph" design: Bodoni headings, Lexend body. Nothing animates.
+styles.css        bright brand-medicine design in the style of Ozempic.com: navy, pill buttons, rounded tiles. Nothing animates.
 products.js       the catalogue: edit names, prices, claims, timelines and usage here
-app.js            formulary filters, product details, bag, 100-person charts, calculator, quiz
+app.js            treatment filters, product details, bag, safety tray, calculator, quiz
 fetch_images.py   downloads the 12 photos into img/ as web-sized JPEGs (run once)
 img/              photos (people shown are AI-generated models, labelled on the page)
 ```
@@ -16,7 +16,7 @@ Higgsfield and are lifestyle and product shots only. There are no before/after p
 
 ## Writing for all ages
 
-Body text is 19px in Lexend, a typeface designed to make reading easier. Contrast is
+Body text is 19px in Figtree, a clear, friendly sans-serif. Contrast is
 at least 6.5:1 and buttons are at least 48px tall. Copy uses short sentences and everyday words,
 and explains terms like GLP-1 the first time they appear.
 

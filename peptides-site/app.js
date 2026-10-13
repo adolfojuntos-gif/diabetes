@@ -6,9 +6,10 @@
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const img = (p) => `<img src="${p.img}" alt="${esc(p.name)} product photo" width="800" height="800" loading="lazy" />`;
-  const kind = (p) => (p.rx ? "Prescription" : "No prescription");
+  const badge = (p) => `<span class="badge ${p.rx ? "badge-rx" : "badge-otc"}">${p.rx ? "Prescription" : "No prescription needed"}</span>`;
+  const cta = (p) => (p.rx ? "See if I qualify" : "Add to bag");
 
-  /* ---------- Formulary ---------- */
+  /* ---------- Treatments ---------- */
   let active = "all";
   function renderTabs() {
     $("#tabs").innerHTML = window.CATEGORIES.map(
@@ -20,21 +21,21 @@
     $("#grid").innerHTML = list
       .map(
         (p) => `
-      <article class="entry">
-        <div class="entry-img">${img(p)}</div>
-        <div class="entry-main">
-          <p class="entry-kind"><span class="${p.rx ? "tag-rx" : "tag-otc"}">${kind(p)}</span> ${esc(p.form)}</p>
+      <article class="card">
+        <div class="card-img">${img(p)}${badge(p)}</div>
+        <div class="card-body">
           <h3>${esc(p.name)}</h3>
+          <p class="card-form">${esc(p.form)}</p>
           <p>${esc(p.tagline)}</p>
-          <dl class="entry-facts">
-            <div><dt>Results</dt><dd>${esc(p.headline)}</dd></div>
-            <div><dt>How fast</dt><dd>${esc(p.speed)}</dd></div>
-          </dl>
-        </div>
-        <div class="entry-side">
-          <p class="entry-price">$${p.price}<small>${esc(p.priceNote)}</small></p>
-          <button class="btn btn-forest" type="button" data-add="${p.id}">${p.rx ? "See if I qualify" : "Add to bag"}</button>
-          <button class="text-btn" type="button" data-more="${p.id}">Full details</button>
+          <ul class="card-facts">
+            <li><b>Results:</b> ${esc(p.headline)}</li>
+            <li><b>How fast:</b> ${esc(p.speed)}</li>
+          </ul>
+          <p class="card-price">$${p.price} <small>${esc(p.priceNote)}</small></p>
+          <div class="card-actions">
+            <button class="pill pill-primary" type="button" data-add="${p.id}">${cta(p)}</button>
+            <button class="pill pill-outline" type="button" data-more="${p.id}">Learn more</button>
+          </div>
         </div>
       </article>`
       )
@@ -66,30 +67,30 @@
     const p = byId[id];
     lastFocus = document.activeElement;
     $("#modalBody").innerHTML = `
-      <header class="sheet-top">
-        <div class="sheet-img">${img(p)}</div>
+      <div class="m-top">
+        <div class="m-img">${img(p)}</div>
         <div>
-          <p class="entry-kind"><span class="${p.rx ? "tag-rx" : "tag-otc"}">${kind(p)}</span> ${esc(p.form)}</p>
+          ${badge(p)}
           <h2 id="mTitle">${esc(p.name)}</h2>
-          <p class="sheet-head">${esc(p.headline)}</p>
+          <p class="m-head">${esc(p.headline)}</p>
           <p>${esc(p.description)}</p>
-          <div class="sheet-cta">
-            <p class="entry-price">$${p.price}<small>${esc(p.priceNote)}</small></p>
-            <button class="btn btn-forest" type="button" data-add="${p.id}">${p.rx ? "See if I qualify" : "Add to bag"}</button>
+          <div class="m-cta">
+            <p class="card-price">$${p.price} <small>${esc(p.priceNote)}</small></p>
+            <button class="pill pill-primary" type="button" data-add="${p.id}">${cta(p)}</button>
           </div>
         </div>
-      </header>
-      <div class="sheet-cols">
+      </div>
+      <div class="m-cols">
         <section><h3>How it works</h3><ul>${p.how.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></section>
-        <section><h3>How fast it works</h3><dl class="sheet-tl">${p.timeline
+        <section><h3>How fast it works</h3><dl class="m-tl">${p.timeline
           .map(([t, d]) => `<div><dt>${esc(t)}</dt><dd>${esc(d)}</dd></div>`)
           .join("")}</dl></section>
         <section><h3>How to use it</h3><ol>${p.use.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></section>
       </div>
-      <div class="sheet-safety"><h3>Safety information</h3><p>${esc(p.safety)}</p><p class="small">Source: ${esc(p.source)}</p></div>`;
+      <div class="m-safety"><h3>Safety information</h3><p>${esc(p.safety)}</p><p class="small">Source: ${esc(p.source)}</p></div>`;
     $("#modal").hidden = false;
     document.body.style.overflow = "hidden";
-    $("#modal .close").focus();
+    $("#modal .x").focus();
   }
   function closeModal() {
     if ($("#modal").hidden) return;
@@ -136,7 +137,7 @@
           .map(
             (p) => `<div class="bag-item">${img(p)}<div><b>${esc(p.name)}</b><small>${
               p.rx ? "Needs a provider's approval" : esc(p.form)
-            }</small><span>$${p.price}${p.rx ? " a month" : ""}</span></div><button class="text-btn" type="button" data-rm="${p.id}">Remove</button></div>`
+            }</small><span>$${p.price}${p.rx ? " a month" : ""}</span></div><button class="link-btn" type="button" data-rm="${p.id}">Remove</button></div>`
           )
           .join("")
       : `<p class="empty">Your bag is empty.</p>`;
@@ -156,7 +157,7 @@
   });
   const openCart = () => {
     $("#drawer").hidden = false;
-    $("#drawer .close").focus();
+    $("#drawer .x").focus();
   };
   const closeCart = () => ($("#drawer").hidden = true);
   $("#cartBtn").addEventListener("click", openCart);
@@ -171,23 +172,13 @@
     }
   });
 
-  /* ---------- 100-person arrays ---------- */
-  const GOALS = { 5: [86, 91], 10: [69, 84], 15: [51, 71], 20: [32, 57] };
-  const dots = (n) => Array.from({ length: 100 }, (_, k) => `<i class="${k < n ? "on" : ""}"></i>`).join("");
-  function setGoal(g) {
-    const [s, t] = GOALS[g];
-    $("#dotsSema").innerHTML = dots(s);
-    $("#dotsTirz").innerHTML = dots(t);
-    $("#numSema").textContent = s;
-    $("#numTirz").textContent = t;
-    $("#goalSummary").textContent = `At least ${g}% weight loss: ${s} of 100 people on semaglutide, ${t} of 100 on tirzepatide.`;
-    document.querySelectorAll("[data-goal]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.goal === String(g))));
-  }
-  document.querySelector(".goal-picker").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-goal]");
-    if (b) setGoal(b.dataset.goal);
+  /* ---------- Safety tray ---------- */
+  $("#trayToggle").addEventListener("click", () => {
+    const tray = $("#isiTray");
+    const open = tray.classList.toggle("open");
+    $("#trayToggle").setAttribute("aria-expanded", String(open));
+    $("#trayToggle").textContent = open ? "Show less" : "Show more";
   });
-  setGoal(15);
 
   /* ---------- Weight calculator ---------- */
   function calc() {
@@ -210,7 +201,7 @@
     } catch {}
   });
 
-  /* ---------- Two-minute check ---------- */
+  /* ---------- 2-minute check ---------- */
   const first = {
     q: "What is your main goal?",
     a: [["Lose weight", "weight"], ["Lose belly fat and improve metabolic health", "metabolic"], ["Firmer, smoother skin", "skin"], ["Train harder and recover better", "athlete"]],
@@ -236,13 +227,13 @@
       $("#quizOpts").innerHTML =
         recs
           .map(
-            (p) => `<div class="rec">${img(p)}<div><b>${esc(p.name)}</b><small>${esc(p.headline)}</small></div><button class="btn btn-brass" type="button" data-rec="${p.id}">${
+            (p) => `<div class="rec">${img(p)}<div><b>${esc(p.name)}</b><small>${esc(p.headline)}</small></div><button class="pill pill-white" type="button" data-rec="${p.id}">${
               p.rx ? "Start my visit" : "Add to bag"
             }</button></div>`
           )
           .join("") +
         (recs.some((p) => p.rx) ? `<p class="small">A licensed provider makes the final decision after reviewing your health history.</p>` : "") +
-        `<button class="text-btn" type="button" data-restart>Start over</button>`;
+        `<button class="link-btn" type="button" data-restart>Start over</button>`;
       return;
     }
     const s = steps[i];
