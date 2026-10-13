@@ -2,7 +2,7 @@
 
 Usage: python3 fetch_images.py   (needs Pillow: pip install pillow)
 
-The photos were generated for this site with Higgsfield (Nano Banana Pro). People shown are
+The photos were generated for this site with Higgsfield (Nano Banana). People shown are
 AI-generated models, not customers, and the page labels them "Model for illustration only."
 """
 import io

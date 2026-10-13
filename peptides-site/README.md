@@ -40,7 +40,7 @@ These patterns come from the top direct-to-consumer GLP-1 and wellness brands (H
 
 | Pattern | Where they use it | Where it is here |
 |---|---|---|
-| A big outcome number in the headline | Wegovy and Zepbound lead with average % weight loss | Hero says "up to 20%"; stat bubbles; product headlines |
+| A big outcome number in the headline | Wegovy and Zepbound lead with average % weight loss | Hero footnoted average (35–48 lb); key-numbers row; product headlines |
 | Price-first, low-friction entry ("free consult", "from $X/mo") | Hims, Ro, Henry Meds | Announcement bar, hero checks, pricing cards |
 | Quiz funnel instead of "buy now" for Rx | Every telehealth brand | 2-minute assessment section that recommends products |
 | Three-step "how it works" | Ro, Hims, Found | Steps section |
