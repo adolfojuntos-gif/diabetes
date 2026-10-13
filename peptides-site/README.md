@@ -3,16 +3,38 @@
 A static marketing and shop site for weight-loss, metabolic, skin and athlete peptides. No build step: open `index.html` or serve the folder with any static host (Netlify, Vercel, Cloudflare Pages, S3).
 
 ```
-index.html    page structure and copy
-styles.css    design system (fonts, colours, layout, mobile)
-products.js   the catalogue: edit names, prices, claims, timelines and usage here
-app.js        product images (drawn SVG), shop tabs, product modal, cart, quiz, results chart
-img/          put real member before/after photos here
+index.html        page structure and copy
+styles.css        design system (fonts, colours, layout, mobile). Nothing on the page animates.
+products.js       the catalogue: edit names, prices, claims, timelines and usage here
+app.js            treatment filters, product details, cart, quiz, weight calculator
+fetch_images.py   downloads the 12 photos into img/ as web-sized JPEGs (run once)
+img/              photos (people shown are AI-generated models, labelled on the page)
 ```
+
+Run `python3 fetch_images.py` once before opening the site. The photos were generated with
+Higgsfield and are lifestyle and product shots only. There are no before/after photos.
+
+## Writing for all ages
+
+Body text is 19px in Atkinson Hyperlegible, a typeface made for low-vision readers. Contrast is
+at least 6.5:1 and buttons are at least 48px tall. Copy uses short sentences and everyday words,
+and explains terms like GLP-1 the first time they appear.
 
 "Arcline" is a placeholder brand. Rename it in `index.html` (logo, title, footer).
 
-## What the page borrows from high-revenue telehealth and pharma sites
+## Layout modeled on Ozempic® and Wegovy® sites
+
+Novo Nordisk's brand sites follow one pattern, and this page uses it:
+
+- A thin top bar pointing to safety information, and a safety tray pinned to the bottom of the screen.
+- A hero that pairs a lifestyle photo with one plain-language promise and a footnoted average result.
+- Results given as **pounds and percent** with the starting weight and the placebo result in the footnote (here: about 35 lb on semaglutide and about 48 lb on tirzepatide).
+- A row of key numbers in columns.
+- "How many people reached their goal" (at least 5%, 10%, 15% and 20% weight loss), shown as "86 in 100" rather than statistics jargon.
+- A "what to expect" timeline in columns, a "how it works" explainer, and step-by-step injection instructions with a body diagram.
+- A full Important Safety Information section with the boxed warning first.
+
+## What the page borrows from high-revenue telehealth sites
 
 These patterns come from the top direct-to-consumer GLP-1 and wellness brands (Hims & Hers, Ro, Henry Meds, Noom Med, Eden, Found) and from brand-pharma sites like Wegovy and Zepbound.
 
