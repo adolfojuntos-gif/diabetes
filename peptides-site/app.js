@@ -1,4 +1,6 @@
 (function () {
+  // A photo that fails to load leaves its grey frame instead of a broken-image icon.
+  document.addEventListener("error", (e) => e.target.tagName === "IMG" && (e.target.style.visibility = "hidden"), true);
   const P = window.PRODUCTS;
   const byId = Object.fromEntries(P.map((p) => [p.id, p]));
   const $ = (s) => document.querySelector(s);
