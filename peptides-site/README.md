@@ -4,7 +4,7 @@ A static marketing and shop site for weight-loss, metabolic, skin and athlete pe
 
 ```
 index.html        page structure and copy
-styles.css        bright brand-medicine design in the style of Ozempic.com: navy, pill buttons, rounded tiles. Nothing animates.
+styles.css        bright brand-medicine design in the style of Ozempic.com: berry-plum and raspberry red, pill buttons, rounded tiles. Nothing animates.
 products.js       the catalogue: edit names, prices, claims, timelines and usage here
 app.js            treatment filters, product details, bag, safety tray, calculator, quiz
 fetch_images.py   downloads the 12 photos into img/ as web-sized JPEGs (run once)
