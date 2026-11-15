@@ -1,0 +1,210 @@
+{
+  "name": "GHL 0 - One-Click Setup (fields + tags)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## GHL 0. One-Click Setup\n\n**In simple words:** run this once per salon. It creates every contact field and tag the other workflows use, so you don't have to type them in by hand.\n\nFill in **Config**, then press **Test workflow**. Fields or tags that already exist just show an error and are skipped.",
+        "width": 600,
+        "height": 260,
+        "color": 4
+      },
+      "id": "7ccfb376-7d95-42c4-8905-4f075d54cf87",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -340
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "efb99367-5d3d-49e8-a16e-a264c8f4bd38",
+      "name": "Run Once",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const SETTINGS = {\n  // ---- GoHighLevel ----\n  ghlLocationId: 'YOUR_GHL_SUB_ACCOUNT_LOCATION_ID',   // Sub-account > Settings > Business Profile\n\n  fields: [\n    ['square_customer_id', 'TEXT'], ['square_booking_id', 'TEXT'], ['appt_time', 'TEXT'],\n    ['appt_stylist', 'TEXT'], ['appt_service', 'TEXT'], ['booked_via', 'TEXT'],\n    ['card_link', 'TEXT'], ['fee_link', 'TEXT'], ['fee_amount', 'TEXT'],\n    ['no_show_count', 'NUMERICAL'], ['policy_agreed_at', 'TEXT'],\n  ],\n  tags: ['needs-human', 'human-takeover', 'needs-card', 'card-on-file', 'sq-booked', 'sq-remind-48h',\n    'sq-remind-2h', 'sq-completed', 'sq-cancelled', 'sq-late-cancel', 'sq-no-show', 'fee-charged',\n    'fee-waived', 'prepay-required', 'waitlist'],\n};\nreturn [{ json: SETTINGS }];"
+      },
+      "id": "6afe35a9-be51-4caa-b49d-549852867532",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $json.fields.map(([name, dataType]) => ({ json: { name, dataType } }));"
+      },
+      "id": "44afc9cb-cf97-4e63-883b-55d68c1b925d",
+      "name": "List Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $json.tags.map((name) => ({ json: { name } }));"
+      },
+      "id": "6d8baa8d-a1a8-4749-aa3d-bfad1c0c97e0",
+      "name": "List Tags",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/locations/' + $('Config').first().json.ghlLocationId + '/customFields' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $json.name, dataType: $json.dataType, model: 'contact' }) }}",
+        "options": {}
+      },
+      "id": "5d329afe-d0f8-46df-b55d-3750ec84e085",
+      "name": "Create Field",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        -100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/locations/' + $('Config').first().json.ghlLocationId + '/tags' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $json.name }) }}",
+        "options": {}
+      },
+      "id": "2c327be0-43e9-4739-a4eb-d1432e3dff3e",
+      "name": "Create Tag",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Run Once": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "List Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "List Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Fields": {
+      "main": [
+        [
+          {
+            "node": "Create Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Tags": {
+      "main": [
+        [
+          {
+            "node": "Create Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

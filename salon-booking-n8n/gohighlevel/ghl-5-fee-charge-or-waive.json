@@ -1,0 +1,892 @@
+{
+  "name": "GHL 5 - Manager Charges or Waives Fee",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## GHL 5. Charge or Waive\n\n**In simple words:** the manager taps the fee link (sent by GoHighLevel). The page shows who, when and how much, with **Charge** and **Waive** buttons.\n- **Charge:** Square charges the saved card.\n- **Waive:** nothing is charged.\nThen n8n adds **fee-charged** or **fee-waived** in GoHighLevel (which sends the receipt text and moves the pipeline card) and writes a note on the contact.",
+        "width": 660,
+        "height": 340,
+        "color": 4
+      },
+      "id": "b633d044-bdf6-4c83-86e9-202c7a9e9668",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -440
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "fee-decision",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "09af9dd9-dc2b-4976-a5c1-82d835e97fc4",
+      "name": "Manager Opens Link",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "a1795de9-0d39-4bfc-806e-4a5e3dcc108a"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fee-decision-submit",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "bdb7e3fa-3e12-4bab-ac32-cf04cc5df6f0",
+      "name": "Manager Presses a Button",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "dea1fbdd-d293-4a0b-968a-282d52451d1f"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============ EDIT YOUR SETTINGS HERE ============\nconst SETTINGS = {\n  // ---- Your business ----\n  salonName: 'Your Salon Name',\n  timezone: 'America/New_York',          // your salon's time zone\n  salonPhone: '+15551234567',            // your Twilio texting number\n  managerPhone: '+15557654321',          // who approves no-show / late-cancel fees\n\n  // ---- Square ----\n  // Sandbox for testing: https://connect.squareupsandbox.com   Live: https://connect.squareup.com\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',           // Square API version header\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n\n  // ---- n8n ----\n  n8nBaseUrl: 'https://YOUR-N8N-DOMAIN.com',   // the public address of your n8n\n  linkSecret: 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD', // same value in every workflow\n\n  // ---- Cancellation policy ----\n  lateCancelHours: 24,\n  lateCancelFeeCents: 2500,   // $25.00\n  noShowFeeCents: 4000,       // $40.00\n  currency: 'USD',\n  policyText: 'Free to cancel or reschedule up to 24 hours before. Cancelling with less than 24 hours notice costs $25. Missing the appointment without notice costs $40. Both are charged to the card you save with us.',\n\n  // ---- GoHighLevel ----\n  ghlLocationId: 'YOUR_GHL_SUB_ACCOUNT_LOCATION_ID',   // Sub-account > Settings > Business Profile\n};\n// =================================================\n\nreturn [{ json: { ...SETTINGS, request: $input.first().json } }];"
+      },
+      "id": "b39de4a5-93c2-4431-a787-cadfedef1157",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst r = cfg.request;\nconst p = { ...(r.query || {}), ...(r.body || {}) };\nconst crypto = require('crypto');\nconst expected = crypto.createHmac('sha256', cfg.linkSecret).update(String(p.b) + '|' + String(p.k)).digest('hex').slice(0, 32);\nconst valid = !!(p.b && p.s) && ['late', 'noshow'].includes(p.k) && String(p.s).length === expected.length &&\n  crypto.timingSafeEqual(Buffer.from(String(p.s)), Buffer.from(expected));\nreturn [{ json: {\n  valid, b: p.b, k: p.k, s: p.s,\n  action: (r.body && r.body.action) || '',\n  reason: (r.body && r.body.reason) || '',\n  feeCents: p.k === 'noshow' ? cfg.noShowFeeCents : cfg.lateCancelFeeCents,\n  label: p.k === 'noshow' ? 'No-show' : 'Late cancellation',\n} }];"
+      },
+      "id": "b98bb13a-28e0-47d9-ae63-46ab691dc346",
+      "name": "Check the Link",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c4b6614f-301f-4b5c-9973-c1a90bd3c8d6",
+              "leftValue": "={{ $json.valid }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c9769045-ad09-4fff-b5f7-62060b5ea6d3",
+      "name": "Link OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        660,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<h1>This link is not valid.</h1>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "49c72188-c390-4729-996b-78b6b176d698",
+      "name": "Show: Bad Link",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/bookings/' + $('Check the Link').first().json.b }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "54b8c6a5-529f-451d-a8bc-1373252b2041",
+      "name": "Get Booking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/customers/' + $json.booking.customer_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "28598110-68ea-4eed-b4f6-6e1583605042",
+      "name": "Get Square Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "6544a578-23f7-44dc-b26c-ec259d1d5a51",
+              "leftValue": "={{ $('Check the Link').first().json.action }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d2232221-2b45-424b-a27c-6155bfaff504",
+      "name": "Button Pressed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst esc = (s) => String(s ?? '').replace(/[&<>\"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[ch]));\nconst page = (title, inner) => `<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>${esc(title)}</title>\n<style>body{font-family:system-ui,sans-serif;background:#f6f4f1;color:#222;margin:0;padding:24px}main{max-width:440px;margin:0 auto;background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.08)}h1{font-size:22px;margin:0 0 8px}p{line-height:1.5}.policy{background:#faf6ef;border-radius:10px;padding:12px;font-size:14px}button{width:100%;padding:14px;border:0;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;margin-top:10px}.go{background:#222;color:#fff}.alt{background:#e9e6e1;color:#222}input[type=text]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccc;border-radius:10px;font-size:16px;margin:6px 0}label{display:block;margin:12px 0;font-size:15px}#msg{color:#b00020}</style></head><body><main>${inner}</main></body></html>`;\n\nconst cfg = $('Config').first().json;\nconst v = $('Check the Link').first().json;\nconst bk = $('Get Booking').first().json.booking || {};\nconst c = $json.customer || {};\nconst name = [c.given_name, c.family_name].filter(Boolean).join(' ') || 'Client';\nconst when = new Date(bk.start_at).toLocaleString('en-US', { timeZone: cfg.timezone, dateStyle: 'medium', timeStyle: 'short' });\nconst amount = '$' + (v.feeCents / 100).toFixed(2);\nconst html = page('Fee decision', `\n<h1>${esc(v.label)}</h1>\n<p><b>${esc(name)}</b><br>${esc(when)}<br>Fee: <b>${esc(amount)}</b></p>\n<form method=\"POST\" action=\"${esc(cfg.n8nBaseUrl)}/webhook/fee-decision-submit\">\n  <input type=\"hidden\" name=\"b\" value=\"${esc(v.b)}\"><input type=\"hidden\" name=\"k\" value=\"${esc(v.k)}\"><input type=\"hidden\" name=\"s\" value=\"${esc(v.s)}\">\n  <label>Reason (if waiving)<input type=\"text\" name=\"reason\" placeholder=\"e.g. family emergency\"></label>\n  <button class=\"go\" name=\"action\" value=\"charge\" onclick=\"return confirm('Charge ${esc(amount)} to the saved card?')\">Charge ${esc(amount)}</button>\n  <button class=\"alt\" name=\"action\" value=\"waive\">Waive fee</button>\n</form>`);\nreturn [{ json: { html } }];"
+      },
+      "id": "ecdf2a57-9b12-48e9-830a-4a6f7fca2e0a",
+      "name": "Build Decision Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "e6d568d2-003e-4980-b1df-48c1ab95fa92",
+      "name": "Show Decision Page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "8d9daaf9-399b-4aec-938c-44d5483ad7d1",
+              "leftValue": "={{ $('Check the Link').first().json.action }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "charge"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "11dfc626-74e8-414c-addb-3ebcbc0955ba",
+      "name": "Charge?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/cards' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customer_id",
+              "value": "={{ $('Get Booking').first().json.booking.customer_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "56641ba8-cb7c-4020-8e73-ca6aff089028",
+      "name": "Find Saved Card",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cards = ($input.first().json.cards || []).filter((c) => c.enabled !== false);\ncards.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));\nconst bk = $('Get Booking').first().json.booking || {};\nreturn [{ json: { cardId: cards.length ? cards[0].id : '', customerId: bk.customer_id } }];"
+      },
+      "id": "398f1588-3cba-4fe2-9185-a3bcc7da8da6",
+      "name": "Pick Card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "347cc976-680e-4426-a73a-91647c819644",
+              "leftValue": "={{ $json.cardId }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bf4f3d53-78a5-49e3-9b4f-7afa98cfffec",
+      "name": "Has a Card?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<h1>No saved card for this client.</h1><p>Nothing was charged.</p>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "4338cfa6-cc8b-4a03-81e2-b6029d1c2623",
+      "name": "Show: No Card",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2420,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/payments' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ idempotency_key: 'fee-' + $('Check the Link').first().json.b + '-' + $('Check the Link').first().json.k, source_id: $json.cardId, customer_id: $json.customerId, location_id: $('Config').first().json.locationId, amount_money: { amount: $('Check the Link').first().json.feeCents, currency: $('Config').first().json.currency }, autocomplete: true, note: $('Check the Link').first().json.label + ' fee', reference_id: String($('Check the Link').first().json.b).slice(0, 40) }) }}",
+        "options": {}
+      },
+      "id": "934ad73a-7076-4a80-8e8d-f92ff5f22c2e",
+      "name": "Charge the Card",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        -40
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<h1>The charge did not go through.</h1><p>The card may be declined or expired. Nothing was charged.</p>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "ad643001-1121-4275-88e2-843a4ef8cce6",
+      "name": "Show: Charge Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2640,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst v = $('Check the Link').first().json;\nconst c = $('Get Square Customer').first().json.customer || {};\nconst charged = v.action === 'charge' && $('Charge the Card').isExecuted;\nconst pay = charged ? ($('Charge the Card').first().json.payment || {}) : {};\nconst amount = '$' + (v.feeCents / 100).toFixed(2);\nconst when = new Date().toLocaleString('en-US', { timeZone: cfg.timezone, dateStyle: 'medium', timeStyle: 'short' });\nconst note = charged\n  ? `${v.label.toUpperCase()} FEE CHARGED: ${amount} on ${when}. Square payment ${pay.id || ''}. Booking ${v.b}.`\n  : `${v.label.toUpperCase()} FEE WAIVED on ${when}. Reason: ${v.reason || 'none given'}. Booking ${v.b}.`;\nreturn [{ json: { phone: c.phone_number || '', firstName: c.given_name || '', lastName: c.family_name || '',\n  fields: { fee_amount: amount }, tag: charged ? 'fee-charged' : 'fee-waived', note, charged } }];"
+      },
+      "id": "fa582b95-c034-484a-9202-5dfab8e5c4db",
+      "name": "Fee Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/upsert' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ locationId: $('Config').first().json.ghlLocationId, phone: $('Fee Result').item.json.phone, firstName: $('Fee Result').item.json.firstName || undefined, lastName: $('Fee Result').item.json.lastName || undefined, customFields: Object.entries($('Fee Result').item.json.fields || {}).map(([key, field_value]) => ({ key, field_value: String(field_value) })) }) }}",
+        "options": {}
+      },
+      "id": "577b1241-ba10-4fe6-b847-7c57192c5b83",
+      "name": "Update Contact in GoHighLevel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3080,
+        60
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/' + $('Update Contact in GoHighLevel').first().json.contact.id + '/tags' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: [ $('Fee Result').first().json.tag ] }) }}",
+        "options": {}
+      },
+      "id": "0474d944-b6e7-4c0b-8c6c-42a288606e42",
+      "name": "Add Fee Tag",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3300,
+        60
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/' + $('Update Contact in GoHighLevel').first().json.contact.id + '/notes' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ body: $('Fee Result').first().json.note }) }}",
+        "options": {}
+      },
+      "id": "8d275e7f-01c4-4cea-9b9e-4096d8a77c0c",
+      "name": "Add Fee Note",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        60
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('Fee Result').first().json.charged ? '<h1>Charged.</h1><p>GoHighLevel will text the client a receipt.</p>' : '<h1>Fee waived.</h1><p>Nothing was charged.</p>' }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "f719ad54-6430-4f75-aa48-d70f6f4c3d53",
+      "name": "Show: Done",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3740,
+        60
+      ]
+    }
+  ],
+  "connections": {
+    "Manager Opens Link": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manager Presses a Button": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Check the Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check the Link": {
+      "main": [
+        [
+          {
+            "node": "Link OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Booking": {
+      "main": [
+        [
+          {
+            "node": "Get Square Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Square Customer": {
+      "main": [
+        [
+          {
+            "node": "Button Pressed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Decision Page": {
+      "main": [
+        [
+          {
+            "node": "Show Decision Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Saved Card": {
+      "main": [
+        [
+          {
+            "node": "Pick Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Card": {
+      "main": [
+        [
+          {
+            "node": "Has a Card?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fee Result": {
+      "main": [
+        [
+          {
+            "node": "Update Contact in GoHighLevel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Contact in GoHighLevel": {
+      "main": [
+        [
+          {
+            "node": "Add Fee Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Fee Tag": {
+      "main": [
+        [
+          {
+            "node": "Add Fee Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Fee Note": {
+      "main": [
+        [
+          {
+            "node": "Show: Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Link OK?": {
+      "main": [
+        [
+          {
+            "node": "Get Booking",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show: Bad Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Button Pressed?": {
+      "main": [
+        [
+          {
+            "node": "Charge?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Decision Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Charge?": {
+      "main": [
+        [
+          {
+            "node": "Find Saved Card",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fee Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has a Card?": {
+      "main": [
+        [
+          {
+            "node": "Charge the Card",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show: No Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Charge the Card": {
+      "main": [
+        [
+          {
+            "node": "Fee Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show: Charge Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

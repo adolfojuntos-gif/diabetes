@@ -1,0 +1,317 @@
+{
+  "name": "GHL 4 - Square Booking Events to GoHighLevel",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## GHL 4. Square Booking Events\n\n**In simple words:** Square tells n8n each time a booking changes. n8n updates the GoHighLevel contact and adds one tag:\n- **sq-booked** (new booking)\n- **sq-cancelled** (cancelled in time)\n- **sq-late-cancel** (cancelled less than 24h before)\n- **sq-no-show** (stylist marked No-show in Square)\n\nFor late cancels and no-shows it also fills in **fee_link** and **fee_amount** for the manager's text.",
+        "width": 640,
+        "height": 340,
+        "color": 4
+      },
+      "id": "2092913b-258e-42d3-9b9d-68862601d0e3",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "square-events",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "bd2dd9ca-2df5-4b78-8711-128cc575b7dc",
+      "name": "Square Sends an Update",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "620052f1-e65e-4354-aeb0-d8e390f17c80"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============ EDIT YOUR SETTINGS HERE ============\nconst SETTINGS = {\n  // ---- Your business ----\n  salonName: 'Your Salon Name',\n  timezone: 'America/New_York',          // your salon's time zone\n  salonPhone: '+15551234567',            // your Twilio texting number\n  managerPhone: '+15557654321',          // who approves no-show / late-cancel fees\n\n  // ---- Square ----\n  // Sandbox for testing: https://connect.squareupsandbox.com   Live: https://connect.squareup.com\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',           // Square API version header\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n\n  // ---- n8n ----\n  n8nBaseUrl: 'https://YOUR-N8N-DOMAIN.com',   // the public address of your n8n\n  linkSecret: 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD', // same value in every workflow\n\n  // ---- Cancellation policy ----\n  lateCancelHours: 24,\n  lateCancelFeeCents: 2500,   // $25.00\n  noShowFeeCents: 4000,       // $40.00\n  currency: 'USD',\n  policyText: 'Free to cancel or reschedule up to 24 hours before. Cancelling with less than 24 hours notice costs $25. Missing the appointment without notice costs $40. Both are charged to the card you save with us.',\n\n  // ---- Stylists (team_member_id comes from Square > Staff) ----\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA', phone: '+15550000001' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA',   phone: '+15550000002' },\n  ],\n\n  // ---- Services: EACH STYLIST HAS THEIR OWN TIME ----\n  // In Square, make one service variation per speed (e.g. \"Long Haircut 45 min\" for Maria,\n  // \"Long Haircut 90 min\" for Ana), same name and price for the client, and paste the IDs here.\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n\n  // ---- GoHighLevel ----\n  ghlLocationId: 'YOUR_GHL_SUB_ACCOUNT_LOCATION_ID',   // Sub-account > Settings > Business Profile\n\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://YOUR-N8N-DOMAIN.com/webhook/square-events', // must match Square exactly\n};\n// =================================================\n\nreturn [{ json: { ...SETTINGS, request: $input.first().json }, binary: $input.first().binary }];"
+      },
+      "id": "05a7d647-ed38-40ba-8675-79dd246d8e1b",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst crypto = require('crypto');\n\n// 1) Security: make sure this message really came from Square\nlet raw;\ntry { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); }\ncatch (e) { raw = JSON.stringify(cfg.request.body); }\nconst got = String((cfg.request.headers || {})['x-square-hmacsha256-signature'] || '');\nconst expected = crypto.createHmac('sha256', cfg.squareWebhookSignatureKey).update(cfg.squareWebhookUrl + raw).digest('base64');\nif (got.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected))) {\n  throw new Error('Signature check failed - this did not come from Square (or the signature key / URL in Config is wrong).');\n}\n\n// 2) Sort the update into: new booking, cancelled on time, late cancel, no-show\nconst event = JSON.parse(raw);\nconst b = event && event.data && event.data.object && event.data.object.booking;\nif (!b) return [];\nlet kind = null;\nif (event.type === 'booking.created') kind = 'new_booking';\nelse if (event.type === 'booking.updated') {\n  if (b.status === 'NO_SHOW') kind = 'noshow';\n  else if (b.status === 'CANCELLED_BY_CUSTOMER') {\n    const hoursBefore = (new Date(b.start_at) - new Date(b.updated_at || event.created_at)) / 3600e3;\n    kind = hoursBefore < cfg.lateCancelHours ? 'late' : 'cancelled';\n  }\n}\nif (!kind) return [];\n\nreturn [{ json: { kind, booking: b, customerId: b.customer_id } }];"
+      },
+      "id": "527daa61-c4fc-47b8-bf2b-0d1fca59c8fe",
+      "name": "Check Message Is From Square",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/customers/' + $json.customerId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "413eff1a-bf86-435c-ab89-54b21dc45065",
+      "name": "Get Square Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst seg = (b) => ((b.appointment_segments || [])[0] || {});\nconst stylistName = (tm) => (cfg.stylists.find((s) => s.team_member_id === tm) || {}).name || '';\nconst serviceName = (vid) => { for (const s of cfg.services) for (const o of s.options) if (o.service_variation_id === vid) return s.name; return ''; };\nconst fmt = (d) => new Date(d).toLocaleString('en-US', { timeZone: cfg.timezone, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });\nconst ev = $('Check Message Is From Square').item.json;\nconst b = ev.booking, c = $json.customer || {};\nconst tag = { new_booking: 'sq-booked', cancelled: 'sq-cancelled', late: 'sq-late-cancel', noshow: 'sq-no-show' }[ev.kind];\nconst fields = { square_customer_id: b.customer_id, square_booking_id: b.id, appt_time: fmt(b.start_at),\n  appt_stylist: stylistName(seg(b).team_member_id), appt_service: serviceName(seg(b).service_variation_id) };\nif (ev.kind === 'new_booking') fields.booked_via = b.source === 'API' ? 'ai' : (b.source === 'FIRST_PARTY_BUYER' ? 'square online' : 'front desk');\nif (ev.kind === 'late' || ev.kind === 'noshow') {\n  const crypto = require('crypto');\n  const s = crypto.createHmac('sha256', cfg.linkSecret).update(b.id + '|' + ev.kind).digest('hex').slice(0, 32);\n  fields.fee_link = `${cfg.n8nBaseUrl}/webhook/fee-decision?b=${encodeURIComponent(b.id)}&k=${ev.kind}&s=${s}`;\n  fields.fee_amount = '$' + ((ev.kind === 'noshow' ? cfg.noShowFeeCents : cfg.lateCancelFeeCents) / 100).toFixed(2);\n}\nreturn { json: { phone: c.phone_number || '', firstName: c.given_name || '', lastName: c.family_name || '', tag, fields } };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "bee29620-d10c-473d-86a7-62151e9dda72",
+      "name": "Contact Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "9b811eab-f8a0-461b-9def-46f63fd98e03",
+              "leftValue": "={{ $json.phone }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4df180c6-1b62-44a3-b7f4-fb43bc35b2b9",
+      "name": "Has a Phone Number?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/upsert' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ locationId: $('Config').first().json.ghlLocationId, phone: $('Contact Details').item.json.phone, firstName: $('Contact Details').item.json.firstName || undefined, lastName: $('Contact Details').item.json.lastName || undefined, customFields: Object.entries($('Contact Details').item.json.fields || {}).map(([key, field_value]) => ({ key, field_value: String(field_value) })) }) }}",
+        "options": {}
+      },
+      "id": "9f186a7f-002b-43a3-b238-7d92198229ce",
+      "name": "Update Contact in GoHighLevel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/' + $json.contact.id + '/tags' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: [ $('Contact Details').item.json.tag ] }) }}",
+        "options": {}
+      },
+      "id": "55026a38-7ac3-4e3a-b3ef-535a2d8d0aef",
+      "name": "Add Event Tag",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Square Sends an Update": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Check Message Is From Square",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message Is From Square": {
+      "main": [
+        [
+          {
+            "node": "Get Square Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Square Customer": {
+      "main": [
+        [
+          {
+            "node": "Contact Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Details": {
+      "main": [
+        [
+          {
+            "node": "Has a Phone Number?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Contact in GoHighLevel": {
+      "main": [
+        [
+          {
+            "node": "Add Event Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has a Phone Number?": {
+      "main": [
+        [
+          {
+            "node": "Update Contact in GoHighLevel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

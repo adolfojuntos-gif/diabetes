@@ -1,0 +1,386 @@
+{
+  "name": "GHL 3 - Reminder Tags",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## GHL 3. Reminder Tags\n\n**In simple words:** every hour, n8n looks at the Square calendar. When it's time for a reminder, it fills in the appointment details on the GoHighLevel contact and adds a tag:\n- **sq-remind-48h** (2 days before)\n- **sq-remind-2h** (2 hours before)\n- **sq-completed** (after the visit)\n\nGoHighLevel workflows send the actual texts. Square is always the truth, so moved bookings get the right reminder.",
+        "width": 640,
+        "height": 320,
+        "color": 4
+      },
+      "id": "ca92ba85-4ed1-4544-b3a7-85a990ad27c8",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "1a8d3879-1a3e-4301-a755-a19794fb7d33",
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============ EDIT YOUR SETTINGS HERE ============\nconst SETTINGS = {\n  // ---- Your business ----\n  salonName: 'Your Salon Name',\n  timezone: 'America/New_York',          // your salon's time zone\n  salonPhone: '+15551234567',            // your Twilio texting number\n  managerPhone: '+15557654321',          // who approves no-show / late-cancel fees\n\n  // ---- Square ----\n  // Sandbox for testing: https://connect.squareupsandbox.com   Live: https://connect.squareup.com\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',           // Square API version header\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n\n  // ---- n8n ----\n  n8nBaseUrl: 'https://YOUR-N8N-DOMAIN.com',   // the public address of your n8n\n  linkSecret: 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD', // same value in every workflow\n\n  // ---- Cancellation policy ----\n  lateCancelHours: 24,\n  lateCancelFeeCents: 2500,   // $25.00\n  noShowFeeCents: 4000,       // $40.00\n  currency: 'USD',\n  policyText: 'Free to cancel or reschedule up to 24 hours before. Cancelling with less than 24 hours notice costs $25. Missing the appointment without notice costs $40. Both are charged to the card you save with us.',\n\n  // ---- Stylists (team_member_id comes from Square > Staff) ----\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA', phone: '+15550000001' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA',   phone: '+15550000002' },\n  ],\n\n  // ---- Services: EACH STYLIST HAS THEIR OWN TIME ----\n  // In Square, make one service variation per speed (e.g. \"Long Haircut 45 min\" for Maria,\n  // \"Long Haircut 90 min\" for Ana), same name and price for the client, and paste the IDs here.\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n\n  // ---- GoHighLevel ----\n  ghlLocationId: 'YOUR_GHL_SUB_ACCOUNT_LOCATION_ID',   // Sub-account > Settings > Business Profile\n};\n// =================================================\n\nreturn [{ json: { ...SETTINGS, request: $input.first().json } }];"
+      },
+      "id": "456d153e-4a55-4da2-9ede-7e26d07c9234",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/bookings' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location_id",
+              "value": "={{ $('Config').first().json.locationId }}"
+            },
+            {
+              "name": "start_at_min",
+              "value": "={{ new Date(Date.now() - 4 * 3600e3).toISOString() }}"
+            },
+            {
+              "name": "start_at_max",
+              "value": "={{ new Date(Date.now() + 50 * 3600e3).toISOString() }}"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "851bc195-0632-4d1b-9466-399d0ed6ab51",
+      "name": "Get Upcoming Bookings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs every hour, so each window is exactly 1 hour wide: everyone gets each text once.\nconst H = 3600e3, now = Date.now();\nconst out = [];\nfor (const b of $input.first().json.bookings || []) {\n  if (b.status !== 'ACCEPTED' || !b.customer_id) continue;\n  const diff = new Date(b.start_at).getTime() - now;\n  let kind = null;\n  if (diff >= 48 * H && diff < 49 * H) kind = 'two_days';\n  else if (diff >= 2 * H && diff < 3 * H) kind = 'two_hours';\n  else if (diff <= -2 * H && diff > -3 * H) kind = 'follow_up';\n  if (kind) out.push({ json: { kind, booking: b, customerId: b.customer_id } });\n}\nreturn out;"
+      },
+      "id": "69e323d4-0c30-4d89-b3a8-f85ad1f6f066",
+      "name": "Pick Who Gets a Reminder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/customers/' + $json.customerId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "991d873a-ab47-458c-a61e-8f3b715e5c71",
+      "name": "Get Square Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst seg = (b) => ((b.appointment_segments || [])[0] || {});\nconst stylistName = (tm) => (cfg.stylists.find((s) => s.team_member_id === tm) || {}).name || '';\nconst serviceName = (vid) => { for (const s of cfg.services) for (const o of s.options) if (o.service_variation_id === vid) return s.name; return ''; };\nconst fmt = (d) => new Date(d).toLocaleString('en-US', { timeZone: cfg.timezone, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });\nconst r = $('Pick Who Gets a Reminder').item.json;\nconst b = r.booking, c = $json.customer || {};\nconst tag = { two_days: 'sq-remind-48h', two_hours: 'sq-remind-2h', follow_up: 'sq-completed' }[r.kind];\nreturn { json: { phone: c.phone_number || '', firstName: c.given_name || '', lastName: c.family_name || '', tag,\n  fields: { square_customer_id: b.customer_id, square_booking_id: b.id, appt_time: fmt(b.start_at),\n    appt_stylist: stylistName(seg(b).team_member_id), appt_service: serviceName(seg(b).service_variation_id) } } };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "d4822b1c-2ad2-4fd2-9f9d-604a6cabef9d",
+      "name": "Contact Details",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "65fdab2f-4872-406a-8808-6d9f596f9059",
+              "leftValue": "={{ $json.phone }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7c383dcb-86ce-4857-8ca3-281749e62047",
+      "name": "Has a Phone Number?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/upsert' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ locationId: $('Config').first().json.ghlLocationId, phone: $('Contact Details').item.json.phone, firstName: $('Contact Details').item.json.firstName || undefined, lastName: $('Contact Details').item.json.lastName || undefined, customFields: Object.entries($('Contact Details').item.json.fields || {}).map(([key, field_value]) => ({ key, field_value: String(field_value) })) }) }}",
+        "options": {}
+      },
+      "id": "a4dab25e-d981-4389-954c-f59fe74f84e5",
+      "name": "Update Contact in GoHighLevel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/' + $json.contact.id + '/tags' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: [ $('Contact Details').item.json.tag ] }) }}",
+        "options": {}
+      },
+      "id": "c8581188-eef7-4dd0-bf18-83aaf854644c",
+      "name": "Add Reminder Tag",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Every Hour": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Get Upcoming Bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Upcoming Bookings": {
+      "main": [
+        [
+          {
+            "node": "Pick Who Gets a Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Who Gets a Reminder": {
+      "main": [
+        [
+          {
+            "node": "Get Square Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Square Customer": {
+      "main": [
+        [
+          {
+            "node": "Contact Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Details": {
+      "main": [
+        [
+          {
+            "node": "Has a Phone Number?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Contact in GoHighLevel": {
+      "main": [
+        [
+          {
+            "node": "Add Reminder Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has a Phone Number?": {
+      "main": [
+        [
+          {
+            "node": "Update Contact in GoHighLevel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

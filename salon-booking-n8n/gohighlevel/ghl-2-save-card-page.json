@@ -1,0 +1,691 @@
+{
+  "name": "GHL 2 - Secure Save-Card Page",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## GHL 2. Secure Save-Card Page\n\n**In simple words:** the safe page from the text link. The card goes into **Square's own secure box**. When it's saved, GoHighLevel gets the tag **card-on-file**, the time they agreed to the policy, and a note on the contact with the full record (proof if a fee is ever disputed).",
+        "width": 640,
+        "height": 280,
+        "color": 4
+      },
+      "id": "025f007c-b4a6-4a90-9921-ed718ece27b7",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "save-card",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "235b9397-054c-4d4e-9e22-62d7439ea9da",
+      "name": "Customer Opens Link",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "fa569598-79be-489e-960c-1df4b514e057"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "save-card-submit",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "3cc49831-ce75-4572-b73e-a2127b6cc78b",
+      "name": "Customer Taps Save",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "28141482-7845-4c10-bc12-bfa648efd238"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============ EDIT YOUR SETTINGS HERE ============\nconst SETTINGS = {\n  // ---- Your business ----\n  salonName: 'Your Salon Name',\n  timezone: 'America/New_York',          // your salon's time zone\n  salonPhone: '+15551234567',            // your Twilio texting number\n  managerPhone: '+15557654321',          // who approves no-show / late-cancel fees\n\n  // ---- Square ----\n  // Sandbox for testing: https://connect.squareupsandbox.com   Live: https://connect.squareup.com\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',           // Square API version header\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n\n  // ---- n8n ----\n  n8nBaseUrl: 'https://YOUR-N8N-DOMAIN.com',   // the public address of your n8n\n  linkSecret: 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD', // same value in every workflow\n\n  // ---- Cancellation policy ----\n  lateCancelHours: 24,\n  lateCancelFeeCents: 2500,   // $25.00\n  noShowFeeCents: 4000,       // $40.00\n  currency: 'USD',\n  policyText: 'Free to cancel or reschedule up to 24 hours before. Cancelling with less than 24 hours notice costs $25. Missing the appointment without notice costs $40. Both are charged to the card you save with us.',\n\n  // ---- GoHighLevel ----\n  ghlLocationId: 'YOUR_GHL_SUB_ACCOUNT_LOCATION_ID',   // Sub-account > Settings > Business Profile\n\n  squareApplicationId: 'YOUR_SQUARE_APPLICATION_ID',   // Square Developer > your app > Credentials\n};\n// =================================================\n\nreturn [{ json: { ...SETTINGS, request: $input.first().json } }];"
+      },
+      "id": "b76b1c61-71ed-4c37-baa7-d09a817e9b82",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "d969ec5b-cc43-46f7-92a5-d3da1524218c",
+              "leftValue": "={{ !!($json.request.body && $json.request.body.token) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1e8502e4-ee65-493b-bd84-fa97a9deb600",
+      "name": "Page or Save?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst esc = (s) => String(s ?? '').replace(/[&<>\"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[ch]));\nconst page = (title, inner) => `<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>${esc(title)}</title>\n<style>body{font-family:system-ui,sans-serif;background:#f6f4f1;color:#222;margin:0;padding:24px}main{max-width:440px;margin:0 auto;background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.08)}h1{font-size:22px;margin:0 0 8px}p{line-height:1.5}.policy{background:#faf6ef;border-radius:10px;padding:12px;font-size:14px}button{width:100%;padding:14px;border:0;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;margin-top:10px}.go{background:#222;color:#fff}.alt{background:#e9e6e1;color:#222}input[type=text]{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccc;border-radius:10px;font-size:16px;margin:6px 0}label{display:block;margin:12px 0;font-size:15px}#msg{color:#b00020}</style></head><body><main>${inner}</main></body></html>`;\n\nconst cfg = $('Config').first().json;\nconst q = cfg.request.query || {};\nconst crypto = require('crypto');\nconst expected = crypto.createHmac('sha256', cfg.linkSecret).update(String(q.c || '')).digest('hex').slice(0, 32);\nconst valid = !!(q.c && q.s) && String(q.s).length === expected.length &&\n  crypto.timingSafeEqual(Buffer.from(String(q.s)), Buffer.from(expected));\n\nif (!valid) {\n  return [{ json: { html: page('Link not valid', '<h1>This link is not valid</h1><p>Please text us and we will send you a new one.</p>') } }];\n}\n\nconst sdk = cfg.squareBaseUrl.includes('sandbox') ? 'https://sandbox.web.squarecdn.com/v1/square.js' : 'https://web.squarecdn.com/v1/square.js';\nconst data = JSON.stringify({ appId: cfg.squareApplicationId, locationId: cfg.locationId, c: q.c, s: q.s,\n  postUrl: cfg.n8nBaseUrl + '/webhook/save-card-submit' }).replace(/</g, '\\\\u003c');\n\nconst html = page('Save your card', `\n<h1>${esc(cfg.salonName)}</h1>\n<p>Save a card to hold your appointment. <b>You are not charged now.</b></p>\n<div class=\"policy\"><b>Our policy:</b> ${esc(cfg.policyText)}</div>\n<label>Name on card<input type=\"text\" id=\"name\" autocomplete=\"cc-name\"></label>\n<div id=\"card\"></div>\n<label><input type=\"checkbox\" id=\"agree\"> I agree to the cancellation policy above. Fees may be charged to this card.</label>\n<button class=\"go\" id=\"btn\">Save card</button>\n<p id=\"msg\"></p>\n<p style=\"font-size:12px;color:#777\">Your card is stored securely by Square. ${esc(cfg.salonName)} never sees your full card number.</p>\n<script src=\"${sdk}\"></script>\n<script>\nconst D = ${data};\n(async () => {\n  const msg = document.getElementById('msg'), btn = document.getElementById('btn');\n  let payments, card;\n  try {\n    payments = Square.payments(D.appId, D.locationId);\n    card = await payments.card();\n    await card.attach('#card');\n  } catch (e) { msg.textContent = 'The card form could not load. Please try again later.'; return; }\n  btn.onclick = async () => {\n    if (!document.getElementById('agree').checked) { msg.textContent = 'Please tick the box to agree to the policy.'; return; }\n    btn.disabled = true; msg.textContent = 'Saving...';\n    try {\n      const name = document.getElementById('name').value;\n      const r = await card.tokenize();\n      if (r.status !== 'OK') throw new Error('Please check your card details.');\n      let verificationToken;\n      try { const v = await payments.verifyBuyer(r.token, { intent: 'STORE', billingContact: { givenName: name } }); verificationToken = v && v.token; } catch (e) {}\n      const res = await fetch(D.postUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ c: D.c, s: D.s, token: r.token, verificationToken, consent: true, name }) });\n      const out = await res.json();\n      if (!out.ok) throw new Error(out.message || 'We could not save your card.');\n      document.querySelector('main').innerHTML = '<h1>Card saved</h1><p>Go back to your texts and reply <b>YES</b> to confirm your booking.</p>';\n    } catch (e) { msg.textContent = e.message; btn.disabled = false; }\n  };\n})();\n</script>`);\nreturn [{ json: { html } }];"
+      },
+      "id": "66935764-00c1-42be-8755-33aa19ee8116",
+      "name": "Build Card Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "f1a64918-112b-468c-9443-e2be70315d80",
+      "name": "Show Card Page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst b = cfg.request.body || {};\nconst crypto = require('crypto');\nconst expected = crypto.createHmac('sha256', cfg.linkSecret).update(String(b.c || '')).digest('hex').slice(0, 32);\nconst valid = !!(b.c && b.s && b.token) && String(b.s).length === expected.length &&\n  crypto.timingSafeEqual(Buffer.from(String(b.s)), Buffer.from(expected));\nreturn [{ json: { ok: valid && b.consent === true, c: b.c, token: b.token, verificationToken: b.verificationToken || null, name: b.name || '' } }];"
+      },
+      "id": "97a2263f-19a1-4279-9682-869b1f303234",
+      "name": "Check Submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "dc835e39-cc79-443c-8ff4-50901e0e9725",
+              "leftValue": "={{ $json.ok }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "93f908dc-75c5-4c14-8c92-d7d59905ee2d",
+      "name": "Valid and Agreed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/cards' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ idempotency_key: 'card-' + $json.c.slice(0, 20) + '-' + $json.token.slice(-16), source_id: $json.token, verification_token: $json.verificationToken || undefined, card: { customer_id: $json.c, cardholder_name: $json.name || undefined } }) }}",
+        "options": {}
+      },
+      "id": "e4708979-79a0-4de7-b0ab-9a0f4413865e",
+      "name": "Save Card in Square",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/customers/' + $('Check Submission').first().json.c }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2306c92a-11c8-4c94-8044-072df38f9a06",
+      "name": "Get Square Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst card = $('Save Card in Square').first().json.card || {};\nconst c = $json.customer || {};\nconst h = cfg.request.headers || {};\nconst when = new Date().toLocaleString('en-US', { timeZone: cfg.timezone, dateStyle: 'medium', timeStyle: 'short' });\nconst cardText = (card.card_brand || 'Card') + ' ending ' + (card.last_4 || '');\nconst note = [\n  'CARD SAVED + POLICY AGREED',\n  'When: ' + when + ' (' + new Date().toISOString() + ')',\n  'Card: ' + cardText + ' (stored by Square)',\n  'Square customer: ' + (card.customer_id || ''),\n  'IP address: ' + (h['x-forwarded-for'] || h['x-real-ip'] || ''),\n  'Device: ' + (h['user-agent'] || ''),\n  'Policy they agreed to: ' + cfg.policyText,\n].join('\\n');\nreturn [{ json: { phone: c.phone_number || '', firstName: c.given_name || '', lastName: c.family_name || '',\n  fields: { policy_agreed_at: when, square_customer_id: card.customer_id || '' }, note } }];"
+      },
+      "id": "1bf12b44-0a72-4640-b99a-dee4cccafbd2",
+      "name": "Consent Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/upsert' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ locationId: $('Config').first().json.ghlLocationId, phone: $('Consent Record').item.json.phone, firstName: $('Consent Record').item.json.firstName || undefined, lastName: $('Consent Record').item.json.lastName || undefined, customFields: Object.entries($('Consent Record').item.json.fields || {}).map(([key, field_value]) => ({ key, field_value: String(field_value) })) }) }}",
+        "options": {}
+      },
+      "id": "8dd27c3f-4721-4227-a2b9-c9a9ecba8176",
+      "name": "Update Contact in GoHighLevel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/' + $('Update Contact in GoHighLevel').first().json.contact.id + '/tags' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['card-on-file'] }) }}",
+        "options": {}
+      },
+      "id": "5390ac42-7eaa-45ae-9ac8-844085810acb",
+      "name": "Tag: card-on-file",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/' + $('Update Contact in GoHighLevel').first().json.contact.id + '/notes' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ body: $('Consent Record').first().json.note }) }}",
+        "options": {}
+      },
+      "id": "82185fb8-0af9-4978-8967-333c687c5066",
+      "name": "Add Consent Note",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/conversations/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'SMS', contactId: $('Update Contact in GoHighLevel').first().json.contact.id, message: 'Thanks! Your card is saved with ' + $('Config').first().json.salonName + '. Reply YES to confirm your booking.' }) }}",
+        "options": {}
+      },
+      "id": "2bf9acf7-359f-4e0b-bfc1-eb74e304eab8",
+      "name": "Text: Card Saved",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        120
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "{\"ok\": true}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "01b1cc17-fb12-4525-a0ba-5fb9a8c58294",
+      "name": "Reply: Saved",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2640,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify({ ok: false, message: 'Your card could not be saved. Please check the details or try another card.' }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "14d1cd84-550c-48d1-8a0b-790dfa82da52",
+      "name": "Reply: Card Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify({ ok: false, message: 'Please tick the box to agree to the policy, or ask us for a new link.' }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "c8f8dda6-97e6-41fe-ac2e-03e27479d470",
+      "name": "Reply: Not Allowed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "Customer Opens Link": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Taps Save": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Page or Save?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Card Page": {
+      "main": [
+        [
+          {
+            "node": "Show Card Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Submission": {
+      "main": [
+        [
+          {
+            "node": "Valid and Agreed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Square Customer": {
+      "main": [
+        [
+          {
+            "node": "Consent Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consent Record": {
+      "main": [
+        [
+          {
+            "node": "Update Contact in GoHighLevel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Contact in GoHighLevel": {
+      "main": [
+        [
+          {
+            "node": "Tag: card-on-file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag: card-on-file": {
+      "main": [
+        [
+          {
+            "node": "Add Consent Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Consent Note": {
+      "main": [
+        [
+          {
+            "node": "Text: Card Saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text: Card Saved": {
+      "main": [
+        [
+          {
+            "node": "Reply: Saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Page or Save?": {
+      "main": [
+        [
+          {
+            "node": "Check Submission",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Card Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid and Agreed?": {
+      "main": [
+        [
+          {
+            "node": "Save Card in Square",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply: Not Allowed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Card in Square": {
+      "main": [
+        [
+          {
+            "node": "Get Square Customer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply: Card Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
