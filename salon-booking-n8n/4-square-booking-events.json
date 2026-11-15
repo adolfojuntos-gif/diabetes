@@ -1,0 +1,392 @@
+{
+  "name": "4 - Square Booking Events (new, cancel, no-show)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 4. Square Booking Events\n\n**In simple words:** Square tells n8n every time a booking changes.\n- **New booking:** text the stylist.\n- **Cancelled on time:** text the stylist, no fee.\n- **Late cancel or no-show:** text the manager a link to **Charge** or **Waive** the fee. Nothing is charged automatically.\n\nNo-show = the stylist marks the appointment **No-show** in the Square app.",
+        "width": 620,
+        "height": 320,
+        "color": 4
+      },
+      "id": "c2b6d631-1c8e-4d6f-877c-eae9a20ab30d",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "square-events",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "589271d2-6c9a-43bf-bd4a-5c735fff8950",
+      "name": "Square Sends an Update",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "1c90ecd5-4491-43ff-a278-9098e4f2305a"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============ EDIT YOUR SETTINGS HERE ============\nconst SETTINGS = {\n  // ---- Your business ----\n  salonName: 'Your Salon Name',\n  timezone: 'America/New_York',          // your salon's time zone\n  salonPhone: '+15551234567',            // your Twilio texting number\n  managerPhone: '+15557654321',          // who approves no-show / late-cancel fees\n\n  // ---- Square ----\n  // Sandbox for testing: https://connect.squareupsandbox.com   Live: https://connect.squareup.com\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',           // Square API version header\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n\n  // ---- n8n ----\n  n8nBaseUrl: 'https://YOUR-N8N-DOMAIN.com',   // the public address of your n8n\n  linkSecret: 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD', // same value in every workflow\n\n  // ---- Cancellation policy ----\n  lateCancelHours: 24,\n  lateCancelFeeCents: 2500,   // $25.00\n  noShowFeeCents: 4000,       // $40.00\n  currency: 'USD',\n  policyText: 'Free to cancel or reschedule up to 24 hours before. Cancelling with less than 24 hours notice costs $25. Missing the appointment without notice costs $40. Both are charged to the card you save with us.',\n\n  // ---- Stylists (team_member_id comes from Square > Staff) ----\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA', phone: '+15550000001' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA',   phone: '+15550000002' },\n  ],\n\n  // From Square Developer > Webhooks > your subscription\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://YOUR-N8N-DOMAIN.com/webhook/square-events', // must match Square exactly\n};\n// =================================================\n\nreturn [{ json: { ...SETTINGS, request: $input.first().json }, binary: $input.first().binary }];"
+      },
+      "id": "e67a2e14-145b-434c-8d4d-338b28185a95",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst crypto = require('crypto');\n\n// 1) Security: make sure this message really came from Square\nlet raw;\ntry { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); }\ncatch (e) { raw = JSON.stringify(cfg.request.body); }\nconst got = String((cfg.request.headers || {})['x-square-hmacsha256-signature'] || '');\nconst expected = crypto.createHmac('sha256', cfg.squareWebhookSignatureKey).update(cfg.squareWebhookUrl + raw).digest('base64');\nif (got.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected))) {\n  throw new Error('Signature check failed - this did not come from Square (or the signature key / URL in Config is wrong).');\n}\n\n// 2) Sort the update into: new booking, cancelled on time, late cancel, no-show\nconst event = JSON.parse(raw);\nconst b = event && event.data && event.data.object && event.data.object.booking;\nif (!b) return [];\nlet kind = null;\nif (event.type === 'booking.created') kind = 'new_booking';\nelse if (event.type === 'booking.updated') {\n  if (b.status === 'NO_SHOW') kind = 'noshow';\n  else if (b.status === 'CANCELLED_BY_CUSTOMER') {\n    const hoursBefore = (new Date(b.start_at) - new Date(b.updated_at || event.created_at)) / 3600e3;\n    kind = hoursBefore < cfg.lateCancelHours ? 'late' : 'cancelled';\n  }\n}\nif (!kind) return [];\n\nconst tm = ((b.appointment_segments || [])[0] || {}).team_member_id;\nconst stylist = cfg.stylists.find((s) => s.team_member_id === tm) || {};\nconst when = new Date(b.start_at).toLocaleString('en-US', { timeZone: cfg.timezone, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });\nreturn [{ json: { kind, bookingId: b.id, customerId: b.customer_id, when, stylistName: stylist.name || 'a stylist', stylistPhone: stylist.phone || '' } }];"
+      },
+      "id": "f17b13d9-aa2d-407b-84f4-98fa450f45ec",
+      "name": "Check Message Is From Square",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/customers/' + $json.customerId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a05a9e55-d3ee-467e-8d28-d752e21516a1",
+      "name": "Get Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "578aba14-da7a-4bd2-a805-7d6ee4cf57b6",
+                    "leftValue": "={{ $('Check Message Is From Square').item.json.kind }}",
+                    "rightValue": "new_booking",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "New booking"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "c22e3015-8a59-470c-9323-6a42d37f9594",
+                    "leftValue": "={{ $('Check Message Is From Square').item.json.kind }}",
+                    "rightValue": "cancelled",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cancelled on time"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "607595c7-36c2-492e-b35c-afa013a8374b",
+                    "leftValue": "={{ $('Check Message Is From Square').item.json.kind }}",
+                    "rightValue": "late",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Late cancel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "6500015b-a051-41f2-b83d-095987badfa5",
+                    "leftValue": "={{ $('Check Message Is From Square').item.json.kind }}",
+                    "rightValue": "noshow",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "No-show"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "164e28f1-4b32-44ba-8062-b5b5cdd2d7a3",
+      "name": "What Happened?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "from": "={{ $('Config').first().json.salonPhone }}",
+        "to": "={{ $('Check Message Is From Square').item.json.stylistPhone }}",
+        "message": "=New booking: {{ [$json.customer?.given_name, $json.customer?.family_name].filter(Boolean).join(' ') || 'A client' }} on {{ $('Check Message Is From Square').item.json.when }}.",
+        "options": {}
+      },
+      "id": "5a5281c3-c72c-42f9-ad7d-86df6824874d",
+      "name": "Text Stylist: New Booking",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -140
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "from": "={{ $('Config').first().json.salonPhone }}",
+        "to": "={{ $('Check Message Is From Square').item.json.stylistPhone }}",
+        "message": "=Cancelled: {{ [$json.customer?.given_name, $json.customer?.family_name].filter(Boolean).join(' ') || 'A client' }} on {{ $('Check Message Is From Square').item.json.when }}. That time is open again.",
+        "options": {}
+      },
+      "id": "1dfa4ad9-cb88-45b6-8a4c-b8beb221e0ab",
+      "name": "Text Stylist: Cancelled",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        20
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst ev = $('Check Message Is From Square').item.json;\nconst c = $json.customer || {};\nconst name = [c.given_name, c.family_name].filter(Boolean).join(' ') || 'A client';\nconst crypto = require('crypto');\nconst s = crypto.createHmac('sha256', cfg.linkSecret).update(ev.bookingId + '|' + ev.kind).digest('hex').slice(0, 32);\nconst link = `${cfg.n8nBaseUrl}/webhook/fee-decision?b=${encodeURIComponent(ev.bookingId)}&k=${ev.kind}&s=${s}`;\nconst fee = ev.kind === 'noshow' ? cfg.noShowFeeCents : cfg.lateCancelFeeCents;\nconst label = ev.kind === 'noshow' ? 'NO-SHOW' : 'LATE CANCEL';\nreturn { json: { body: `${label}: ${name}, ${ev.when} with ${ev.stylistName}. Charge the $${(fee / 100).toFixed(2)} fee or waive it? Open: ${link}` } };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "780ff629-42e1-40be-840a-b3bb79892b19",
+      "name": "Make Approve Link",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "from": "={{ $('Config').first().json.salonPhone }}",
+        "to": "={{ $('Config').first().json.managerPhone }}",
+        "message": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "25948cfe-166b-4715-a8dc-b5b227146f8b",
+      "name": "Text Manager: Charge or Waive?",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        200
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Square Sends an Update": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Check Message Is From Square",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message Is From Square": {
+      "main": [
+        [
+          {
+            "node": "Get Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customer": {
+      "main": [
+        [
+          {
+            "node": "What Happened?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Approve Link": {
+      "main": [
+        [
+          {
+            "node": "Text Manager: Charge or Waive?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "What Happened?": {
+      "main": [
+        [
+          {
+            "node": "Text Stylist: New Booking",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Stylist: Cancelled",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Make Approve Link",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Make Approve Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

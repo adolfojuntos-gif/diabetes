@@ -1,0 +1,235 @@
+<title>Salon Booking Autopilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one readable column; a phone-style text thread as the centrepiece, then five plain-language cards in a two-column grid. */
+:root {
+  --bg: #f7f5f8;
+  --surface: #ffffff;
+  --fg: #231c2b;
+  --muted: #62586d;
+  --line: #e3dde8;
+  --accent: #7a3e8f;
+  --accent-soft: #f1e6f5;
+  --bubble-in: #ece8ef;
+  --bubble-out: #7a3e8f;
+  --bubble-out-fg: #ffffff;
+  --good: #23784f;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17131b; --surface: #211b27; --fg: #efe9f3; --muted: #a99db5; --line: #362d3f;
+    --accent: #c99be0; --accent-soft: #33253d; --bubble-in: #2d2535; --bubble-out: #8f50a6;
+    --bubble-out-fg: #ffffff; --good: #6fd3a0; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17131b; --surface: #211b27; --fg: #efe9f3; --muted: #a99db5; --line: #362d3f;
+  --accent: #c99be0; --accent-soft: #33253d; --bubble-in: #2d2535; --bubble-out: #8f50a6;
+  --bubble-out-fg: #ffffff; --good: #6fd3a0; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 64px;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(34px, 6vw, 52px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(24px, 3.4vw, 30px); font-weight: 800; }
+h3 { font-size: 19px; font-weight: 600; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: 19px; color: var(--muted); }
+header { display: grid; gap: 14px; }
+section { display: grid; gap: 20px; }
+
+.hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 36px; align-items: center; }
+.hero > * { min-width: 0; }
+.pillars { display: grid; gap: 12px; }
+.pillar { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+.pillar b { display: block; }
+.pillar span { color: var(--muted); font-size: 15px; }
+.dot { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-family: var(--display); }
+
+.phone { background: var(--surface); border: 1px solid var(--line); border-radius: 28px; padding: 18px 14px 20px; box-shadow: 0 10px 30px rgba(40, 20, 50, 0.10); max-width: 380px; width: 100%; justify-self: center; }
+.phone-top { text-align: center; font-size: 13px; color: var(--muted); padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.phone-top b { display: block; color: var(--fg); font-size: 15px; }
+.thread { display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 82%; padding: 9px 13px; border-radius: 18px; font-size: 14.5px; line-height: 1.4; }
+.in { align-self: flex-end; background: var(--bubble-out); color: var(--bubble-out-fg); border-bottom-right-radius: 6px; }
+.out { align-self: flex-start; background: var(--bubble-in); color: var(--fg); border-bottom-left-radius: 6px; }
+.msg u { text-decoration-color: currentColor; }
+.sys { align-self: center; font-size: 12px; color: var(--muted); padding: 4px 0; }
+
+.parts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.part { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.part.wide { grid-column: 1 / -1; }
+.tag { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; }
+.part ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.part li::marker { color: var(--accent); }
+
+.flow { overflow-x: auto; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.steps li:last-child { border-bottom: 0; }
+.steps li::before { content: counter(s); font-family: var(--display); font-weight: 800; color: var(--accent); font-size: 22px; line-height: 1.3; }
+.steps li span { color: var(--muted); display: block; font-size: 15px; }
+
+.speed { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 420px; }
+.speed th, .speed td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.speed th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.speed td.num { font-weight: 600; }
+.table-box { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 6px 10px; }
+
+.safe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.safe > div { border-top: 3px solid var(--good); padding-top: 12px; display: grid; gap: 6px; min-width: 0; }
+.safe p { color: var(--muted); font-size: 15px; }
+.note { font-size: 14px; color: var(--muted); }
+
+@media (max-width: 760px) {
+  .hero, .parts, .safe { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Square + n8n + AI texting</div>
+    <h1>Salon Booking Autopilot</h1>
+    <p class="lead">Clients book by text, every booking holds a card, reminders go out by themselves, and each stylist's calendar fits how fast they really work.</p>
+  </header>
+
+  <section class="hero">
+    <div class="pillars">
+      <h2>What it does, in one minute</h2>
+      <div class="pillar"><div class="dot">✓</div><div><b>Books by text, day or night</b><span>The AI checks the real Square calendar and only offers times that are actually open.</span></div></div>
+      <div class="pillar"><div class="dot">✓</div><div><b>Every stylist works at their own pace</b><span>A long haircut blocks 45 minutes for a fast stylist and 90 for another. Nobody gets rushed.</span></div></div>
+      <div class="pillar"><div class="dot">✓</div><div><b>A card holds every booking</b><span>The client saves a card on Square's secure page. Nothing is charged at booking.</span></div></div>
+      <div class="pillar"><div class="dot">✓</div><div><b>No-shows can be charged, by a person</b><span>The manager gets a text and taps Charge or Waive. It never charges by itself.</span></div></div>
+    </div>
+
+    <div class="phone" aria-label="Example text conversation">
+      <div class="phone-top"><b>Your Salon</b>Text message</div>
+      <div class="thread">
+        <div class="msg in">Hi! Do you have anything tomorrow around 2 for a long haircut?</div>
+        <div class="msg out">Hi Jo! Tomorrow (Fri) I have 1:45 PM or 2:30 PM with Maria, or 3:00 PM with Ana. Which works?</div>
+        <div class="msg in">2:30 with Maria</div>
+        <div class="msg out">To hold your spot we keep a card on file. You won't be charged now. Save it here: <u>yoursalon.com/save-card</u> then reply YES.</div>
+        <div class="sys">Jo saves a card on the secure page</div>
+        <div class="msg in">YES</div>
+        <div class="msg out">Booked! Fri at 2:30 PM with Maria for a Long Haircut. Free to change until Thu 2:30 PM.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">The main idea</div>
+    <h2>Same service, each stylist's own time</h2>
+    <p>Square gives every service one length. So we make one version of the service for each speed. The client sees the same name and price either way. The calendar just blocks the right amount of time for the stylist they pick.</p>
+    <div class="table-box">
+      <table class="speed">
+        <thead><tr><th>Stylist</th><th>Long haircut takes</th><th>Fits in an 8-hour day</th></tr></thead>
+        <tbody>
+          <tr><td>Maria (fast)</td><td class="num">45 min + 10 min clean-up</td><td class="num">about 8–9 long cuts</td></tr>
+          <tr><td>Ana</td><td class="num">90 min + 10 min clean-up</td><td class="num">about 4–5 long cuts</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Mixed with shorter services, that is how a fast stylist reaches 14–15 clients a day and another stays at 9–10, without anyone being asked to speed up. The numbers are examples. Each stylist sets their own times.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">The 5 parts</div>
+    <h2>What each automation does</h2>
+    <div class="parts">
+      <div class="part">
+        <div class="tag">Part 1 · Text assistant</div>
+        <h3>The AI that books appointments</h3>
+        <ul>
+          <li>Reads the client's text</li>
+          <li>Checks the Square calendar for open times</li>
+          <li>Asks for a clear YES before booking</li>
+          <li>Can also cancel or move a booking</li>
+          <li>Passes the chat to a person if it gets stuck</li>
+        </ul>
+      </div>
+      <div class="part">
+        <div class="tag">Part 2 · Save-card page</div>
+        <h3>The safe page for the card</h3>
+        <ul>
+          <li>Card goes into Square's own secure box</li>
+          <li>The salon never sees the full card number</li>
+          <li>Client ticks "I agree to the policy"</li>
+          <li>The date and time they agreed is saved as proof</li>
+        </ul>
+      </div>
+      <div class="part">
+        <div class="tag">Part 3 · Reminders</div>
+        <h3>Texts that go out by themselves</h3>
+        <ul>
+          <li>2 days before: "Free to change until…"</li>
+          <li>2 hours before: "See you soon!"</li>
+          <li>After the visit: "Leave us a review?"</li>
+        </ul>
+      </div>
+      <div class="part">
+        <div class="tag">Part 4 · Calendar watcher</div>
+        <h3>Knows when bookings change</h3>
+        <ul>
+          <li>New booking: texts the stylist</li>
+          <li>Cancelled in time: texts the stylist, no fee</li>
+          <li>Late cancel or no-show: texts the manager</li>
+        </ul>
+      </div>
+      <div class="part wide">
+        <div class="tag">Part 5 · Charge or waive</div>
+        <h3>The manager decides about every fee</h3>
+        <ul>
+          <li>The manager taps the link and sees who, when and how much</li>
+          <li>Two buttons: <b>Charge</b> or <b>Waive</b> (with a reason, like "family emergency")</li>
+          <li>Charge: Square charges the saved card, and the client gets a polite receipt text</li>
+          <li>Every decision goes into a Google Sheet, so there's a clear record</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="flow">
+    <div class="eyebrow">Start to finish</div>
+    <h2>One appointment, step by step</h2>
+    <ol class="steps">
+      <li><div><b>Client texts the salon</b><span>"Anything tomorrow at 2?"</span></div></li>
+      <li><div><b>AI checks the calendar</b><span>Only real open times, using that stylist's own service length.</span></div></li>
+      <li><div><b>Client picks a time</b><span>The AI repeats the details and waits for YES.</span></div></li>
+      <li><div><b>Card is saved</b><span>First-time clients get the secure link. Returning clients already have one.</span></div></li>
+      <li><div><b>Booking is made in Square</b><span>It shows up on the salon calendar like any other booking.</span></div></li>
+      <li><div><b>Reminders go out</b><span>2 days before, 2 hours before, and a thank-you after.</span></div></li>
+      <li><div><b>If they don't show</b><span>The stylist taps No-show in Square. The manager chooses Charge or Waive.</span></div></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="eyebrow">Built to be safe</div>
+    <h2>Why clients and staff can trust it</h2>
+    <div class="safe">
+      <div><h3>No card numbers by text</h3><p>Cards only go into Square's secure page. The AI is told never to ask for them.</p></div>
+      <div><h3>No surprise charges</h3><p>Money only moves when the manager presses Charge. Links can't be faked.</p></div>
+      <div><h3>No rushing stylists</h3><p>Each stylist's times are their own. The system doesn't rank or compare anyone.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">What you need</div>
+    <h2>The pieces</h2>
+    <div class="parts">
+      <div class="part"><h3>Square Appointments</h3><p>The calendar, saved cards and payments. Booking through the API usually needs the Plus or Premium plan.</p></div>
+      <div class="part"><h3>n8n</h3><p>The automation engine. It runs the 5 parts behind the scenes.</p></div>
+      <div class="part"><h3>Twilio</h3><p>The salon's texting number. It needs to be registered for business texting in the US.</p></div>
+      <div class="part"><h3>Claude (AI) + Google Sheets</h3><p>The AI reads and answers texts. The sheet keeps the record of agreements and fees.</p></div>
+    </div>
+  </section>
+</div>

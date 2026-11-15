@@ -1,0 +1,806 @@
+{
+  "name": "1 - AI Text Booking Assistant (Square)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 1. AI Text Booking Assistant\n\n**In simple words:** a customer texts the salon. The AI reads the text, looks at the real calendar in Square, offers open times, and books the one they pick.\n\n**Card rule:** the AI can only book if the customer has a card saved. If not, it texts them a secure link to save one first.\n\n**Edit:** open the **Config** node and fill in your salon details, stylists and services.",
+        "width": 640,
+        "height": 300,
+        "color": 4
+      },
+      "id": "58095cd9-bddc-4ae8-82fb-994d41525b79",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "salon-sms",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "510a20bb-c879-4d32-9ff4-b6d3c24e3240",
+      "name": "Customer Texts In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "b98b9fa7-ccd9-4c3e-9c4e-e3f575b88a1a"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<Response></Response>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/xml"
+              }
+            ]
+          }
+        }
+      },
+      "id": "50b9dc8b-7349-4427-b717-1f144a3b6686",
+      "name": "Tell Twilio OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============ EDIT YOUR SETTINGS HERE ============\nconst SETTINGS = {\n  // ---- Your business ----\n  salonName: 'Your Salon Name',\n  timezone: 'America/New_York',          // your salon's time zone\n  salonPhone: '+15551234567',            // your Twilio texting number\n  managerPhone: '+15557654321',          // who approves no-show / late-cancel fees\n\n  // ---- Square ----\n  // Sandbox for testing: https://connect.squareupsandbox.com   Live: https://connect.squareup.com\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',           // Square API version header\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n\n  // ---- n8n ----\n  n8nBaseUrl: 'https://YOUR-N8N-DOMAIN.com',   // the public address of your n8n\n  linkSecret: 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD', // same value in every workflow\n\n  // ---- Cancellation policy ----\n  lateCancelHours: 24,\n  lateCancelFeeCents: 2500,   // $25.00\n  noShowFeeCents: 4000,       // $40.00\n  currency: 'USD',\n  policyText: 'Free to cancel or reschedule up to 24 hours before. Cancelling with less than 24 hours notice costs $25. Missing the appointment without notice costs $40. Both are charged to the card you save with us.',\n\n  // ---- Stylists (team_member_id comes from Square > Staff) ----\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA', phone: '+15550000001' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA',   phone: '+15550000002' },\n  ],\n\n  // ---- Services: EACH STYLIST HAS THEIR OWN TIME ----\n  // In Square, make one service variation per speed (e.g. \"Long Haircut 45 min\" for Maria,\n  // \"Long Haircut 90 min\" for Ana), same name and price for the client, and paste the IDs here.\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n};\n// =================================================\n\nconst sms = $('Customer Texts In').first().json.body || {};\nreturn [{ json: { ...SETTINGS, phone: sms.From, message: String(sms.Body || '').trim() } }];"
+      },
+      "id": "4930d2dc-6e53-4a7c-8b15-193fd41fc0e9",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/customers/search' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ limit: 1, query: { filter: { phone_number: { exact: $json.phone } } } }) }}",
+        "options": {}
+      },
+      "id": "6c5c5254-ca5f-472a-9a39-97d75d39cc11",
+      "name": "Find Customer by Phone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "336663f9-b2ee-43e4-ba2c-c0dd269c1de8",
+              "leftValue": "={{ ($json.customers || []).length }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8600904c-80f4-4583-81e8-26513152ef15",
+      "name": "Already a Customer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/customers' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ idempotency_key: 'sms-' + $('Config').first().json.phone, phone_number: $('Config').first().json.phone, note: 'Created by the text booking assistant' }) }}",
+        "options": {}
+      },
+      "id": "9ac75ab8-9769-4469-9010-f5be933410d3",
+      "name": "Create New Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        160
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst c = input.customer || (input.customers || [])[0];\nif (!c) throw new Error('Could not find or create the customer in Square: ' + JSON.stringify(input));\nreturn [{ json: { customerId: c.id, customerName: [c.given_name, c.family_name].filter(Boolean).join(' ') } }];"
+      },
+      "id": "71b12289-b92e-470b-ba43-5492280c638b",
+      "name": "Customer Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/cards' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customer_id",
+              "value": "={{ $json.customerId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4689e303-fcd1-4db1-a57b-360efe224b63",
+      "name": "Check Saved Card",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst cust = $('Customer Info').first().json;\nconst cards = ($input.first().json.cards || []).filter((c) => c.enabled !== false);\nconst crypto = require('crypto');\n\n// Secure link for saving a card (signed so nobody can change the customer id)\nconst sig = crypto.createHmac('sha256', cfg.linkSecret).update(cust.customerId).digest('hex').slice(0, 32);\nconst cardLink = `${cfg.n8nBaseUrl}/webhook/save-card?c=${encodeURIComponent(cust.customerId)}&s=${sig}`;\n\n// Current time + UTC offset in the salon's time zone\nconst now = new Date();\nconst nowText = now.toLocaleString('en-US', { timeZone: cfg.timezone, dateStyle: 'full', timeStyle: 'short' });\nconst off = (now.toLocaleString('en-US', { timeZone: cfg.timezone, timeZoneName: 'longOffset' }).match(/GMT([+-]\\d{2}:\\d{2})/) || [])[1] || '+00:00';\n\nconst menu = cfg.services.map((s) => `- ${s.name} (${s.price}):\\n` + s.options.map((o) =>\n  `    ${o.stylist}: ${o.minutes} min -> team_member_id=${o.team_member_id}, service_variation_id=${o.service_variation_id}`).join('\\n')).join('\\n');\n\nconst hasCard = cards.length > 0;\nconst systemPrompt = `You are the friendly text-message booking assistant for ${cfg.salonName}.\nKeep replies short (1-3 sentences), warm, plain text. No markdown.\n\nTIME: Right now it is ${nowText} (${cfg.timezone}, UTC offset ${off}). Always use this time zone.\nWhen you send times to tools, use ISO 8601 with the offset, like 2026-11-20T14:00:00${off}.\n\nCUSTOMER: ${cust.customerName || 'name not known yet'}, phone ${cfg.phone}.\nCARD ON FILE: ${hasCard ? 'YES (card ending ' + (cards[0].last_4 || '????') + ')' : 'NO'}.\n\nSERVICES AND STYLISTS. Each stylist has their own time for each service.\nAlways use the service_variation_id that belongs to the chosen stylist:\n${menu}\n\nHOW TO BOOK\n1. Find out: which service, which stylist (or \"anyone\"), and which day/time.\n2. Use check_availability. Search a whole day: from 00:00 that day to 00:00 the next day (Square needs at least 24 hours). If that start is in the past, start from now.\n   If the customer said \"anyone\", check each stylist who offers the service.\n3. Offer at most 3 real times from the results. NEVER invent a time.\n4. Repeat the details and get a clear YES, e.g. \"Confirm Tue Nov 20 at 2:00 PM with Maria for a Long Haircut?\"\n5. CARD RULE: every booking needs a card on file. If CARD ON FILE is NO, do not book. Send this secure link and ask them to reply YES after saving the card: ${cardLink}\n   Never ask for card numbers by text. If someone sends card numbers, tell them to delete the message and use the link.\n6. After a clear YES (and card on file is YES), call book_appointment with the exact start_at, team_member_id, service_variation_id and service_variation_version from the check_availability results.\n7. If booking fails because the time was taken, check availability again and offer the next open times.\n\nPOLICY (mention it once to new customers, and before any cancellation): ${cfg.policyText}\n\nCANCEL OR RESCHEDULE: use list_my_bookings, confirm which booking, then cancel_booking.\nIf the appointment is less than ${cfg.lateCancelHours} hours away, remind them about the late-cancel fee before cancelling.\nTo reschedule: book the new time first, then cancel the old one.\n\nIf you are unsure, the customer is upset, or they ask something you cannot handle, tell them a team member will text them back, and end your reply with [HANDOFF].`;\n\nreturn [{ json: { ...cust, hasCard, systemPrompt, message: cfg.message, phone: cfg.phone } }];"
+      },
+      "id": "7f619245-4c22-4d76-a734-5e5e2322c18b",
+      "name": "Prepare for AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "options": {
+          "systemMessage": "={{ $json.systemPrompt }}",
+          "maxIterations": 12
+        }
+      },
+      "id": "f6087b5d-3376-41ab-904a-e1eeaaef73a2",
+      "name": "AI Booking Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        2000,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-haiku-5-5"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "ab60f4c9-eb89-4834-9884-c917c823fc3a",
+      "name": "Claude",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1880,
+        260
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "REPLACE_ANTHROPIC_CRED",
+          "name": "Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Config').first().json.phone }}",
+        "contextWindowLength": 20
+      },
+      "id": "cc0620f6-d1ca-418c-96c8-d3112da6cd00",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2020,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/bookings/availability/search' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: { filter: { location_id: $('Config').first().json.locationId, start_at_range: { start_at: $fromAI('range_start', 'Start of the search window, ISO 8601 with offset', 'string'), end_at: $fromAI('range_end', 'End of the search window, ISO 8601 with offset. Must be at least 24 hours after range_start', 'string') }, segment_filters: [{ service_variation_id: $fromAI('service_variation_id', 'service_variation_id for the chosen stylist and service', 'string'), team_member_id_filter: { any: [ $fromAI('team_member_id', 'team_member_id of the stylist', 'string') ] } }] } } }) }}",
+        "options": {},
+        "toolDescription": "Find open appointment times in Square for ONE stylist and ONE service. Returns availabilities with start_at, team_member_id, service_variation_id and service_variation_version."
+      },
+      "id": "d4404a6b-b61c-468c-8ca0-8645213868c7",
+      "name": "check_availability",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.squareBaseUrl + ($('Prepare for AI').first().json.hasCard ? '/v2/bookings' : '/v2/BLOCKED-no-card-on-file-send-the-card-link') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ idempotency_key: $('Prepare for AI').first().json.customerId + '-' + $fromAI('booking_key', 'Copy the exact start_at value here again. Used to stop double bookings.', 'string'), booking: { location_id: $('Config').first().json.locationId, customer_id: $('Prepare for AI').first().json.customerId, start_at: $fromAI('start_at', 'Exact start_at from check_availability', 'string'), customer_note: 'Booked by the text assistant', appointment_segments: [{ team_member_id: $fromAI('team_member_id', 'team_member_id from check_availability', 'string'), service_variation_id: $fromAI('service_variation_id', 'service_variation_id from check_availability', 'string'), service_variation_version: $fromAI('service_variation_version', 'service_variation_version number from check_availability', 'number') }] } }) }}",
+        "options": {},
+        "toolDescription": "Create the booking in Square. Only call after the customer clearly said YES. Only works when the customer has a card on file."
+      },
+      "id": "d4d060a5-712b-4d3a-8a9c-aaa88021cfb3",
+      "name": "book_appointment",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2300,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/bookings' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customer_id",
+              "value": "={{ $('Prepare for AI').first().json.customerId }}"
+            },
+            {
+              "name": "location_id",
+              "value": "={{ $('Config').first().json.locationId }}"
+            },
+            {
+              "name": "start_at_min",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {},
+        "toolDescription": "List this customer's upcoming bookings (id, version, start_at, status, stylist)."
+      },
+      "id": "5661bcd3-6c46-4689-b3a7-68585c65732f",
+      "name": "list_my_bookings",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2440,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.squareBaseUrl + '/v2/bookings/' + $fromAI('booking_id', 'id of the booking to cancel, from list_my_bookings', 'string') + '/cancel' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Config').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ booking_version: $fromAI('booking_version', 'version number of the booking, from list_my_bookings', 'number') }) }}",
+        "options": {},
+        "toolDescription": "Cancel one of this customer's bookings. Only call after they confirmed which one."
+      },
+      "id": "4f4c157c-56bf-417a-9ca6-1936d37d1224",
+      "name": "cancel_booking",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2580,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = String($json.output || '').trim();\nconst handoff = out.includes('[HANDOFF]');\nconst reply = out.replace(/\\[HANDOFF\\]/g, '').trim() ||\n  'Sorry, something went wrong on our side. A team member will text you shortly.';\nreturn [{ json: { reply, handoff: handoff || !out } }];"
+      },
+      "id": "46f6ea89-7b29-4c59-b2d2-26a4ec2fa91d",
+      "name": "Clean Up Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2340,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "from": "={{ $('Config').first().json.salonPhone }}",
+        "to": "={{ $('Config').first().json.phone }}",
+        "message": "={{ $json.reply }}",
+        "options": {}
+      },
+      "id": "40aef809-2d51-4c37-90e6-a8d6fb9d51db",
+      "name": "Text Reply to Customer",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        -80
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "62daef3f-f324-4c5d-b413-96cc70c9c5a3",
+              "leftValue": "={{ $json.handoff }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c61a2ab8-ab4c-4b91-a0ae-5269d2dbd52b",
+      "name": "Needs a Human?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "from": "={{ $('Config').first().json.salonPhone }}",
+        "to": "={{ $('Config').first().json.managerPhone }}",
+        "message": "=Customer {{ $('Config').first().json.phone }} needs a person to text them back. Their last message: \"{{ $('Config').first().json.message }}\"",
+        "options": {}
+      },
+      "id": "06862303-1afb-44b8-b3e9-149e756c5855",
+      "name": "Text the Manager",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        2780,
+        100
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "REPLACE_TWILIO_CRED",
+          "name": "Twilio"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Customer Texts In": {
+      "main": [
+        [
+          {
+            "node": "Tell Twilio OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tell Twilio OK": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Find Customer by Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Customer by Phone": {
+      "main": [
+        [
+          {
+            "node": "Already a Customer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New Customer": {
+      "main": [
+        [
+          {
+            "node": "Customer Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Info": {
+      "main": [
+        [
+          {
+            "node": "Check Saved Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Saved Card": {
+      "main": [
+        [
+          {
+            "node": "Prepare for AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare for AI": {
+      "main": [
+        [
+          {
+            "node": "AI Booking Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Booking Assistant": {
+      "main": [
+        [
+          {
+            "node": "Clean Up Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Up Reply": {
+      "main": [
+        [
+          {
+            "node": "Text Reply to Customer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Needs a Human?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already a Customer?": {
+      "main": [
+        [
+          {
+            "node": "Customer Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create New Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs a Human?": {
+      "main": [
+        [
+          {
+            "node": "Text the Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Booking Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Booking Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Booking Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "book_appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Booking Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_my_bookings": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Booking Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cancel_booking": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Booking Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
