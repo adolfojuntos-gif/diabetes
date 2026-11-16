@@ -1,0 +1,800 @@
+{
+  "name": "Salon A - AI Text Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## A. AI Text Assistant\n\n**In simple words:** a client texts the salon's GoHighLevel number. The AI looks at the real Square calendar and offers open times.\n\n- **Client already has a card saved:** the AI books it in Square.\n- **New client:** the AI sends the Square booking link. Square saves their card and shows the policy.\n\nThe AI answers through GoHighLevel, so every chat is in your GoHighLevel inbox.\n\n**To set up:** fill in **Settings**, then pick your credentials on the orange nodes.",
+        "width": 640,
+        "height": 340,
+        "color": 4
+      },
+      "id": "9aae527d-2e0c-4064-a5a7-9438a2a06726",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ghl-sms",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "aa33be57-4268-42b0-a58e-6afbf06fe458",
+      "name": "Text from GoHighLevel",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "76852788-4b7b-46f4-aacd-3758677448c1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ================= YOUR SALON SETTINGS =================\n// Fill this in once. Copy the SAME settings into the other workflow.\nconst SETTINGS = {\n  salonName: 'Your Salon Name',\n  timezone: 'America/Chicago',\n  bookingLink: 'https://book.squareup.com/appointments/YOUR-LINK',  // your Square online booking page\n\n  // Square (use the Sandbox address while testing; live = https://connect.squareup.com)\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://theseam.app.n8n.cloud/webhook/square-events',\n\n  // GoHighLevel\n  ghlLocationId: 'YOUR_GHL_LOCATION_ID',\n\n  lateCancelHours: 24,\n  policyText: 'Free to cancel or change up to 24 hours before. Late cancellations and no-shows may be charged a fee to the card you saved when booking.',\n\n  // Each stylist has their OWN time for each service.\n  // In Square, make one version of the service per speed (same name and price for clients).\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA' },\n  ],\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n};\n// ========================================================\n\nconst p = $input.first().json.body || {};\nconst cd = p.customData || {};\nconst msg = cd.message || (p.message && p.message.body) || p.message || '';\nreturn [{ json: { ...SETTINGS,\n  contactId: cd.contact_id || p.contact_id || p.contactId || '',\n  phone: cd.phone || p.phone || '',\n  name: [p.first_name, p.last_name].filter(Boolean).join(' '),\n  message: String(msg).trim() } }];"
+      },
+      "id": "b2ede163-48a8-4009-a267-9b6253571098",
+      "name": "Settings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cd5efc94-8dc4-43fb-be2b-de85552791ae",
+              "leftValue": "={{ $json.message && $json.contactId && $json.phone ? 'yes' : '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bbbb399e-bf56-4ab6-ad4e-caa02a68e84c",
+      "name": "Is There a Message?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/customers/search' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ limit: 1, query: { filter: { phone_number: { exact: $json.phone } } } }) }}",
+        "options": {}
+      },
+      "id": "8c9e1bd0-fd32-4394-8588-5cf8efef42a2",
+      "name": "Find Client in Square",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $('Settings').first().json;\nconst c = ($input.first().json.customers || [])[0];\nreturn [{ json: { customerId: c ? c.id : '', known: !!c } }];"
+      },
+      "id": "514925a9-2be1-46c6-95c1-c6187d87b76c",
+      "name": "Client Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "dd80987a-bca5-4bdc-8ec7-cafc19a908bd",
+              "leftValue": "={{ $json.known }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "36b76fff-1217-475a-b25b-f9a5ede71545",
+      "name": "Known Client?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/cards' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customer_id",
+              "value": "={{ $json.customerId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e86b6d19-4ab1-420e-9661-37461556b85d",
+      "name": "Check Saved Card",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        -80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $('Settings').first().json;\nconst info = $('Client Info').first().json;\nconst cards = info.known ? (($input.first().json.cards || []).filter((c) => c.enabled !== false)) : [];\nconst canBook = info.known && cards.length > 0;\n\nconst now = new Date();\nconst nowText = now.toLocaleString('en-US', { timeZone: s.timezone, dateStyle: 'full', timeStyle: 'short' });\nconst off = (now.toLocaleString('en-US', { timeZone: s.timezone, timeZoneName: 'longOffset' }).match(/GMT([+-]\\d{2}:\\d{2})/) || [])[1] || '+00:00';\nconst menu = s.services.map((sv) => `- ${sv.name} (${sv.price}):\\n` + sv.options.map((o) =>\n  `    ${o.stylist}: ${o.minutes} min -> team_member_id=${o.team_member_id}, service_variation_id=${o.service_variation_id}`).join('\\n')).join('\\n');\n\nconst prompt = `You are the friendly text-message assistant for ${s.salonName}. Reply in 1-3 short sentences, plain text.\n\nNOW: ${nowText} (${s.timezone}, UTC offset ${off}). Send times to tools as ISO 8601 with this offset, e.g. 2026-11-20T14:00:00${off}.\nCLIENT: ${s.name || 'name unknown'}. CAN BOOK BY TEXT: ${canBook ? 'YES (card saved)' : 'NO (no card saved yet)'}.\n\nSERVICES. Each stylist has their own time. Use the service_variation_id that belongs to the chosen stylist:\n${menu}\n\nSTEPS\n1. Find out the service, the stylist (or \"anyone\") and the day.\n2. Use check_availability for that whole day (00:00 to 00:00 next day; at least 24 hours; start from now if the day already started). For \"anyone\", check each stylist.\n3. Offer up to 3 real times. Never make up a time.\n4. ${canBook\n    ? 'When they pick one, repeat it (\"Confirm Fri Nov 20, 2:30 PM with Maria, Long Haircut?\") and wait for YES. Then call book_appointment with the exact values from check_availability. If it fails, check again and offer new times.'\n    : 'Do NOT book by text. Tell them the time is open and send this link to book it and save a card (it holds the spot, no charge now): ' + s.bookingLink}\n5. Never ask for card numbers. If someone sends one, tell them to delete it and use the booking link.\n\nTo cancel or change: use list_my_bookings, confirm which one, then cancel_booking. If it is less than ${s.lateCancelHours} hours away, mention the policy first.\nPOLICY: ${s.policyText}\n\nIf you can't help, they're upset, or they ask for a person: say a team member will text them soon and end with [HANDOFF].`;\nreturn [{ json: { prompt, canBook, customerId: info.customerId, message: s.message } }];"
+      },
+      "id": "8948536a-d683-41e3-a40c-d55e87d6a609",
+      "name": "Prepare the AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Prepare the AI').first().json.message }}",
+        "options": {
+          "systemMessage": "={{ $('Prepare the AI').first().json.prompt }}",
+          "maxIterations": 12
+        }
+      },
+      "id": "1337b662-c3de-412a-88bc-bef42b80e8d2",
+      "name": "AI Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1760,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-haiku-5-5"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "984b06d0-7142-4713-b61b-6a1c4491ebf0",
+      "name": "Claude",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1640,
+        260
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "REPLACE_ANTHROPIC_CRED",
+          "name": "Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Settings').first().json.contactId }}",
+        "contextWindowLength": 20
+      },
+      "id": "0624c751-7c8b-405f-93f4-491096fd07c9",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1780,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/bookings/availability/search' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: { filter: { location_id: $('Settings').first().json.locationId, start_at_range: { start_at: $fromAI('range_start', 'Start of the search window, ISO 8601 with offset', 'string'), end_at: $fromAI('range_end', 'End of the window, ISO 8601 with offset, at least 24 hours after the start', 'string') }, segment_filters: [{ service_variation_id: $fromAI('service_variation_id', 'service_variation_id for the chosen stylist', 'string'), team_member_id_filter: { any: [ $fromAI('team_member_id', 'team_member_id of the stylist', 'string') ] } }] } } }) }}",
+        "options": {},
+        "toolDescription": "Find open times in Square for ONE stylist and ONE service."
+      },
+      "id": "1f4d5d0a-d393-4cfe-8341-c224a3cf8eec",
+      "name": "check_availability",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + ($('Prepare the AI').first().json.canBook ? '/v2/bookings' : '/v2/BLOCKED-send-the-booking-link-instead') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ idempotency_key: $('Prepare the AI').first().json.customerId + '-' + $fromAI('booking_key', 'Copy the exact start_at again (prevents double booking)', 'string'), booking: { location_id: $('Settings').first().json.locationId, customer_id: $('Prepare the AI').first().json.customerId, start_at: $fromAI('start_at', 'Exact start_at from check_availability', 'string'), customer_note: 'Booked by text', appointment_segments: [{ team_member_id: $fromAI('team_member_id', 'team_member_id from check_availability', 'string'), service_variation_id: $fromAI('service_variation_id', 'service_variation_id from check_availability', 'string'), service_variation_version: $fromAI('service_variation_version', 'service_variation_version from check_availability', 'number') }] } }) }}",
+        "options": {},
+        "toolDescription": "Book the appointment in Square. Only after a clear YES, and only when CAN BOOK BY TEXT is YES."
+      },
+      "id": "63ebf368-7768-403e-8a12-e0d88be57ffb",
+      "name": "book_appointment",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2060,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/bookings' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customer_id",
+              "value": "={{ $('Prepare the AI').first().json.customerId || 'none' }}"
+            },
+            {
+              "name": "location_id",
+              "value": "={{ $('Settings').first().json.locationId }}"
+            },
+            {
+              "name": "start_at_min",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {},
+        "toolDescription": "List this client's upcoming bookings (id, version, start time, stylist)."
+      },
+      "id": "771181b6-f229-4291-a8c8-7df3712b079c",
+      "name": "list_my_bookings",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/bookings/' + $fromAI('booking_id', 'id from list_my_bookings', 'string') + '/cancel' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ booking_version: $fromAI('booking_version', 'version from list_my_bookings', 'number') }) }}",
+        "options": {},
+        "toolDescription": "Cancel one booking after the client confirmed which one."
+      },
+      "id": "e9eba2fb-840a-44a8-a12d-dfec9167c3a6",
+      "name": "cancel_booking",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2340,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = String($json.output || '').trim();\nconst handoff = out.includes('[HANDOFF]') || !out;\nconst reply = out.replace(/\\[HANDOFF\\]/g, '').trim() || 'Sorry, something went wrong. A team member will text you shortly.';\nreturn [{ json: { reply, handoff } }];"
+      },
+      "id": "30f08c2e-00c1-4982-8bca-32bfb9429eba",
+      "name": "Tidy the Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/conversations/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-04-15"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'SMS', contactId: $('Settings').first().json.contactId, message: $json.reply }) }}",
+        "options": {}
+      },
+      "id": "a0e2b60a-186c-40a8-9e2d-f8d2ebf1a33d",
+      "name": "Reply in GoHighLevel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2320,
+        -80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "caad1c72-e136-40c0-86f2-9ba015d3dc38",
+              "leftValue": "={{ $json.handoff }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "241967e5-7868-477e-b4ee-8b7074919a86",
+      "name": "Needs a Person?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://services.leadconnectorhq.com' + '/contacts/' + $('Settings').first().json.contactId + '/tags' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: ['needs-human'] }) }}",
+        "options": {}
+      },
+      "id": "5ca16b15-d064-4eb4-ab95-b5e83cdf50f9",
+      "name": "Tag: needs-human",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2540,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GHL_CRED",
+          "name": "GoHighLevel API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Text from GoHighLevel": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Is There a Message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Client in Square": {
+      "main": [
+        [
+          {
+            "node": "Client Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Info": {
+      "main": [
+        [
+          {
+            "node": "Known Client?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Saved Card": {
+      "main": [
+        [
+          {
+            "node": "Prepare the AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare the AI": {
+      "main": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Assistant": {
+      "main": [
+        [
+          {
+            "node": "Tidy the Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tidy the Reply": {
+      "main": [
+        [
+          {
+            "node": "Reply in GoHighLevel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Needs a Person?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is There a Message?": {
+      "main": [
+        [
+          {
+            "node": "Find Client in Square",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Known Client?": {
+      "main": [
+        [
+          {
+            "node": "Check Saved Card",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare the AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs a Person?": {
+      "main": [
+        [
+          {
+            "node": "Tag: needs-human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "book_appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_my_bookings": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cancel_booking": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
