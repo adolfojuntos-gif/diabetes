@@ -259,9 +259,9 @@ for (const b of $input.first().json.bookings || []) {
   if (kind) out.push({ json: { kind, booking: b } });
 }
 return out;""")
-wf.add("Together", "n8n-nodes-base.noOp", 1, [880, 120], {})
-sq(wf, "Get Client from Square", [1100, 120], "GET", "'/v2/customers/' + $json.booking.customer_id", on_error="continueRegularOutput")
-code(wf, "Write the Texts", [1320, 120], r"""const s = $('Settings').first().json;
+wf.add("Together", "n8n-nodes-base.noOp", 1, [1100, 120], {})
+sq(wf, "Get Client from Square", [1320, 120], "GET", "'/v2/customers/' + $json.booking.customer_id", on_error="continueRegularOutput")
+code(wf, "Write the Texts", [1540, 120], r"""const s = $('Settings').first().json;
 const events = $('Together').all();
 const out = [];
 $input.all().forEach((item, i) => {
@@ -298,7 +298,7 @@ $input.all().forEach((item, i) => {
   }
 });
 return out;""")
-text(wf, "Send Text", [1540, 120], "$json.to", "$json.text")
+text(wf, "Send Text", [1760, 120], "$json.to", "$json.text")
 for a, b in [("Square Booking Changed", "Settings"), ("Every Hour", "Settings"), ("Settings", "From Square or the Clock?"),
              ("Check It's From Square", "Together"), ("Get Upcoming Bookings", "Who Needs a Reminder?"),
              ("Who Needs a Reminder?", "Together"), ("Together", "Get Client from Square"),
