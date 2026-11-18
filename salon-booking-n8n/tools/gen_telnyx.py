@@ -46,7 +46,7 @@ const SETTINGS = {
   squareVersion: '2025-01-23',
   locationId: 'YOUR_SQUARE_LOCATION_ID',
   squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',
-  squareWebhookUrl: 'https://YOUR-N8N-ADDRESS/webhook/square-events',
+  squareWebhookUrl: 'https://adolfo12.app.n8n.cloud/webhook/square-events',
 
   // Telnyx: Mission Control > Keys & Credentials > Public Key (optional, but recommended)
   telnyxPublicKey: '',

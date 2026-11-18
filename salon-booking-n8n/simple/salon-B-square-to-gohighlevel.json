@@ -8,7 +8,7 @@
         "height": 340,
         "color": 4
       },
-      "id": "8ecea1f1-5323-42b8-920a-100fddce5f32",
+      "id": "4ba0c875-b95d-4291-9eb2-0046133334c4",
       "name": "Note 0",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -26,7 +26,7 @@
           "rawBody": true
         }
       },
-      "id": "1379abf9-a515-43e0-ba60-194950791df9",
+      "id": "c4074f4c-da59-42b3-bdf6-47c32ee07bc4",
       "name": "Square Booking Changed",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -34,7 +34,7 @@
         0,
         0
       ],
-      "webhookId": "616608f9-1c70-4212-a5f2-b357a55c50d4"
+      "webhookId": "b58be139-2952-4a30-8551-3dae88cb5490"
     },
     {
       "parameters": {
@@ -47,7 +47,7 @@
           ]
         }
       },
-      "id": "770e2654-33f2-4b21-92ef-17e7e85fdafe",
+      "id": "f2c1171f-eb60-4ebb-8bb9-46e22a752622",
       "name": "Every Hour",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -58,9 +58,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// ================= YOUR SALON SETTINGS =================\n// Fill this in once. Copy the SAME settings into the other workflow.\nconst SETTINGS = {\n  salonName: 'Your Salon Name',\n  timezone: 'America/Chicago',\n  bookingLink: 'https://book.squareup.com/appointments/YOUR-LINK',  // your Square online booking page\n\n  // Square (use the Sandbox address while testing; live = https://connect.squareup.com)\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://theseam.app.n8n.cloud/webhook/square-events',\n\n  // GoHighLevel\n  ghlLocationId: 'YOUR_GHL_LOCATION_ID',\n\n  lateCancelHours: 24,\n  policyText: 'Free to cancel or change up to 24 hours before. Late cancellations and no-shows may be charged a fee to the card you saved when booking.',\n\n  // Each stylist has their OWN time for each service.\n  // In Square, make one version of the service per speed (same name and price for clients).\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA' },\n  ],\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n};\n// ========================================================\n\nreturn [{ json: { ...SETTINGS, request: $input.first().json }, binary: $input.first().binary }];"
+        "jsCode": "// ================= YOUR SALON SETTINGS =================\n// Fill this in once. Copy the SAME settings into the other workflow.\nconst SETTINGS = {\n  salonName: 'Your Salon Name',\n  timezone: 'America/Chicago',\n  bookingLink: 'https://book.squareup.com/appointments/YOUR-LINK',  // your Square online booking page\n\n  // Square (use the Sandbox address while testing; live = https://connect.squareup.com)\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://adolfo12.app.n8n.cloud/webhook/square-events',\n\n  // GoHighLevel\n  ghlLocationId: 'YOUR_GHL_LOCATION_ID',\n\n  lateCancelHours: 24,\n  policyText: 'Free to cancel or change up to 24 hours before. Late cancellations and no-shows may be charged a fee to the card you saved when booking.',\n\n  // Each stylist has their OWN time for each service.\n  // In Square, make one version of the service per speed (same name and price for clients).\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA' },\n  ],\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n};\n// ========================================================\n\nreturn [{ json: { ...SETTINGS, request: $input.first().json }, binary: $input.first().binary }];"
       },
-      "id": "5718ee6e-5156-4cbc-9a4e-e1d8afe582f5",
+      "id": "a689f6f4-4e6d-4153-89e8-0a0134e95ce5",
       "name": "Settings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -79,7 +79,7 @@
           },
           "conditions": [
             {
-              "id": "6dc7a2c9-68bf-4b32-87c3-a9cbb908dac7",
+              "id": "f4619787-a505-4efe-b35f-99127374c2b9",
               "leftValue": "={{ !!($json.request && $json.request.headers) }}",
               "operator": {
                 "type": "boolean",
@@ -93,7 +93,7 @@
         },
         "options": {}
       },
-      "id": "ef813cf1-bb35-4ed6-8fbd-4031ffe42ca3",
+      "id": "1dc74550-cc57-4df3-9332-e8213bac5f8c",
       "name": "From Square or the Clock?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -106,7 +106,7 @@
       "parameters": {
         "jsCode": "const s = $('Settings').first().json;\nconst crypto = require('crypto');\nlet raw;\ntry { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); }\ncatch (e) { raw = JSON.stringify(s.request.body); }\nconst got = String((s.request.headers || {})['x-square-hmacsha256-signature'] || '');\nconst want = crypto.createHmac('sha256', s.squareWebhookSignatureKey).update(s.squareWebhookUrl + raw).digest('base64');\nif (got.length !== want.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(want))) {\n  throw new Error('This did not come from Square (or the signature key / URL in Settings is wrong).');\n}\nconst event = JSON.parse(raw);\nconst b = event && event.data && event.data.object && event.data.object.booking;\nif (!b || !b.customer_id) return [];\nlet tag = null;\nif (event.type === 'booking.created') tag = 'sq-booked';\nelse if (b.status === 'NO_SHOW') tag = 'sq-no-show';\nelse if (b.status === 'CANCELLED_BY_CUSTOMER') {\n  const hoursBefore = (new Date(b.start_at) - new Date(b.updated_at || event.created_at)) / 3600e3;\n  tag = hoursBefore < s.lateCancelHours ? 'sq-late-cancel' : 'sq-cancelled';\n}\nreturn tag ? [{ json: { tag, booking: b } }] : [];"
       },
-      "id": "2940816f-40ca-4ee7-92e7-03f40bbaa86b",
+      "id": "2b7a2404-6d3a-47a5-a5ae-a8974c2600d4",
       "name": "Check It's From Square",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -157,7 +157,7 @@
         },
         "options": {}
       },
-      "id": "2d84d396-8f70-449e-8398-bf333aa67580",
+      "id": "975573a7-0aae-4c3f-85d2-f693dc58cf24",
       "name": "Get Today's Bookings",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -176,7 +176,7 @@
       "parameters": {
         "jsCode": "// Runs every hour; each window is 1 hour wide, so each client gets each reminder once.\nconst H = 3600e3, now = Date.now(), out = [];\nfor (const b of $input.first().json.bookings || []) {\n  if (b.status !== 'ACCEPTED' || !b.customer_id) continue;\n  const diff = new Date(b.start_at).getTime() - now;\n  let tag = null;\n  if (diff >= 48 * H && diff < 49 * H) tag = 'sq-remind-48h';\n  else if (diff >= 2 * H && diff < 3 * H) tag = 'sq-remind-2h';\n  else if (diff <= -2 * H && diff > -3 * H) tag = 'sq-completed';\n  if (tag) out.push({ json: { tag, booking: b } });\n}\nreturn out;"
       },
-      "id": "9c59c6e6-bf6f-4e8c-a97c-1236a3331572",
+      "id": "b5cd4763-ebcb-4af5-bfca-3a5378cf3f2e",
       "name": "Who Needs a Reminder?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -206,7 +206,7 @@
         },
         "options": {}
       },
-      "id": "6b59489d-2c6e-4c73-9656-79168d5c42df",
+      "id": "c1160226-52a7-4b81-94e8-fdddb5bd823e",
       "name": "Get Client from Square",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -227,7 +227,7 @@
         "jsCode": "const s = $('Settings').first().json;\nconst ev = $('Merge').item.json;\nconst b = ev.booking, c = $json.customer || {};\nconst seg = (b.appointment_segments || [])[0] || {};\nconst stylist = (s.stylists.find((x) => x.team_member_id === seg.team_member_id) || {}).name || '';\nlet service = '';\nfor (const sv of s.services) for (const o of sv.options) if (o.service_variation_id === seg.service_variation_id) service = sv.name;\nconst when = new Date(b.start_at).toLocaleString('en-US', { timeZone: s.timezone, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });\nconst fields = { appt_time: when, appt_stylist: stylist, appt_service: service };\nif (ev.tag === 'sq-booked') fields.booked_via = b.source === 'API' ? 'text' : 'square';\nreturn { json: { phone: c.phone_number || '', firstName: c.given_name || '', lastName: c.family_name || '', tag: ev.tag, fields } };",
         "mode": "runOnceForEachItem"
       },
-      "id": "ff94f6cd-b50c-4de1-9c14-3d07f0e5f05b",
+      "id": "6553f3e2-3807-4fe3-8806-fc3dd61db4f3",
       "name": "Contact Details",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -238,7 +238,7 @@
     },
     {
       "parameters": {},
-      "id": "0e18c039-092c-4b2c-8361-96fa70e00294",
+      "id": "956d2407-7555-4ede-9f86-49484e36e371",
       "name": "Merge",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
@@ -257,7 +257,7 @@
           },
           "conditions": [
             {
-              "id": "aa98380f-e1d8-4583-8173-75f2d561bc36",
+              "id": "4e31dc59-e157-4427-8c39-00f40e503f77",
               "leftValue": "={{ $json.phone }}",
               "operator": {
                 "type": "string",
@@ -271,7 +271,7 @@
         },
         "options": {}
       },
-      "id": "feb132ff-a1e2-4c39-968a-f79732585eef",
+      "id": "5470922a-98b7-4165-a688-76bd9c0f7837",
       "name": "Has a Phone?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -304,7 +304,7 @@
         "jsonBody": "={{ JSON.stringify({ locationId: $('Settings').first().json.ghlLocationId, phone: $json.phone, firstName: $json.firstName || undefined, lastName: $json.lastName || undefined, customFields: Object.entries($json.fields).map(([key, field_value]) => ({ key, field_value })) }) }}",
         "options": {}
       },
-      "id": "65d9a34f-4452-45e9-92dd-beee52f9b488",
+      "id": "7855c460-8e51-4486-aaff-ff4a0841abe4",
       "name": "Update Contact in GoHighLevel",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -344,7 +344,7 @@
         "jsonBody": "={{ JSON.stringify({ tags: [ $('Contact Details').item.json.tag ] }) }}",
         "options": {}
       },
-      "id": "0d46c6fe-86f5-4e4d-bb3f-001bf19fb074",
+      "id": "92deb599-5f49-4cd8-830a-a402762cda43",
       "name": "Add the Tag",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,

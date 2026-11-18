@@ -21,12 +21,12 @@
 3. **Turn off Square's own text reminders**, so clients don't get two of everything.
 4. **developer.squareup.com:**
    - Create an app and copy the Access token and Location ID.
-   - Under **Webhooks**, add `https://YOUR-N8N-ADDRESS/webhook/square-events` for `booking.created` and `booking.updated`.
+   - Under **Webhooks**, add `https://adolfo12.app.n8n.cloud/webhook/square-events` for `booking.created` and `booking.updated`.
    - Copy the Signature key.
 
 ### 2. Telnyx
 1. Buy or choose a phone number and attach it to a **Messaging Profile**.
-2. On the Messaging Profile, set the inbound webhook URL to `https://YOUR-N8N-ADDRESS/webhook/telnyx-sms`.
+2. On the Messaging Profile, set the inbound webhook URL to `https://adolfo12.app.n8n.cloud/webhook/telnyx-sms`.
 3. Complete **10DLC registration** (brand + campaign) for the number. US carriers block or filter unregistered business texting.
 4. Optional, but recommended: copy the **Public Key** (Keys & Credentials) into `telnyxPublicKey` in Settings, so n8n can confirm each message really came from Telnyx.
 5. Telnyx handles STOP / HELP / START on its own. The AI ignores those words.

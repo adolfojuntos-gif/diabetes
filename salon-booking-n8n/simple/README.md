@@ -25,7 +25,7 @@
 3. **Turn off Square's text reminders**, so clients don't get every reminder twice.
 4. **developer.squareup.com:**
    - Create an app and copy the **Access token** and **Location ID**.
-   - Under **Webhooks**, add `https://theseam.app.n8n.cloud/webhook/square-events` for `booking.created` and `booking.updated`.
+   - Under **Webhooks**, add `https://adolfo12.app.n8n.cloud/webhook/square-events` for `booking.created` and `booking.updated`.
    - Copy the **Signature key**.
 
 ### 2. n8n
@@ -42,7 +42,7 @@
 
 | # | Trigger | Actions |
 |---|---|---|
-| 1 | **Customer Replied** (SMS), only if the contact does **not** have the tag `human-takeover` | **Webhook** POST to `https://theseam.app.n8n.cloud/webhook/ghl-sms`. Add Custom Data: `message` = `{{message.body}}`, `contact_id` = `{{contact.id}}`, `phone` = `{{contact.phone}}` |
+| 1 | **Customer Replied** (SMS), only if the contact does **not** have the tag `human-takeover` | **Webhook** POST to `https://adolfo12.app.n8n.cloud/webhook/ghl-sms`. Add Custom Data: `message` = `{{message.body}}`, `contact_id` = `{{contact.id}}`, `phone` = `{{contact.phone}}` |
 | 2 | Tag added `needs-human` | Notify the manager → add tag `human-takeover` (pauses the AI) → wait 12 hours → remove both tags |
 | 3 | Tag added `sq-booked` or `sq-cancelled` | If `booked_via` is `square`, text the confirmation. Notify the stylist. Remove the tag |
 | 4 | Tag added `sq-remind-48h` / `sq-remind-2h` / `sq-completed` | Send the matching text (2 days before / 2 hours before / thank you + review request). Remove the tag |

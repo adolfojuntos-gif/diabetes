@@ -8,7 +8,7 @@
         "height": 360,
         "color": 4
       },
-      "id": "f12107c2-6f5d-4a37-a1fb-ec99884078de",
+      "id": "9ac3d52c-e54b-4300-a8fa-99113edc152f",
       "name": "Note 0",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -26,7 +26,7 @@
           "rawBody": true
         }
       },
-      "id": "c0e971f6-1e65-4fba-80b9-a52a77a4011f",
+      "id": "5f10d609-211c-48d6-b0aa-cd3a357ca466",
       "name": "Text Comes In (Telnyx)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -34,13 +34,13 @@
         0,
         0
       ],
-      "webhookId": "fd68820b-20ac-4363-9d83-cf4351d5445c"
+      "webhookId": "aec185ce-a385-484f-8911-2ee1a9202e46"
     },
     {
       "parameters": {
-        "jsCode": "// ================= YOUR SALON SETTINGS =================\n// Fill this in once, then copy the SAME settings into the other workflow.\nconst SETTINGS = {\n  salonName: 'Your Salon Name',\n  timezone: 'America/Chicago',\n  salonPhone: '+19565550100',        // your Telnyx number (texts come from here)\n  managerPhone: '+19565550101',      // gets no-show / late-cancel / \"needs a person\" texts\n  bookingLink: 'https://book.squareup.com/appointments/YOUR-LINK',  // Square online booking page\n  reviewLink: 'https://g.page/r/YOUR-GOOGLE-REVIEW-LINK',\n\n  // Square (Sandbox while testing; live = https://connect.squareup.com)\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://YOUR-N8N-ADDRESS/webhook/square-events',\n\n  // Telnyx: Mission Control > Keys & Credentials > Public Key (optional, but recommended)\n  telnyxPublicKey: '',\n\n  lateCancelHours: 24,\n  policyText: 'Free to cancel or change up to 24 hours before. Late cancellations and no-shows may be charged a fee to the card saved when booking.',\n\n  // Each stylist has their OWN time for each service.\n  // In Square, make one version of the service per speed (same name and price for clients).\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA', phone: '+19565550111' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA',   phone: '+19565550112' },\n  ],\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n};\n// ========================================================\n\nconst crypto = require('crypto');\nconst req = $input.first().json;\nconst body = req.body || {};\n\n// Optional security check: was this really sent by Telnyx?\nif (SETTINGS.telnyxPublicKey) {\n  let raw;\n  try { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); } catch (e) { raw = JSON.stringify(body); }\n  const h = req.headers || {};\n  const key = crypto.createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), Buffer.from(SETTINGS.telnyxPublicKey, 'base64')]), format: 'der', type: 'spki' });\n  const ok = crypto.verify(null, Buffer.from(`${h['telnyx-timestamp']}|${raw}`), key, Buffer.from(String(h['telnyx-signature-ed25519'] || ''), 'base64'));\n  if (!ok) throw new Error('This did not come from Telnyx (or telnyxPublicKey in Settings is wrong).');\n}\n\nconst d = body.data || {};\nconst p = d.payload || {};\nconst message = String(p.text || '').trim();\nconst phone = (p.from && p.from.phone_number) || '';\n// Only real incoming texts. STOP / HELP / START are handled by Telnyx itself.\nconst keyword = /^(stop|stopall|unsubscribe|end|quit|help|info|start|unstop)$/i.test(message);\nif (d.event_type !== 'message.received' || !message || !phone || keyword) return [];\n\n// Paused because a person is handling this client?\nconst memory = $getWorkflowStaticData('global');\nmemory.paused = memory.paused || {};\nif (memory.paused[phone] && memory.paused[phone] > Date.now()) return [];\n\nreturn [{ json: { ...SETTINGS, phone, message } }];"
+        "jsCode": "// ================= YOUR SALON SETTINGS =================\n// Fill this in once, then copy the SAME settings into the other workflow.\nconst SETTINGS = {\n  salonName: 'Your Salon Name',\n  timezone: 'America/Chicago',\n  salonPhone: '+19565550100',        // your Telnyx number (texts come from here)\n  managerPhone: '+19565550101',      // gets no-show / late-cancel / \"needs a person\" texts\n  bookingLink: 'https://book.squareup.com/appointments/YOUR-LINK',  // Square online booking page\n  reviewLink: 'https://g.page/r/YOUR-GOOGLE-REVIEW-LINK',\n\n  // Square (Sandbox while testing; live = https://connect.squareup.com)\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://adolfo12.app.n8n.cloud/webhook/square-events',\n\n  // Telnyx: Mission Control > Keys & Credentials > Public Key (optional, but recommended)\n  telnyxPublicKey: '',\n\n  lateCancelHours: 24,\n  policyText: 'Free to cancel or change up to 24 hours before. Late cancellations and no-shows may be charged a fee to the card saved when booking.',\n\n  // Each stylist has their OWN time for each service.\n  // In Square, make one version of the service per speed (same name and price for clients).\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA', phone: '+19565550111' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA',   phone: '+19565550112' },\n  ],\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n};\n// ========================================================\n\nconst crypto = require('crypto');\nconst req = $input.first().json;\nconst body = req.body || {};\n\n// Optional security check: was this really sent by Telnyx?\nif (SETTINGS.telnyxPublicKey) {\n  let raw;\n  try { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); } catch (e) { raw = JSON.stringify(body); }\n  const h = req.headers || {};\n  const key = crypto.createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), Buffer.from(SETTINGS.telnyxPublicKey, 'base64')]), format: 'der', type: 'spki' });\n  const ok = crypto.verify(null, Buffer.from(`${h['telnyx-timestamp']}|${raw}`), key, Buffer.from(String(h['telnyx-signature-ed25519'] || ''), 'base64'));\n  if (!ok) throw new Error('This did not come from Telnyx (or telnyxPublicKey in Settings is wrong).');\n}\n\nconst d = body.data || {};\nconst p = d.payload || {};\nconst message = String(p.text || '').trim();\nconst phone = (p.from && p.from.phone_number) || '';\n// Only real incoming texts. STOP / HELP / START are handled by Telnyx itself.\nconst keyword = /^(stop|stopall|unsubscribe|end|quit|help|info|start|unstop)$/i.test(message);\nif (d.event_type !== 'message.received' || !message || !phone || keyword) return [];\n\n// Paused because a person is handling this client?\nconst memory = $getWorkflowStaticData('global');\nmemory.paused = memory.paused || {};\nif (memory.paused[phone] && memory.paused[phone] > Date.now()) return [];\n\nreturn [{ json: { ...SETTINGS, phone, message } }];"
       },
-      "id": "7d47078d-4b1c-439e-844c-26944344c072",
+      "id": "87c92433-3d71-4e5f-ad9b-ae75fc7bafd5",
       "name": "Settings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -73,7 +73,7 @@
         "jsonBody": "={{ JSON.stringify({ limit: 1, query: { filter: { phone_number: { exact: $json.phone } } } }) }}",
         "options": {}
       },
-      "id": "0ef394b6-802c-45e1-a491-f22d5a0df06d",
+      "id": "a1c217d1-6782-4a78-841e-6d01563a9705",
       "name": "Find Client in Square",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -92,7 +92,7 @@
       "parameters": {
         "jsCode": "const c = ($input.first().json.customers || [])[0];\nreturn [{ json: { customerId: c ? c.id : '', known: !!c, name: c ? [c.given_name, c.family_name].filter(Boolean).join(' ') : '' } }];"
       },
-      "id": "e8b1daef-42e6-41ae-a169-39d10882fc19",
+      "id": "9802ad89-a040-4292-92fa-56ed1f2fac3e",
       "name": "Client Info",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -111,7 +111,7 @@
           },
           "conditions": [
             {
-              "id": "2573df99-46bc-4e34-9e7d-9dcc7e216c17",
+              "id": "6e16bf9f-be75-4cea-8bcc-c70bb49bb454",
               "leftValue": "={{ $json.known }}",
               "operator": {
                 "type": "boolean",
@@ -125,7 +125,7 @@
         },
         "options": {}
       },
-      "id": "e2aea070-de78-41bb-988e-7584a0c7eea5",
+      "id": "99c74f2c-d86b-46e2-add0-8a7efe8c5836",
       "name": "Known Client?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -164,7 +164,7 @@
         },
         "options": {}
       },
-      "id": "1a3a2c5c-e453-44da-8805-536df62b7a44",
+      "id": "bdd10cca-26f2-4de1-9e3b-d76c8d08bd78",
       "name": "Check Saved Card",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -183,7 +183,7 @@
       "parameters": {
         "jsCode": "const s = $('Settings').first().json;\nconst info = $('Client Info').first().json;\nconst cards = info.known ? (($input.first().json.cards || []).filter((c) => c.enabled !== false)) : [];\nconst canBook = info.known && cards.length > 0;\n\nconst now = new Date();\nconst nowText = now.toLocaleString('en-US', { timeZone: s.timezone, dateStyle: 'full', timeStyle: 'short' });\nconst off = (now.toLocaleString('en-US', { timeZone: s.timezone, timeZoneName: 'longOffset' }).match(/GMT([+-]\\d{2}:\\d{2})/) || [])[1] || '+00:00';\nconst menu = s.services.map((sv) => `- ${sv.name} (${sv.price}):\\n` + sv.options.map((o) =>\n  `    ${o.stylist}: ${o.minutes} min -> team_member_id=${o.team_member_id}, service_variation_id=${o.service_variation_id}`).join('\\n')).join('\\n');\n\nconst prompt = `You are the friendly text-message assistant for ${s.salonName}. Reply in 1-3 short sentences, plain text. Reply in the same language the client writes in.\n\nNOW: ${nowText} (${s.timezone}, UTC offset ${off}). Send times to tools as ISO 8601 with this offset, e.g. 2026-11-20T14:00:00${off}.\nCLIENT: ${info.name || 'name unknown'}. CAN BOOK BY TEXT: ${canBook ? 'YES (card saved)' : 'NO (no card saved yet)'}.\n\nSERVICES. Each stylist has their own time. Use the service_variation_id that belongs to the chosen stylist:\n${menu}\n\nSTEPS\n1. Find out the service, the stylist (or \"anyone\") and the day.\n2. Use check_availability for that whole day (00:00 to 00:00 next day; at least 24 hours; start from now if the day already started). For \"anyone\", check each stylist.\n3. Offer up to 3 real times. Never make up a time.\n4. ${canBook\n    ? 'When they pick one, repeat it (\"Confirm Fri Nov 20, 2:30 PM with Maria, Long Haircut?\") and wait for a clear yes. Then call book_appointment with the exact values from check_availability. If it fails, check again and offer new times.'\n    : 'Do NOT book by text. Tell them the time is open and send this link to book it and save a card (it holds the spot, no charge now): ' + s.bookingLink}\n5. Never ask for card numbers. If someone sends one, tell them to delete it and use the booking link.\n\nTo cancel or change: use list_my_bookings, confirm which one, then cancel_booking. If it is less than ${s.lateCancelHours} hours away, mention the policy first.\nTo RESCHEDULE: book the new time first (if CAN BOOK BY TEXT is YES), then cancel the old one. If they can't book by text, send the booking link.\nCONFIRMING: we text clients \"Reply C to confirm\". If they reply C, \"confirm\" or similar, use list_my_bookings, then confirm_appointment on their next appointment, and reply with the day and time.\nAFTER A MISSED OR CANCELLED VISIT: we may have texted them asking if they want another day. If they reply with a day, help them rebook it.\nPOLICY: ${s.policyText}\n\nIf you can't help, they're upset, or they ask for a person: say a team member will text them soon and end with [HANDOFF].`;\nreturn [{ json: { prompt, canBook, customerId: info.customerId, message: s.message } }];"
       },
-      "id": "73f0ab07-e06e-44d8-b371-a1a42cbffbd1",
+      "id": "9528ec62-1ab2-4889-b2a9-7bdf43f96e35",
       "name": "Prepare the AI",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -201,7 +201,7 @@
           "maxIterations": 12
         }
       },
-      "id": "07c12c5b-2abd-4793-80fc-ae5bf1c5faf7",
+      "id": "0f1501b2-7e71-4825-8ca9-37cc4403d2fe",
       "name": "AI Assistant",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
@@ -222,7 +222,7 @@
           "temperature": 0.3
         }
       },
-      "id": "8fd6dec8-307c-4f12-a865-cd9e3db45e68",
+      "id": "053e81df-86f8-4e7d-8da8-f2d88703f135",
       "name": "Claude",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
@@ -243,7 +243,7 @@
         "sessionKey": "={{ $('Settings').first().json.phone }}",
         "contextWindowLength": 20
       },
-      "id": "916393fd-84c6-43e0-8e20-0fd74ed97e23",
+      "id": "99d801d9-b877-474c-a661-b32a33bb8724",
       "name": "Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
@@ -277,7 +277,7 @@
         "options": {},
         "toolDescription": "Find open times in Square for ONE stylist and ONE service."
       },
-      "id": "44f27177-1ad0-4d70-9946-b4d7becbcc0f",
+      "id": "8de713a2-191c-44fc-87d6-4511b0d959a8",
       "name": "check_availability",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
@@ -317,7 +317,7 @@
         "options": {},
         "toolDescription": "Book the appointment in Square. Only after a clear yes, and only when CAN BOOK BY TEXT is YES."
       },
-      "id": "7204226c-6f20-45b3-a39d-a7ddb0448fa7",
+      "id": "8f0ddf55-c324-4ee0-8c31-21b978dfd167",
       "name": "book_appointment",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
@@ -375,7 +375,7 @@
         "options": {},
         "toolDescription": "List this client's upcoming bookings (id, version, start time, stylist)."
       },
-      "id": "d9692e86-d180-4230-b8fe-f29577d733e0",
+      "id": "6267676f-16b6-4624-9f86-23b57bd48de1",
       "name": "list_my_bookings",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
@@ -415,7 +415,7 @@
         "options": {},
         "toolDescription": "Cancel one booking after the client confirmed which one."
       },
-      "id": "d99a4d29-cfe7-45fa-b634-f2afd0b8011a",
+      "id": "2e056470-cc37-4004-8ae1-18f687f73137",
       "name": "cancel_booking",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
@@ -455,7 +455,7 @@
         "options": {},
         "toolDescription": "Mark the client's upcoming appointment as confirmed (they replied C). Shows as 'Confirmed' in the Square app."
       },
-      "id": "0c67fe9f-b1e0-4c10-932a-3fbe07d4be64",
+      "id": "54f10c29-8afa-4f90-b091-65a41332ea50",
       "name": "confirm_appointment",
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.2,
@@ -474,7 +474,7 @@
       "parameters": {
         "jsCode": "const s = $('Settings').first().json;\nconst out = String($json.output || '').trim();\nconst handoff = out.includes('[HANDOFF]') || !out;\nconst reply = out.replace(/\\[HANDOFF\\]/g, '').trim() || 'Sorry, something went wrong. A team member will text you shortly.';\nif (handoff) {\n  // Let a person take over: the AI stays quiet with this client for 12 hours\n  const memory = $getWorkflowStaticData('global');\n  memory.paused = memory.paused || {};\n  memory.paused[s.phone] = Date.now() + 12 * 3600e3;\n}\nreturn [{ json: { reply, handoff } }];"
       },
-      "id": "f0b156c6-188b-436e-9154-c7101f0c4c4b",
+      "id": "7a32b3c8-40a2-4d3f-85fb-809c2696b722",
       "name": "Tidy the Reply",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -494,7 +494,7 @@
         "jsonBody": "={{ JSON.stringify({ from: $('Settings').first().json.salonPhone, to: $('Settings').first().json.phone, text: $json.reply }) }}",
         "options": {}
       },
-      "id": "6737cf1e-b6b5-47fb-8214-301bb5d8aad4",
+      "id": "276fb610-df97-45a1-8c20-7798ba7710f9",
       "name": "Text the Client",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -520,7 +520,7 @@
           },
           "conditions": [
             {
-              "id": "a47b9793-20df-4668-af47-d7467d48dc56",
+              "id": "cd9e6f9d-4f80-453e-9081-aeb643b4b214",
               "leftValue": "={{ $('Tidy the Reply').first().json.handoff }}",
               "operator": {
                 "type": "boolean",
@@ -534,7 +534,7 @@
         },
         "options": {}
       },
-      "id": "377a0137-a0a6-4bf5-8dd3-bbcc5f79fe1c",
+      "id": "b2799917-ccbb-438d-adf0-f792d54ea0ff",
       "name": "Needs a Person?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -554,7 +554,7 @@
         "jsonBody": "={{ JSON.stringify({ from: $('Settings').first().json.salonPhone, to: $('Settings').first().json.managerPhone, text: 'Client ' + $('Settings').first().json.phone + ' needs a person. Their last message: \"' + $('Settings').first().json.message + '\". The AI will stay quiet with them for 12 hours.' }) }}",
         "options": {}
       },
-      "id": "704b6390-9d99-40c1-af1f-f3c911b9f23d",
+      "id": "24b5e249-c03e-47cd-b23d-590a5b40fe1f",
       "name": "Text the Manager",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,

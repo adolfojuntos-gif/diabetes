@@ -35,7 +35,7 @@ const SETTINGS = {
   squareVersion: '2025-01-23',
   locationId: 'YOUR_SQUARE_LOCATION_ID',
   squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',
-  squareWebhookUrl: 'https://theseam.app.n8n.cloud/webhook/square-events',
+  squareWebhookUrl: 'https://adolfo12.app.n8n.cloud/webhook/square-events',
 
   // GoHighLevel
   ghlLocationId: 'YOUR_GHL_LOCATION_ID',
