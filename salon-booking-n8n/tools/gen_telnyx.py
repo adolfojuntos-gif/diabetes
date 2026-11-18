@@ -20,7 +20,7 @@ def text(wf, name, pos, to_expr, text_expr):
         "method": "POST", "url": "https://api.telnyx.com/v2/messages",
         "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
         "sendBody": True, "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ from: " + S + ".salonPhone, to: " + to_expr + ", text: " + text_expr + " }) }}",
+        "jsonBody": "={{ JSON.stringify({ from: " + S + ".salonPhone, to: " + to_expr + ", text: " + text_expr + ", use_profile_webhooks: false }) }}",
         "options": {}}, credentials=TELNYX_CRED, onError="continueRegularOutput")
 
 
@@ -223,10 +223,11 @@ wf.save("salon-A-ai-text-assistant-telnyx.json")
 # B. SQUARE -> TEXTS
 # =====================================================================
 wf = WF("Salon B - Square Texts and Reminders (Telnyx)")
-wf.note("## B. Square Texts and Reminders\n\n**In simple words:** watches the Square calendar and sends the right text.\n\n**When a booking changes** (Square tells us right away):\n- New booking: confirmation to the client (if they booked online) + heads-up to the stylist\n- Cancelled: tells the stylist the time is open, and asks the client if they want another day\n- No-show: asks the client if they want to reschedule, tells the manager (who can charge the fee in Square)\n\n**Every hour:** 2 days before: reminder + \"Reply C to confirm\". 1 day before and still not confirmed: tells the manager. 2 hours before: reminder. After the visit: thank-you + review link.\n\n**Turn off Square's own text reminders** so clients don't get two.",
+wf.note("## B. Square Texts and Reminders\n\n**In simple words:** watches the Square calendar and sends the right text.\n\n**When a booking changes** (Square tells us right away):\n- New booking: confirmation to the client (if they booked online) + heads-up to the stylist\n- Cancelled: tells the stylist the time is open, and asks the client if they want another day\n- No-show: asks the client if they want to reschedule, tells the manager (who can charge the fee in Square)\n\n**Every hour from 6 AM to 10 PM** (saves executions; covers appointments from about 8 AM to 7 PM. Change the hours in the clock node if the salon opens earlier or closes later): 2 days before: reminder + \"Reply C to confirm\". 1 day before and still not confirmed: tells the manager. 2 hours before: reminder. After the visit: thank-you + review link.\n\n**Turn off Square's own text reminders** so clients don't get two.",
         [-60, -480], w=660, h=400, color=4)
 webhook(wf, "Square Booking Changed", [0, 0], "POST", "square-events", respond="onReceived", options={"rawBody": True})
-wf.add("Every Hour", "n8n-nodes-base.scheduleTrigger", 1.2, [0, 260], {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}})
+wf.add("Every Hour (6 AM-10 PM)", "n8n-nodes-base.scheduleTrigger", 1.2, [0, 260],
+       {"rule": {"interval": [{"field": "cronExpression", "expression": "0 6-22 * * *"}]}})
 code(wf, "Settings", [220, 120], SETTINGS +
      "return [{ json: { ...SETTINGS, request: $input.first().json }, binary: $input.first().binary }];")
 if_node(wf, "From Square or the Clock?", [440, 120], "={{ !!($json.request && $json.request.headers) }}", "boolean", "true")
@@ -318,7 +319,7 @@ $input.all().forEach((item, i) => {
 });
 return out;""")
 text(wf, "Send Text", [1760, 120], "$json.to", "$json.text")
-for a, b in [("Square Booking Changed", "Settings"), ("Every Hour", "Settings"), ("Settings", "From Square or the Clock?"),
+for a, b in [("Square Booking Changed", "Settings"), ("Every Hour (6 AM-10 PM)", "Settings"), ("Settings", "From Square or the Clock?"),
              ("Check It's From Square", "Together"), ("Get Upcoming Bookings", "Who Needs a Reminder?"),
              ("Who Needs a Reminder?", "Together"), ("Together", "Get Client from Square"),
              ("Get Client from Square", "Write the Texts"), ("Write the Texts", "Send Text")]:
@@ -326,4 +327,8 @@ for a, b in [("Square Booking Changed", "Settings"), ("Every Hour", "Settings"),
 wf.link("From Square or the Clock?", "Check It's From Square", 0)
 wf.link("From Square or the Clock?", "Get Upcoming Bookings", 1)
 wf.save("salon-B-square-texts-telnyx.json")
+# run the clock in the salon's time zone (change here AND in Settings if the salon is elsewhere)
+_p = os.path.join(OUT, "salon-B-square-texts-telnyx.json")
+_w = json.load(open(_p)); _w["settings"]["timezone"] = "America/Chicago"
+json.dump(_w, open(_p, "w"), indent=2, ensure_ascii=False)
 print("ok")

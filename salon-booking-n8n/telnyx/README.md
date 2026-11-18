@@ -46,6 +46,7 @@
 - **AI:** a few dollars per salon per month.
 
 ## Notes
+- **Saving executions:** the hourly check runs only from 6 AM to 10 PM (salon time zone), and texts are sent with `use_profile_webhooks: false` so Telnyx's delivery receipts don't start workflow A. A 1–2 stylist salon uses about 1,200–1,800 executions a month. If the salon opens before 8 AM or takes appointments after 7 PM, widen the hours in the **Every Hour (6 AM-10 PM)** node.
 - Fees are only charged by someone at the salon, in the Square app. Nothing charges automatically.
 - The AI never asks for card numbers. Cards are only entered on Square's booking page.
 - The "AI stays quiet for 12 hours" pause only works while the workflow is **published** (active).
