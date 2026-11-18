@@ -6,8 +6,8 @@
 
 | File | What it does |
 |---|---|
-| `salon-A-ai-text-assistant-telnyx.json` | A client texts → the AI checks Square for open times. Returning clients with a saved card are booked by text. New clients get the Square booking link, where Square saves the card and shows the policy. If the AI gets stuck, the manager gets a text and the AI stays quiet with that client for 12 hours. |
-| `salon-B-square-texts-telnyx.json` | When a booking changes: confirmation to the client (online bookings), a heads-up to the stylist, and a late cancel / no-show alert to the manager. Every hour: a reminder 2 days before, a reminder 2 hours before, and a thank-you with a review link after the visit. |
+| `salon-A-ai-text-assistant-telnyx.json` | A client texts → the AI checks Square for open times. Returning clients with a saved card are booked by text. New clients get the Square booking link, where Square saves the card and shows the policy. When a client replies **C**, the AI marks the appointment "Confirmed" in Square (staff see it in the Square app). If the AI gets stuck, the manager gets a text and the AI stays quiet with that client for 12 hours. |
+| `salon-B-square-texts-telnyx.json` | When a booking changes: confirmation to the client (online bookings) and a heads-up to the stylist. **Cancelled or no-show:** asks the client if they want another day (the AI rebooks them when they reply), and alerts the manager for late cancels and no-shows. Every hour: **2 days before**, a reminder plus "Reply C to confirm"; **1 day before and still not confirmed**, a nudge to the client and a heads-up to the manager to follow up or release the spot; **2 hours before**, a reminder; **after the visit**, a thank-you with a review link. |
 
 ## Setup
 

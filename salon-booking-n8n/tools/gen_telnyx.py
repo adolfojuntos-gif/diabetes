@@ -145,6 +145,9 @@ STEPS
 5. Never ask for card numbers. If someone sends one, tell them to delete it and use the booking link.
 
 To cancel or change: use list_my_bookings, confirm which one, then cancel_booking. If it is less than ${s.lateCancelHours} hours away, mention the policy first.
+To RESCHEDULE: book the new time first (if CAN BOOK BY TEXT is YES), then cancel the old one. If they can't book by text, send the booking link.
+CONFIRMING: we text clients "Reply C to confirm". If they reply C, "confirm" or similar, use list_my_bookings, then confirm_appointment on their next appointment, and reply with the day and time.
+AFTER A MISSED OR CANCELLED VISIT: we may have texted them asking if they want another day. If they reply with a day, help them rebook it.
 POLICY: ${s.policyText}
 
 If you can't help, they're upset, or they ask for a person: say a team member will text them soon and end with [HANDOFF].`;
@@ -153,10 +156,10 @@ P = "$('Prepare the AI').first().json"
 wf.add("AI Assistant", "@n8n/n8n-nodes-langchain.agent", 1.7, [1540, 0], {
     "promptType": "define", "text": f"={{{{ {P}.message }}}}",
     "options": {"systemMessage": f"={{{{ {P}.prompt }}}}", "maxIterations": 12}}, onError="continueRegularOutput")
-wf.add("Claude", "@n8n/n8n-nodes-langchain.lmChatAnthropic", 1.3, [1420, 260], {
+wf.add("Claude", "@n8n/n8n-nodes-langchain.lmChatAnthropic", 1.3, [1280, 260], {
     "model": {"__rl": True, "mode": "id", "value": "claude-haiku-5-5"}, "options": {"temperature": 0.3}},
     credentials={"anthropicApi": {"id": "REPLACE_ANTHROPIC_CRED", "name": "Anthropic"}})
-wf.add("Memory", "@n8n/n8n-nodes-langchain.memoryBufferWindow", 1.3, [1560, 260], {
+wf.add("Memory", "@n8n/n8n-nodes-langchain.memoryBufferWindow", 1.3, [1420, 260], {
     "sessionIdType": "customKey", "sessionKey": f"={{{{ {S}.phone }}}}", "contextWindowLength": 20})
 sq(wf, "check_availability", [1700, 260], "POST", "'/v2/bookings/availability/search'",
    "{ query: { filter: { location_id: " + S + ".locationId,"
@@ -182,6 +185,11 @@ sq(wf, "cancel_booking", [2120, 260], "POST",
    "'/v2/bookings/' + $fromAI('booking_id', 'id from list_my_bookings', 'string') + '/cancel'",
    "{ booking_version: $fromAI('booking_version', 'version from list_my_bookings', 'number') }",
    tool="Cancel one booking after the client confirmed which one.")
+sq(wf, "confirm_appointment", [2260, 260], "PUT",
+   "'/v2/bookings/' + $fromAI('booking_id', 'id of the appointment to confirm, from list_my_bookings', 'string')",
+   "{ booking: { version: $fromAI('booking_version', 'version from list_my_bookings', 'number'),"
+   " seller_note: 'Confirmed by client text ' + new Date().toLocaleString('en-US', { timeZone: " + S + ".timezone, dateStyle: 'short', timeStyle: 'short' }) } }",
+   tool="Mark the client's upcoming appointment as confirmed (they replied C). Shows as 'Confirmed' in the Square app.")
 code(wf, "Tidy the Reply", [1880, 0], r"""const s = $('Settings').first().json;
 const out = String($json.output || '').trim();
 const handoff = out.includes('[HANDOFF]') || !out;
@@ -207,7 +215,7 @@ wf.link("Known Client?", "Prepare the AI", 1)
 wf.link("Needs a Person?", "Text the Manager", 0)
 wf.link("Claude", "AI Assistant", kind="ai_languageModel")
 wf.link("Memory", "AI Assistant", kind="ai_memory")
-for t in ["check_availability", "book_appointment", "list_my_bookings", "cancel_booking"]:
+for t in ["check_availability", "book_appointment", "list_my_bookings", "cancel_booking", "confirm_appointment"]:
     wf.link(t, "AI Assistant", kind="ai_tool")
 wf.save("salon-A-ai-text-assistant-telnyx.json")
 
@@ -215,7 +223,7 @@ wf.save("salon-A-ai-text-assistant-telnyx.json")
 # B. SQUARE -> TEXTS
 # =====================================================================
 wf = WF("Salon B - Square Texts and Reminders (Telnyx)")
-wf.note("## B. Square Texts and Reminders\n\n**In simple words:** watches the Square calendar and sends the right text.\n\n**When a booking changes** (Square tells us right away):\n- New booking: confirmation to the client (if they booked online) + heads-up to the stylist\n- Cancelled in time: tells the stylist the time is open\n- Late cancel or no-show: tells the manager, who can charge the fee in the Square app\n\n**Every hour:** reminder 2 days before, reminder 2 hours before, thank-you + review link after the visit.\n\n**Turn off Square's own text reminders** so clients don't get two.",
+wf.note("## B. Square Texts and Reminders\n\n**In simple words:** watches the Square calendar and sends the right text.\n\n**When a booking changes** (Square tells us right away):\n- New booking: confirmation to the client (if they booked online) + heads-up to the stylist\n- Cancelled: tells the stylist the time is open, and asks the client if they want another day\n- No-show: asks the client if they want to reschedule, tells the manager (who can charge the fee in Square)\n\n**Every hour:** 2 days before: reminder + \"Reply C to confirm\". 1 day before and still not confirmed: tells the manager. 2 hours before: reminder. After the visit: thank-you + review link.\n\n**Turn off Square's own text reminders** so clients don't get two.",
         [-60, -480], w=660, h=400, color=4)
 webhook(wf, "Square Booking Changed", [0, 0], "POST", "square-events", respond="onReceived", options={"rawBody": True})
 wf.add("Every Hour", "n8n-nodes-base.scheduleTrigger", 1.2, [0, 260], {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}})
@@ -248,12 +256,14 @@ sq(wf, "Get Upcoming Bookings", [660, 260], "GET", "'/v2/bookings'",
           ("start_at_min", "={{ new Date(Date.now() - 4 * 3600e3).toISOString() }}"),
           ("start_at_max", "={{ new Date(Date.now() + 50 * 3600e3).toISOString() }}"), ("limit", "100")])
 code(wf, "Who Needs a Reminder?", [880, 260], r"""// Runs every hour; each window is 1 hour wide, so each client gets each reminder once.
+// 'not_confirmed' = 1 day before and the client never replied C (Square note doesn't say "Confirmed").
 const H = 3600e3, now = Date.now(), out = [];
 for (const b of $input.first().json.bookings || []) {
   if (b.status !== 'ACCEPTED' || !b.customer_id) continue;
   const diff = new Date(b.start_at).getTime() - now;
   let kind = null;
   if (diff >= 48 * H && diff < 49 * H) kind = 'remind_2_days';
+  else if (diff >= 24 * H && diff < 25 * H && !/confirmed/i.test(b.seller_note || '')) kind = 'not_confirmed';
   else if (diff >= 2 * H && diff < 3 * H) kind = 'remind_2_hours';
   else if (diff <= -2 * H && diff > -3 * H) kind = 'thank_you';
   if (kind) out.push({ json: { kind, booking: b } });
@@ -285,12 +295,21 @@ $input.all().forEach((item, i) => {
     add(st.phone, `New booking: ${name}, ${service}, ${when}.`);
   } else if (ev.kind === 'cancelled') {
     add(st.phone, `Cancelled: ${name}, ${when}. That time is open again.`);
+    add(client, `Hi ${first}, your ${service} on ${when} is cancelled. Want to pick another day? Reply with a day that works and I'll find you a time.`);
   } else if (ev.kind === 'late_cancel' || ev.kind === 'no_show') {
     const label = ev.kind === 'no_show' ? 'NO-SHOW' : 'LATE CANCEL';
     add(s.managerPhone, `${label}: ${name} (${client || 'no phone'}), ${service}${withWho}, ${when}. To charge the fee, open the appointment in the Square app.`);
-    if (ev.kind === 'late_cancel') add(st.phone, `Late cancel: ${name}, ${when}. That time is open again.`);
+    if (ev.kind === 'late_cancel') {
+      add(st.phone, `Late cancel: ${name}, ${when}. That time is open again.`);
+      add(client, `Hi ${first}, your ${service} on ${when} is cancelled. Want to pick another day? Reply with a day that works and I'll find you a time.`);
+    } else {
+      add(client, `Hi ${first}, we missed you today at ${s.salonName}. Hope everything is OK! Want to reschedule? Reply with a day that works and I'll find you a time.`);
+    }
+  } else if (ev.kind === 'not_confirmed') {
+    add(client, `Hi ${first}, just checking: are you still coming ${when}${withWho}? Reply C to confirm, or reply here to change it.`);
+    add(s.managerPhone, `Not confirmed yet: ${name} (${client || 'no phone'}), ${service}${withWho}, ${when}. Reach out, or release the spot in Square if they can't make it.`);
   } else if (ev.kind === 'remind_2_days') {
-    add(client, `Hi ${first}! See you ${when} at ${s.salonName}${withWho}. Need to change it? Reply here. Changes are free until ${freeUntil}.`);
+    add(client, `Hi ${first}! See you ${when} at ${s.salonName}${withWho}. Reply C to confirm, or reply here to change it. Changes are free until ${freeUntil}.`);
   } else if (ev.kind === 'remind_2_hours') {
     add(client, `Hi ${first}, see you soon! Your appointment at ${s.salonName} is today at ${time}.`);
   } else if (ev.kind === 'thank_you') {

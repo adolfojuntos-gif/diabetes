@@ -3,12 +3,12 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## B. Square Texts and Reminders\n\n**In simple words:** watches the Square calendar and sends the right text.\n\n**When a booking changes** (Square tells us right away):\n- New booking: confirmation to the client (if they booked online) + heads-up to the stylist\n- Cancelled in time: tells the stylist the time is open\n- Late cancel or no-show: tells the manager, who can charge the fee in the Square app\n\n**Every hour:** reminder 2 days before, reminder 2 hours before, thank-you + review link after the visit.\n\n**Turn off Square's own text reminders** so clients don't get two.",
+        "content": "## B. Square Texts and Reminders\n\n**In simple words:** watches the Square calendar and sends the right text.\n\n**When a booking changes** (Square tells us right away):\n- New booking: confirmation to the client (if they booked online) + heads-up to the stylist\n- Cancelled: tells the stylist the time is open, and asks the client if they want another day\n- No-show: asks the client if they want to reschedule, tells the manager (who can charge the fee in Square)\n\n**Every hour:** 2 days before: reminder + \"Reply C to confirm\". 1 day before and still not confirmed: tells the manager. 2 hours before: reminder. After the visit: thank-you + review link.\n\n**Turn off Square's own text reminders** so clients don't get two.",
         "width": 660,
         "height": 400,
         "color": 4
       },
-      "id": "0630c0b7-2524-4e6d-b5ff-12aadf944215",
+      "id": "3d087f7a-b876-4450-baed-e22a67350f2c",
       "name": "Note 0",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -26,7 +26,7 @@
           "rawBody": true
         }
       },
-      "id": "bc44953d-50a7-4f73-b427-0c95e159ce8f",
+      "id": "347fd8d9-9f42-4493-ad06-7f138d588a43",
       "name": "Square Booking Changed",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -34,7 +34,7 @@
         0,
         0
       ],
-      "webhookId": "fa585515-8ceb-4c45-9eb1-5500b2af5923"
+      "webhookId": "393048c3-abfc-45fa-bae6-11c6a2699e0a"
     },
     {
       "parameters": {
@@ -47,7 +47,7 @@
           ]
         }
       },
-      "id": "e59e8878-c10b-4787-af52-80916c232edc",
+      "id": "f36cfd11-abb9-4eed-8ab4-5cd0d9412bf0",
       "name": "Every Hour",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -60,7 +60,7 @@
       "parameters": {
         "jsCode": "// ================= YOUR SALON SETTINGS =================\n// Fill this in once, then copy the SAME settings into the other workflow.\nconst SETTINGS = {\n  salonName: 'Your Salon Name',\n  timezone: 'America/Chicago',\n  salonPhone: '+19565550100',        // your Telnyx number (texts come from here)\n  managerPhone: '+19565550101',      // gets no-show / late-cancel / \"needs a person\" texts\n  bookingLink: 'https://book.squareup.com/appointments/YOUR-LINK',  // Square online booking page\n  reviewLink: 'https://g.page/r/YOUR-GOOGLE-REVIEW-LINK',\n\n  // Square (Sandbox while testing; live = https://connect.squareup.com)\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://YOUR-N8N-ADDRESS/webhook/square-events',\n\n  // Telnyx: Mission Control > Keys & Credentials > Public Key (optional, but recommended)\n  telnyxPublicKey: '',\n\n  lateCancelHours: 24,\n  policyText: 'Free to cancel or change up to 24 hours before. Late cancellations and no-shows may be charged a fee to the card saved when booking.',\n\n  // Each stylist has their OWN time for each service.\n  // In Square, make one version of the service per speed (same name and price for clients).\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA', phone: '+19565550111' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA',   phone: '+19565550112' },\n  ],\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n};\n// ========================================================\n\nreturn [{ json: { ...SETTINGS, request: $input.first().json }, binary: $input.first().binary }];"
       },
-      "id": "f65ff328-a71b-4120-b1fb-847effda5f6f",
+      "id": "71549324-65cc-4fb0-8970-38c21cdb2a84",
       "name": "Settings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -79,7 +79,7 @@
           },
           "conditions": [
             {
-              "id": "23bea4c0-3276-481a-9f47-20ace50b5957",
+              "id": "130e6f1d-fbce-4e80-89e2-26228b838067",
               "leftValue": "={{ !!($json.request && $json.request.headers) }}",
               "operator": {
                 "type": "boolean",
@@ -93,7 +93,7 @@
         },
         "options": {}
       },
-      "id": "cfaf66a2-131e-48b6-bf04-7495018fbcf2",
+      "id": "b957e71d-716f-48ef-baeb-bf9e7a631be0",
       "name": "From Square or the Clock?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -106,7 +106,7 @@
       "parameters": {
         "jsCode": "const s = $('Settings').first().json;\nconst crypto = require('crypto');\nlet raw;\ntry { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); }\ncatch (e) { raw = JSON.stringify(s.request.body); }\nconst got = String((s.request.headers || {})['x-square-hmacsha256-signature'] || '');\nconst want = crypto.createHmac('sha256', s.squareWebhookSignatureKey).update(s.squareWebhookUrl + raw).digest('base64');\nif (got.length !== want.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(want))) {\n  throw new Error('This did not come from Square (or the signature key / URL in Settings is wrong).');\n}\nconst event = JSON.parse(raw);\nconst b = event && event.data && event.data.object && event.data.object.booking;\nif (!b || !b.customer_id) return [];\nlet kind = null;\nif (event.type === 'booking.created') kind = 'booked';\nelse if (b.status === 'NO_SHOW') kind = 'no_show';\nelse if (b.status === 'CANCELLED_BY_CUSTOMER') {\n  const hoursBefore = (new Date(b.start_at) - new Date(b.updated_at || event.created_at)) / 3600e3;\n  kind = hoursBefore < s.lateCancelHours ? 'late_cancel' : 'cancelled';\n}\nreturn kind ? [{ json: { kind, booking: b } }] : [];"
       },
-      "id": "2c3c0f93-ccba-4f3c-b04c-5d6c8c339eb0",
+      "id": "8fb2312f-e821-4209-b2f0-d5411a597a48",
       "name": "Check It's From Square",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -157,7 +157,7 @@
         },
         "options": {}
       },
-      "id": "36bba5b4-6b44-44cb-aaba-900ceab39ffe",
+      "id": "dc97303f-efe1-4b3d-ba64-b1037c7ac993",
       "name": "Get Upcoming Bookings",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -174,9 +174,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// Runs every hour; each window is 1 hour wide, so each client gets each reminder once.\nconst H = 3600e3, now = Date.now(), out = [];\nfor (const b of $input.first().json.bookings || []) {\n  if (b.status !== 'ACCEPTED' || !b.customer_id) continue;\n  const diff = new Date(b.start_at).getTime() - now;\n  let kind = null;\n  if (diff >= 48 * H && diff < 49 * H) kind = 'remind_2_days';\n  else if (diff >= 2 * H && diff < 3 * H) kind = 'remind_2_hours';\n  else if (diff <= -2 * H && diff > -3 * H) kind = 'thank_you';\n  if (kind) out.push({ json: { kind, booking: b } });\n}\nreturn out;"
+        "jsCode": "// Runs every hour; each window is 1 hour wide, so each client gets each reminder once.\n// 'not_confirmed' = 1 day before and the client never replied C (Square note doesn't say \"Confirmed\").\nconst H = 3600e3, now = Date.now(), out = [];\nfor (const b of $input.first().json.bookings || []) {\n  if (b.status !== 'ACCEPTED' || !b.customer_id) continue;\n  const diff = new Date(b.start_at).getTime() - now;\n  let kind = null;\n  if (diff >= 48 * H && diff < 49 * H) kind = 'remind_2_days';\n  else if (diff >= 24 * H && diff < 25 * H && !/confirmed/i.test(b.seller_note || '')) kind = 'not_confirmed';\n  else if (diff >= 2 * H && diff < 3 * H) kind = 'remind_2_hours';\n  else if (diff <= -2 * H && diff > -3 * H) kind = 'thank_you';\n  if (kind) out.push({ json: { kind, booking: b } });\n}\nreturn out;"
       },
-      "id": "3a27f687-b1e2-4cda-b2d2-3c6d41da0d0a",
+      "id": "ca402fa4-3fce-41ac-a450-581d077669da",
       "name": "Who Needs a Reminder?",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -187,7 +187,7 @@
     },
     {
       "parameters": {},
-      "id": "ff1bca0c-0c31-4f57-9099-c1209c3fd7d2",
+      "id": "fad9ab9d-0ef7-4ca1-b44e-bfdc625e92a9",
       "name": "Together",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
@@ -217,7 +217,7 @@
         },
         "options": {}
       },
-      "id": "0390f4dc-2f34-4840-be70-c3d7ed92b954",
+      "id": "d96a4e7c-31e1-4d55-974a-4ae1fddffc4a",
       "name": "Get Client from Square",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -235,9 +235,9 @@
     },
     {
       "parameters": {
-        "jsCode": "const s = $('Settings').first().json;\nconst events = $('Together').all();\nconst out = [];\n$input.all().forEach((item, i) => {\n  const ev = events[i].json, b = ev.booking, c = item.json.customer || {};\n  const seg = (b.appointment_segments || [])[0] || {};\n  const st = s.stylists.find((x) => x.team_member_id === seg.team_member_id) || {};\n  let service = 'your appointment';\n  for (const sv of s.services) for (const o of sv.options) if (o.service_variation_id === seg.service_variation_id) service = sv.name;\n  const fmt = (d, o) => new Date(d).toLocaleString('en-US', { timeZone: s.timezone, ...o });\n  const when = fmt(b.start_at, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });\n  const time = fmt(b.start_at, { hour: 'numeric', minute: '2-digit' });\n  const freeUntil = fmt(new Date(b.start_at).getTime() - s.lateCancelHours * 3600e3, { weekday: 'short', hour: 'numeric', minute: '2-digit' });\n  const first = c.given_name || 'there';\n  const name = [c.given_name, c.family_name].filter(Boolean).join(' ') || 'A client';\n  const client = c.phone_number || '';\n  const withWho = st.name ? ` with ${st.name}` : '';\n  const add = (to, text) => { if (to) out.push({ json: { to, text } }); };\n\n  if (ev.kind === 'booked') {\n    if (b.source !== 'API') add(client, `Hi ${first}! You're booked at ${s.salonName}: ${service}${withWho}, ${when}. Free to change until ${freeUntil}. Reply here if you need anything.`);\n    add(st.phone, `New booking: ${name}, ${service}, ${when}.`);\n  } else if (ev.kind === 'cancelled') {\n    add(st.phone, `Cancelled: ${name}, ${when}. That time is open again.`);\n  } else if (ev.kind === 'late_cancel' || ev.kind === 'no_show') {\n    const label = ev.kind === 'no_show' ? 'NO-SHOW' : 'LATE CANCEL';\n    add(s.managerPhone, `${label}: ${name} (${client || 'no phone'}), ${service}${withWho}, ${when}. To charge the fee, open the appointment in the Square app.`);\n    if (ev.kind === 'late_cancel') add(st.phone, `Late cancel: ${name}, ${when}. That time is open again.`);\n  } else if (ev.kind === 'remind_2_days') {\n    add(client, `Hi ${first}! See you ${when} at ${s.salonName}${withWho}. Need to change it? Reply here. Changes are free until ${freeUntil}.`);\n  } else if (ev.kind === 'remind_2_hours') {\n    add(client, `Hi ${first}, see you soon! Your appointment at ${s.salonName} is today at ${time}.`);\n  } else if (ev.kind === 'thank_you') {\n    add(client, `Thanks for coming in, ${first}! If you loved your hair, a quick review means a lot: ${s.reviewLink}`);\n  }\n});\nreturn out;"
+        "jsCode": "const s = $('Settings').first().json;\nconst events = $('Together').all();\nconst out = [];\n$input.all().forEach((item, i) => {\n  const ev = events[i].json, b = ev.booking, c = item.json.customer || {};\n  const seg = (b.appointment_segments || [])[0] || {};\n  const st = s.stylists.find((x) => x.team_member_id === seg.team_member_id) || {};\n  let service = 'your appointment';\n  for (const sv of s.services) for (const o of sv.options) if (o.service_variation_id === seg.service_variation_id) service = sv.name;\n  const fmt = (d, o) => new Date(d).toLocaleString('en-US', { timeZone: s.timezone, ...o });\n  const when = fmt(b.start_at, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });\n  const time = fmt(b.start_at, { hour: 'numeric', minute: '2-digit' });\n  const freeUntil = fmt(new Date(b.start_at).getTime() - s.lateCancelHours * 3600e3, { weekday: 'short', hour: 'numeric', minute: '2-digit' });\n  const first = c.given_name || 'there';\n  const name = [c.given_name, c.family_name].filter(Boolean).join(' ') || 'A client';\n  const client = c.phone_number || '';\n  const withWho = st.name ? ` with ${st.name}` : '';\n  const add = (to, text) => { if (to) out.push({ json: { to, text } }); };\n\n  if (ev.kind === 'booked') {\n    if (b.source !== 'API') add(client, `Hi ${first}! You're booked at ${s.salonName}: ${service}${withWho}, ${when}. Free to change until ${freeUntil}. Reply here if you need anything.`);\n    add(st.phone, `New booking: ${name}, ${service}, ${when}.`);\n  } else if (ev.kind === 'cancelled') {\n    add(st.phone, `Cancelled: ${name}, ${when}. That time is open again.`);\n    add(client, `Hi ${first}, your ${service} on ${when} is cancelled. Want to pick another day? Reply with a day that works and I'll find you a time.`);\n  } else if (ev.kind === 'late_cancel' || ev.kind === 'no_show') {\n    const label = ev.kind === 'no_show' ? 'NO-SHOW' : 'LATE CANCEL';\n    add(s.managerPhone, `${label}: ${name} (${client || 'no phone'}), ${service}${withWho}, ${when}. To charge the fee, open the appointment in the Square app.`);\n    if (ev.kind === 'late_cancel') {\n      add(st.phone, `Late cancel: ${name}, ${when}. That time is open again.`);\n      add(client, `Hi ${first}, your ${service} on ${when} is cancelled. Want to pick another day? Reply with a day that works and I'll find you a time.`);\n    } else {\n      add(client, `Hi ${first}, we missed you today at ${s.salonName}. Hope everything is OK! Want to reschedule? Reply with a day that works and I'll find you a time.`);\n    }\n  } else if (ev.kind === 'not_confirmed') {\n    add(client, `Hi ${first}, just checking: are you still coming ${when}${withWho}? Reply C to confirm, or reply here to change it.`);\n    add(s.managerPhone, `Not confirmed yet: ${name} (${client || 'no phone'}), ${service}${withWho}, ${when}. Reach out, or release the spot in Square if they can't make it.`);\n  } else if (ev.kind === 'remind_2_days') {\n    add(client, `Hi ${first}! See you ${when} at ${s.salonName}${withWho}. Reply C to confirm, or reply here to change it. Changes are free until ${freeUntil}.`);\n  } else if (ev.kind === 'remind_2_hours') {\n    add(client, `Hi ${first}, see you soon! Your appointment at ${s.salonName} is today at ${time}.`);\n  } else if (ev.kind === 'thank_you') {\n    add(client, `Thanks for coming in, ${first}! If you loved your hair, a quick review means a lot: ${s.reviewLink}`);\n  }\n});\nreturn out;"
       },
-      "id": "588992ae-71fc-46f5-84a8-22ad1d6a0f16",
+      "id": "1efac210-d74e-47e0-9df0-e089f65e4935",
       "name": "Write the Texts",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -257,7 +257,7 @@
         "jsonBody": "={{ JSON.stringify({ from: $('Settings').first().json.salonPhone, to: $json.to, text: $json.text }) }}",
         "options": {}
       },
-      "id": "906100e1-9496-4269-aced-6ad1fd1d83f6",
+      "id": "2a18227b-832b-4064-b658-91685162a6ce",
       "name": "Send Text",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
