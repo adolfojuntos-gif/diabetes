@@ -1,0 +1,732 @@
+{
+  "name": "Salon A - AI Text Assistant (Telnyx)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## A. AI Text Assistant\n\n**In simple words:** a client texts the salon's Telnyx number. The AI checks the real Square calendar and offers open times.\n\n- **Returning client with a saved card:** the AI books it in Square.\n- **New client:** the AI sends the Square booking link. Square saves their card and shows the policy.\n- **AI gets stuck or client asks for a person:** the manager gets a text, and the AI stays quiet with that client for 12 hours.\n\n**Set up:** fill in **Settings**, pick credentials on the nodes with warnings.",
+        "width": 660,
+        "height": 360,
+        "color": 4
+      },
+      "id": "faf4e691-12db-4207-8a21-6b6efafff1fc",
+      "name": "Note 0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -440
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telnyx-sms",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "bc779550-520f-462d-84ff-f30e1580fc25",
+      "name": "Text Comes In (Telnyx)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "a5fce861-16ed-4b58-b916-53266d343eef"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ================= YOUR SALON SETTINGS =================\n// Fill this in once, then copy the SAME settings into the other workflow.\nconst SETTINGS = {\n  salonName: 'Your Salon Name',\n  timezone: 'America/Chicago',\n  salonPhone: '+19565550100',        // your Telnyx number (texts come from here)\n  managerPhone: '+19565550101',      // gets no-show / late-cancel / \"needs a person\" texts\n  bookingLink: 'https://book.squareup.com/appointments/YOUR-LINK',  // Square online booking page\n  reviewLink: 'https://g.page/r/YOUR-GOOGLE-REVIEW-LINK',\n\n  // Square (Sandbox while testing; live = https://connect.squareup.com)\n  squareBaseUrl: 'https://connect.squareupsandbox.com',\n  squareVersion: '2025-01-23',\n  locationId: 'YOUR_SQUARE_LOCATION_ID',\n  squareWebhookSignatureKey: 'YOUR_SQUARE_WEBHOOK_SIGNATURE_KEY',\n  squareWebhookUrl: 'https://YOUR-N8N-ADDRESS/webhook/square-events',\n\n  // Telnyx: Mission Control > Keys & Credentials > Public Key (optional, but recommended)\n  telnyxPublicKey: '',\n\n  lateCancelHours: 24,\n  policyText: 'Free to cancel or change up to 24 hours before. Late cancellations and no-shows may be charged a fee to the card saved when booking.',\n\n  // Each stylist has their OWN time for each service.\n  // In Square, make one version of the service per speed (same name and price for clients).\n  stylists: [\n    { name: 'Maria', team_member_id: 'TEAM_MEMBER_ID_MARIA', phone: '+19565550111' },\n    { name: 'Ana',   team_member_id: 'TEAM_MEMBER_ID_ANA',   phone: '+19565550112' },\n  ],\n  services: [\n    { name: 'Long Haircut', price: '$65', options: [\n      { stylist: 'Maria', minutes: 45, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_LONG_CUT_45' },\n      { stylist: 'Ana',   minutes: 90, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_LONG_CUT_90' },\n    ]},\n    { name: 'Short Haircut', price: '$40', options: [\n      { stylist: 'Maria', minutes: 30, team_member_id: 'TEAM_MEMBER_ID_MARIA', service_variation_id: 'VARIATION_ID_SHORT_CUT_30' },\n      { stylist: 'Ana',   minutes: 45, team_member_id: 'TEAM_MEMBER_ID_ANA',   service_variation_id: 'VARIATION_ID_SHORT_CUT_45' },\n    ]},\n  ],\n};\n// ========================================================\n\nconst crypto = require('crypto');\nconst req = $input.first().json;\nconst body = req.body || {};\n\n// Optional security check: was this really sent by Telnyx?\nif (SETTINGS.telnyxPublicKey) {\n  let raw;\n  try { raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8'); } catch (e) { raw = JSON.stringify(body); }\n  const h = req.headers || {};\n  const key = crypto.createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), Buffer.from(SETTINGS.telnyxPublicKey, 'base64')]), format: 'der', type: 'spki' });\n  const ok = crypto.verify(null, Buffer.from(`${h['telnyx-timestamp']}|${raw}`), key, Buffer.from(String(h['telnyx-signature-ed25519'] || ''), 'base64'));\n  if (!ok) throw new Error('This did not come from Telnyx (or telnyxPublicKey in Settings is wrong).');\n}\n\nconst d = body.data || {};\nconst p = d.payload || {};\nconst message = String(p.text || '').trim();\nconst phone = (p.from && p.from.phone_number) || '';\n// Only real incoming texts. STOP / HELP / START are handled by Telnyx itself.\nconst keyword = /^(stop|stopall|unsubscribe|end|quit|help|info|start|unstop)$/i.test(message);\nif (d.event_type !== 'message.received' || !message || !phone || keyword) return [];\n\n// Paused because a person is handling this client?\nconst memory = $getWorkflowStaticData('global');\nmemory.paused = memory.paused || {};\nif (memory.paused[phone] && memory.paused[phone] > Date.now()) return [];\n\nreturn [{ json: { ...SETTINGS, phone, message } }];"
+      },
+      "id": "1afa2d67-dba5-46e6-9f18-d8026a372b44",
+      "name": "Settings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/customers/search' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ limit: 1, query: { filter: { phone_number: { exact: $json.phone } } } }) }}",
+        "options": {}
+      },
+      "id": "d9a3572d-02d1-46d3-9672-be114d21e04b",
+      "name": "Find Client in Square",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const c = ($input.first().json.customers || [])[0];\nreturn [{ json: { customerId: c ? c.id : '', known: !!c, name: c ? [c.given_name, c.family_name].filter(Boolean).join(' ') : '' } }];"
+      },
+      "id": "c4a2d2ab-d82c-4f77-97f7-01437e41b705",
+      "name": "Client Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "4b12e7be-f8a7-456a-b966-d2e6bb8722c1",
+              "leftValue": "={{ $json.known }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d599f664-a3b4-4186-9def-fcaf0f72c042",
+      "name": "Known Client?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/cards' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customer_id",
+              "value": "={{ $json.customerId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4057d100-85b8-461b-9252-c7ab1b1723ce",
+      "name": "Check Saved Card",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $('Settings').first().json;\nconst info = $('Client Info').first().json;\nconst cards = info.known ? (($input.first().json.cards || []).filter((c) => c.enabled !== false)) : [];\nconst canBook = info.known && cards.length > 0;\n\nconst now = new Date();\nconst nowText = now.toLocaleString('en-US', { timeZone: s.timezone, dateStyle: 'full', timeStyle: 'short' });\nconst off = (now.toLocaleString('en-US', { timeZone: s.timezone, timeZoneName: 'longOffset' }).match(/GMT([+-]\\d{2}:\\d{2})/) || [])[1] || '+00:00';\nconst menu = s.services.map((sv) => `- ${sv.name} (${sv.price}):\\n` + sv.options.map((o) =>\n  `    ${o.stylist}: ${o.minutes} min -> team_member_id=${o.team_member_id}, service_variation_id=${o.service_variation_id}`).join('\\n')).join('\\n');\n\nconst prompt = `You are the friendly text-message assistant for ${s.salonName}. Reply in 1-3 short sentences, plain text. Reply in the same language the client writes in.\n\nNOW: ${nowText} (${s.timezone}, UTC offset ${off}). Send times to tools as ISO 8601 with this offset, e.g. 2026-11-20T14:00:00${off}.\nCLIENT: ${info.name || 'name unknown'}. CAN BOOK BY TEXT: ${canBook ? 'YES (card saved)' : 'NO (no card saved yet)'}.\n\nSERVICES. Each stylist has their own time. Use the service_variation_id that belongs to the chosen stylist:\n${menu}\n\nSTEPS\n1. Find out the service, the stylist (or \"anyone\") and the day.\n2. Use check_availability for that whole day (00:00 to 00:00 next day; at least 24 hours; start from now if the day already started). For \"anyone\", check each stylist.\n3. Offer up to 3 real times. Never make up a time.\n4. ${canBook\n    ? 'When they pick one, repeat it (\"Confirm Fri Nov 20, 2:30 PM with Maria, Long Haircut?\") and wait for a clear yes. Then call book_appointment with the exact values from check_availability. If it fails, check again and offer new times.'\n    : 'Do NOT book by text. Tell them the time is open and send this link to book it and save a card (it holds the spot, no charge now): ' + s.bookingLink}\n5. Never ask for card numbers. If someone sends one, tell them to delete it and use the booking link.\n\nTo cancel or change: use list_my_bookings, confirm which one, then cancel_booking. If it is less than ${s.lateCancelHours} hours away, mention the policy first.\nPOLICY: ${s.policyText}\n\nIf you can't help, they're upset, or they ask for a person: say a team member will text them soon and end with [HANDOFF].`;\nreturn [{ json: { prompt, canBook, customerId: info.customerId, message: s.message } }];"
+      },
+      "id": "aea2f8df-b0d0-413f-ac65-331f140b0d5e",
+      "name": "Prepare the AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Prepare the AI').first().json.message }}",
+        "options": {
+          "systemMessage": "={{ $('Prepare the AI').first().json.prompt }}",
+          "maxIterations": 12
+        }
+      },
+      "id": "48241060-2700-410b-b82a-9a9aa1261ac4",
+      "name": "AI Assistant",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1540,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-haiku-5-5"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "08591595-bcd7-4d9f-9b59-8045960a83da",
+      "name": "Claude",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1420,
+        260
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "REPLACE_ANTHROPIC_CRED",
+          "name": "Anthropic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Settings').first().json.phone }}",
+        "contextWindowLength": 20
+      },
+      "id": "6b82ace2-51dd-410f-adb8-a35463bc6564",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1560,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/bookings/availability/search' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: { filter: { location_id: $('Settings').first().json.locationId, start_at_range: { start_at: $fromAI('range_start', 'Start of the search window, ISO 8601 with offset', 'string'), end_at: $fromAI('range_end', 'End of the window, ISO 8601 with offset, at least 24 hours after the start', 'string') }, segment_filters: [{ service_variation_id: $fromAI('service_variation_id', 'service_variation_id for the chosen stylist', 'string'), team_member_id_filter: { any: [ $fromAI('team_member_id', 'team_member_id of the stylist', 'string') ] } }] } } }) }}",
+        "options": {},
+        "toolDescription": "Find open times in Square for ONE stylist and ONE service."
+      },
+      "id": "9dc71490-6f66-4987-a7c9-5728dc060040",
+      "name": "check_availability",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1700,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + ($('Prepare the AI').first().json.canBook ? '/v2/bookings' : '/v2/BLOCKED-send-the-booking-link-instead') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ idempotency_key: $('Prepare the AI').first().json.customerId + '-' + $fromAI('booking_key', 'Copy the exact start_at again (prevents double booking)', 'string'), booking: { location_id: $('Settings').first().json.locationId, customer_id: $('Prepare the AI').first().json.customerId, start_at: $fromAI('start_at', 'Exact start_at from check_availability', 'string'), customer_note: 'Booked by text', appointment_segments: [{ team_member_id: $fromAI('team_member_id', 'team_member_id from check_availability', 'string'), service_variation_id: $fromAI('service_variation_id', 'service_variation_id from check_availability', 'string'), service_variation_version: $fromAI('service_variation_version', 'service_variation_version from check_availability', 'number') }] } }) }}",
+        "options": {},
+        "toolDescription": "Book the appointment in Square. Only after a clear yes, and only when CAN BOOK BY TEXT is YES."
+      },
+      "id": "5190ae9f-74f1-4135-bb72-6799aa1dfceb",
+      "name": "book_appointment",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/bookings' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "customer_id",
+              "value": "={{ $('Prepare the AI').first().json.customerId || 'none' }}"
+            },
+            {
+              "name": "location_id",
+              "value": "={{ $('Settings').first().json.locationId }}"
+            },
+            {
+              "name": "start_at_min",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {},
+        "toolDescription": "List this client's upcoming bookings (id, version, start time, stylist)."
+      },
+      "id": "79e4de72-5c9d-4c09-b0e4-b00b8357d842",
+      "name": "list_my_bookings",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.squareBaseUrl + '/v2/bookings/' + $fromAI('booking_id', 'id from list_my_bookings', 'string') + '/cancel' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Square-Version",
+              "value": "={{ $('Settings').first().json.squareVersion }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ booking_version: $fromAI('booking_version', 'version from list_my_bookings', 'number') }) }}",
+        "options": {},
+        "toolDescription": "Cancel one booking after the client confirmed which one."
+      },
+      "id": "37a242ac-568c-4a82-a618-7d1acd8e6daa",
+      "name": "cancel_booking",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2120,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_SQUARE_CRED",
+          "name": "Square API (Bearer token)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $('Settings').first().json;\nconst out = String($json.output || '').trim();\nconst handoff = out.includes('[HANDOFF]') || !out;\nconst reply = out.replace(/\\[HANDOFF\\]/g, '').trim() || 'Sorry, something went wrong. A team member will text you shortly.';\nif (handoff) {\n  // Let a person take over: the AI stays quiet with this client for 12 hours\n  const memory = $getWorkflowStaticData('global');\n  memory.paused = memory.paused || {};\n  memory.paused[s.phone] = Date.now() + 12 * 3600e3;\n}\nreturn [{ json: { reply, handoff } }];"
+      },
+      "id": "c27068d4-1d78-4c5d-8e7f-fe22d83fe409",
+      "name": "Tidy the Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telnyx.com/v2/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: $('Settings').first().json.salonPhone, to: $('Settings').first().json.phone, text: $json.reply }) }}",
+        "options": {}
+      },
+      "id": "77cc6dff-9f9a-458d-b70f-e62e13ee41cc",
+      "name": "Text the Client",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2100,
+        -80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_TELNYX_CRED",
+          "name": "Telnyx API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "84369915-a39a-434f-9494-dc32e6bfb234",
+              "leftValue": "={{ $('Tidy the Reply').first().json.handoff }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c3e9e0b8-5f2a-4e05-89da-e5a138b584f4",
+      "name": "Needs a Person?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telnyx.com/v2/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: $('Settings').first().json.salonPhone, to: $('Settings').first().json.managerPhone, text: 'Client ' + $('Settings').first().json.phone + ' needs a person. Their last message: \"' + $('Settings').first().json.message + '\". The AI will stay quiet with them for 12 hours.' }) }}",
+        "options": {}
+      },
+      "id": "5e0e6c1b-a6db-4f23-b321-fd1b58b542ae",
+      "name": "Text the Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2320,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_TELNYX_CRED",
+          "name": "Telnyx API (Bearer token)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Text Comes In (Telnyx)": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Find Client in Square",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Client in Square": {
+      "main": [
+        [
+          {
+            "node": "Client Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Info": {
+      "main": [
+        [
+          {
+            "node": "Known Client?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Saved Card": {
+      "main": [
+        [
+          {
+            "node": "Prepare the AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare the AI": {
+      "main": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Assistant": {
+      "main": [
+        [
+          {
+            "node": "Tidy the Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tidy the Reply": {
+      "main": [
+        [
+          {
+            "node": "Text the Client",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Needs a Person?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Known Client?": {
+      "main": [
+        [
+          {
+            "node": "Check Saved Card",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare the AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs a Person?": {
+      "main": [
+        [
+          {
+            "node": "Text the Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_availability": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "book_appointment": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_my_bookings": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cancel_booking": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Assistant",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
